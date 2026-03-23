@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #953f4d;
+  --color-primary-container: #ff94a2;
+  --color-on-primary: #ffefef;
+  --color-on-primary-container: #601726;
+  --color-primary-dim: #863442;
+  
+  --color-secondary: #0c693d;
+  --color-secondary-container: #a1f5bc;
+  --color-on-secondary: #cbffd8;
+  --color-on-secondary-container: #005e35;
+  --color-secondary-dim: #005c34;
+  
+  --color-tertiary: #735802;
+  --color-tertiary-container: #ffd97d;
+  --color-on-tertiary: #fff1d8;
+  --color-on-tertiary-container: #634b00;
+  
+  --color-surface: #fbf5f0;
+  --color-surface-dim: #d9d3cd;
+  --color-surface-bright: #fbf5f0;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f0ea;
+  --color-surface-container: #ede7e2;
+  --color-surface-container-high: #e7e1dc;
+  --color-surface-container-highest: #e2dcd6;
+  
+  --color-on-surface: #302e2b;
+  --color-on-surface-variant: #5e5b57;
+  --color-outline: #7a7672;
+  --color-outline-variant: #b1aca8;
+
+  --font-headline: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-label: "Plus Jakarta Sans", sans-serif;
+
+  --radius-xl: 3rem;
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-surface/40 backdrop-blur-xl;
+  }
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+}
