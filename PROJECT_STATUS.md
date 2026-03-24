@@ -29,6 +29,7 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 - `/` - checks Supabase auth, redirects to `/login` or `/lounge`
 - `/login` - auth UI (`components/Login.tsx`)
 - `/lounge` - rivalry list, create rivalry, join by invite code (`components/Lounge.tsx`)
+- `/settings` - user profile and weekly preference settings (`components/SettingsPage.tsx`)
 - `/rivalry/[id]` - rivalry dashboard and round history (`components/RivalryDashboard.tsx`)
 - `/rivalry/[id]/new-round` - create a new round
 - `/round/[id]` - round lifecycle page (`components/RoundPage.tsx`)
@@ -76,6 +77,7 @@ Observed status values:
 
 - Email/password sign-up and sign-in through Supabase
 - Lounge UI for creating a rivalry and joining by invite code
+- Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
 - Rivalry dashboard and round list
 - New round flow with topic, study days, and optional prize/stake
 - AI syllabus generation and confirmation flow

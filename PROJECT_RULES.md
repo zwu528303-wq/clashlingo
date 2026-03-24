@@ -108,6 +108,8 @@ As of the latest reviewed state, the following product changes are already in th
 - results page includes syllabus / study material review
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point
+- settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
+- lounge now reads profile preferences and uses the new supported language list
 - lounge enforces a 2-rivalry limit in the UI
 - rivalry dashboard shows cumulative rivalry stats and round outcome context
 - scopes page exists
@@ -118,9 +120,7 @@ As of the latest reviewed state, the following product changes are already in th
 These rules are approved but still need implementation work:
 
 - add leave rivalry action and post-exit inactive state behavior
-- expand settings to support nickname, letter avatar override, and avatar color theme
 - move the main countdown experience onto lounge rivalry cards
-- normalize all language selectors to the new 6-language list
 - classify scopes by target language when players use different languages
 - align weekly matching time behavior with the new "soft countdown, mutual early start allowed" rule across all relevant screens
 

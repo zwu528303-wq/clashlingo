@@ -1,0 +1,158 @@
+import type { User } from "@supabase/supabase-js";
+
+export const SUPPORTED_LANGUAGES = [
+  "French",
+  "Spanish",
+  "Japanese",
+  "Korean",
+  "Chinese",
+  "English",
+] as const;
+
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
+export interface AvatarTheme {
+  id: string;
+  label: string;
+  swatchClassName: string;
+  avatarClassName: string;
+  softClassName: string;
+}
+
+export const AVATAR_THEMES: AvatarTheme[] = [
+  {
+    id: "rose",
+    label: "Rose",
+    swatchClassName: "bg-primary",
+    avatarClassName: "bg-primary text-on-primary",
+    softClassName: "bg-primary-container text-on-primary-container",
+  },
+  {
+    id: "mint",
+    label: "Mint",
+    swatchClassName: "bg-secondary",
+    avatarClassName: "bg-secondary text-on-secondary",
+    softClassName: "bg-secondary-container text-on-secondary-container",
+  },
+  {
+    id: "gold",
+    label: "Gold",
+    swatchClassName: "bg-tertiary",
+    avatarClassName: "bg-tertiary text-on-tertiary",
+    softClassName: "bg-tertiary-container text-on-tertiary-container",
+  },
+  {
+    id: "ink",
+    label: "Ink",
+    swatchClassName: "bg-on-surface",
+    avatarClassName: "bg-on-surface text-surface",
+    softClassName: "bg-surface-container-high text-on-surface",
+  },
+];
+
+export const DEFAULT_WEEKLY_MATCH_TIME = "19:00";
+export const DEFAULT_AVATAR_THEME_ID = AVATAR_THEMES[0].id;
+export const DEFAULT_LANGUAGE: SupportedLanguage = SUPPORTED_LANGUAGES[0];
+
+export interface EditableProfile {
+  displayName: string;
+  avatarLetter: string;
+  avatarColor: string;
+  preferredLanguage: SupportedLanguage;
+  weeklyMatchTime: string;
+  email: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+export function buildFallbackName(
+  email?: string,
+  fallback = "Language Warrior"
+) {
+  const candidate = email?.split("@")[0]?.trim();
+  return candidate ? candidate : fallback;
+}
+
+export function getDisplayInitial(value?: string, fallback = "L") {
+  const cleaned = value?.trim();
+  if (!cleaned) return fallback;
+  return cleaned.charAt(0).toUpperCase();
+}
+
+export function normalizeSupportedLanguage(value: unknown): SupportedLanguage {
+  if (
+    typeof value === "string" &&
+    SUPPORTED_LANGUAGES.includes(value as SupportedLanguage)
+  ) {
+    return value as SupportedLanguage;
+  }
+  return DEFAULT_LANGUAGE;
+}
+
+export function normalizeAvatarThemeId(value: unknown) {
+  if (
+    typeof value === "string" &&
+    AVATAR_THEMES.some((theme) => theme.id === value)
+  ) {
+    return value;
+  }
+  return DEFAULT_AVATAR_THEME_ID;
+}
+
+export function normalizeWeeklyMatchTime(value: unknown) {
+  if (typeof value === "string" && /^\d{2}:\d{2}$/.test(value)) {
+    return value;
+  }
+  return DEFAULT_WEEKLY_MATCH_TIME;
+}
+
+export function normalizeAvatarLetter(
+  value: unknown,
+  displayName: string,
+  email?: string
+) {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim().charAt(0).toUpperCase();
+  }
+  return getDisplayInitial(displayName, getDisplayInitial(email, "L"));
+}
+
+export function getAvatarTheme(themeId?: string) {
+  return (
+    AVATAR_THEMES.find((theme) => theme.id === themeId) ?? AVATAR_THEMES[0]
+  );
+}
+
+export function getStableAvatarTheme(seed?: string | null) {
+  if (!seed) return AVATAR_THEMES[0];
+
+  const index =
+    Array.from(seed).reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+    AVATAR_THEMES.length;
+
+  return AVATAR_THEMES[index];
+}
+
+export function getEditableProfileFromUser(user: User): EditableProfile {
+  const metadata = isRecord(user.user_metadata) ? user.user_metadata : {};
+  const email = user.email ?? "";
+  const displayNameCandidate =
+    typeof metadata.display_name === "string" && metadata.display_name.trim()
+      ? metadata.display_name.trim()
+      : buildFallbackName(email);
+
+  return {
+    displayName: displayNameCandidate,
+    avatarLetter: normalizeAvatarLetter(
+      metadata.avatar_letter,
+      displayNameCandidate,
+      email
+    ),
+    avatarColor: normalizeAvatarThemeId(metadata.avatar_color),
+    preferredLanguage: normalizeSupportedLanguage(metadata.preferred_language),
+    weeklyMatchTime: normalizeWeeklyMatchTime(metadata.weekly_match_time),
+    email,
+  };
+}

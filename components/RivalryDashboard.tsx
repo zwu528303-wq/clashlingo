@@ -201,7 +201,10 @@ export default function RivalryDashboard() {
           <ArrowLeft size={20} />
           Back to Lounge
         </button>
-        <button className="text-on-surface-variant hover:text-primary transition-colors">
+        <button
+          onClick={() => router.push("/settings")}
+          className="text-on-surface-variant hover:text-primary transition-colors"
+        >
           <Settings size={20} />
         </button>
       </header>

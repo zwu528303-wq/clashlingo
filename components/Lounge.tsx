@@ -1,9 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { Swords, Plus, UserPlus, ArrowRight, X, Copy, Check, LogOut, BookOpen } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Copy,
+  LogOut,
+  Plus,
+  Settings,
+  Swords,
+  UserPlus,
+  X,
+} from "lucide-react";
+import {
+  SUPPORTED_LANGUAGES,
+  type EditableProfile,
+  type SupportedLanguage,
+  getAvatarTheme,
+  getEditableProfileFromUser,
+  normalizeAvatarLetter,
+} from "@/lib/profile";
 
 interface Rivalry {
   id: string;
@@ -19,6 +39,7 @@ interface Rivalry {
 export default function Lounge() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +48,7 @@ export default function Lounge() {
   const [showJoin, setShowJoin] = useState(false);
 
   // Create form
-  const [myLang, setMyLang] = useState("French");
+  const [myLang, setMyLang] = useState<SupportedLanguage>(SUPPORTED_LANGUAGES[0]);
   const [creating, setCreating] = useState(false);
   const [createdCode, setCreatedCode] = useState("");
   const [createError, setCreateError] = useState("");
@@ -35,11 +56,9 @@ export default function Lounge() {
 
   // Join form
   const [joinCode, setJoinCode] = useState("");
-  const [joinLang, setJoinLang] = useState("Spanish");  
+  const [joinLang, setJoinLang] = useState<SupportedLanguage>(SUPPORTED_LANGUAGES[0]);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
-
-  const languages = ["French", "Spanish", "Japanese", "German", "Korean", "Italian", "Portuguese", "Chinese"];
 
   // Check auth + fetch rivalries
   useEffect(() => {
@@ -49,12 +68,31 @@ export default function Lounge() {
         router.push("/login");
         return;
       }
+      await loadCurrentProfile(user);
       setUserId(user.id);
       await fetchRivalries(user.id);
       setLoading(false);
     };
     init();
   }, [router]);
+
+  const loadCurrentProfile = async (user: User) => {
+    const authProfile = getEditableProfileFromUser(user);
+    const { data } = await supabase
+      .from("users")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle<{ display_name: string | null }>();
+
+    const resolvedProfile: EditableProfile = {
+      ...authProfile,
+      displayName: data?.display_name?.trim() || authProfile.displayName,
+    };
+
+    setProfile(resolvedProfile);
+    setMyLang(resolvedProfile.preferredLanguage);
+    setJoinLang(resolvedProfile.preferredLanguage);
+  };
 
   const fetchRivalries = async (uid: string) => {
     const { data, error } = await supabase
@@ -192,11 +230,36 @@ export default function Lounge() {
     );
   }
 
+  const avatarTheme = getAvatarTheme(profile?.avatarColor);
+  const profileLetter = normalizeAvatarLetter(
+    profile?.avatarLetter,
+    profile?.displayName || "",
+    profile?.email
+  );
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="flex justify-between items-center px-6 py-5 max-w-5xl mx-auto">
-        <h1 className="text-2xl font-black text-primary tracking-tighter">ClashLingo</h1>
+      <header className="flex flex-col gap-5 md:flex-row md:justify-between md:items-center px-6 py-5 max-w-5xl mx-auto">
+        <div className="flex items-center gap-4">
+          <div
+            className={`w-14 h-14 rounded-[1.25rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-2xl font-black shadow-sm`}
+          >
+            {profileLetter}
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-primary tracking-tighter">
+              ClashLingo
+            </h1>
+            <p className="text-sm text-on-surface-variant font-medium">
+              {profile?.displayName || "Language Warrior"} ·{" "}
+              {profile?.preferredLanguage || SUPPORTED_LANGUAGES[0]} learner
+            </p>
+            <p className="text-xs text-on-surface-variant/70 font-medium">
+              Weekly match time {profile?.weeklyMatchTime || "19:00"}
+            </p>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/scopes")}
@@ -204,6 +267,13 @@ export default function Lounge() {
           >
             <BookOpen size={16} />
             Scopes
+          </button>
+          <button
+            onClick={() => router.push("/settings")}
+            className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
+          >
+            <Settings size={16} />
+            Settings
           </button>
           <button
             onClick={handleLogout}
@@ -391,7 +461,7 @@ export default function Lounge() {
                     I want to learn
                   </label>
                   <div className="grid grid-cols-2 gap-3">
-                    {languages.map((lang) => (
+                    {SUPPORTED_LANGUAGES.map((lang) => (
                       <button
                         key={lang}
                         onClick={() => setMyLang(lang)}
@@ -489,7 +559,7 @@ export default function Lounge() {
                 I want to learn
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {languages.map((lang) => (
+                {SUPPORTED_LANGUAGES.map((lang) => (
                   <button
                     key={lang}
                     type="button"
