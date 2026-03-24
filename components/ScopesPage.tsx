@@ -45,24 +45,12 @@ const ACTIVE_STATUSES = ["topic_selection", "confirming", "countdown", "exam_rea
 
 export default function ScopesPage() {
   const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
   const [scopes, setScopes] = useState<ScopeRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [langFilter, setLangFilter] = useState<string>("All");
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      setUserId(user.id);
-      await loadScopes(user.id);
-      setLoading(false);
-    };
-    init();
-  }, [router]);
-
-  const loadScopes = async (uid: string) => {
+  async function loadScopes(uid: string) {
     // Fetch all rivalries the user belongs to
     const { data: rivalries } = await supabase
       .from("rivalries")
@@ -118,7 +106,22 @@ export default function ScopesPage() {
     }));
 
     setScopes(built);
-  };
+  }
+
+  useEffect(() => {
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      await loadScopes(user.id);
+      setLoading(false);
+    };
+    init();
+  }, [router]);
 
   const activeScope = scopes.find((s) => ACTIVE_STATUSES.includes(s.status) && s.syllabus);
   const pastScopes = scopes.filter((s) => s.status === "completed" && s.syllabus);

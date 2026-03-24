@@ -127,8 +127,7 @@ export function normalizeWeeklyMatchTime(value: unknown) {
 
 export function normalizeAvatarLetter(
   value: unknown,
-  displayName: string,
-  email?: string
+  displayName: string
 ) {
   if (typeof value === "string" && value.trim()) {
     return value.trim().charAt(0).toUpperCase();
@@ -164,8 +163,7 @@ export function getEditableProfileFromUser(user: User): EditableProfile {
     displayName: displayNameCandidate,
     avatarLetter: normalizeAvatarLetter(
       metadata.avatar_letter,
-      displayNameCandidate,
-      email
+      displayNameCandidate
     ),
     avatarColor: normalizeAvatarThemeId(metadata.avatar_color),
     preferredLanguage: normalizeSupportedLanguage(metadata.preferred_language),

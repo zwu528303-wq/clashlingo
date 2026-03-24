@@ -67,8 +67,7 @@ export default function SettingsPage() {
         displayName,
         avatarLetter: normalizeAvatarLetter(
           authProfile.avatarLetter,
-          displayName,
-          user.email
+          displayName
         ),
       });
       setLoading(false);
@@ -87,8 +86,7 @@ export default function SettingsPage() {
       resolveDisplayName(profile.displayName);
     const avatarLetter = normalizeAvatarLetter(
       profile.avatarLetter,
-      displayName,
-      profile.email
+      displayName
     );
     const nextProfile: EditableProfile = {
       ...profile,
@@ -285,8 +283,7 @@ export default function SettingsPage() {
                       >
                         {normalizeAvatarLetter(
                           profile.avatarLetter,
-                          profile.displayName,
-                          profile.email
+                          profile.displayName
                         )}
                       </div>
                       <div>
@@ -388,8 +385,7 @@ export default function SettingsPage() {
             >
               {normalizeAvatarLetter(
                 profile.avatarLetter,
-                profile.displayName,
-                profile.email
+                profile.displayName
               )}
             </div>
             <div>
@@ -412,8 +408,7 @@ export default function SettingsPage() {
               >
                 {normalizeAvatarLetter(
                   profile.avatarLetter,
-                  profile.displayName,
-                  profile.email
+                  profile.displayName
                 )}
               </div>
               <div>

@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Circle,
-  Clock,
   BookOpen,
   Swords,
   Trophy,
@@ -30,7 +29,7 @@ interface Round {
   countdown_start: string | null;
   exam_at: string | null;
   exam_started_at: string | null;
-  syllabus: Record<string, unknown> | null;
+  syllabus: Syllabus | null;
   created_at: string;
 }
 
@@ -39,6 +38,14 @@ interface Rivalry {
   player_a_id: string;
   player_b_id: string;
   player_a_lang: string;
+}
+
+interface Syllabus {
+  can_do?: string[];
+  vocabulary?: Record<string, string[]>;
+  grammar?: string[];
+  expressions?: string[];
+  listening?: string[];
 }
 
 export default function RoundPage() {
@@ -152,7 +159,7 @@ export default function RoundPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [round?.status, round?.exam_at, loadRound]);
+  }, [round?.status, round?.exam_at, roundId, loadRound]);
 
   // ========== Actions ==========
 
@@ -193,6 +200,7 @@ export default function RoundPage() {
 
   const myConfirmed = isPlayerA ? round?.player_a_confirmed : round?.player_b_confirmed;
   const rivalConfirmed = isPlayerA ? round?.player_b_confirmed : round?.player_a_confirmed;
+  const syllabus = round?.syllabus;
 
   if (loading) {
     return (
@@ -310,7 +318,7 @@ export default function RoundPage() {
             </div>
 
             {/* Syllabus Preview */}
-            {round.syllabus && (
+            {syllabus && (
               <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen size={20} className="text-primary" />
@@ -321,7 +329,7 @@ export default function RoundPage() {
                 <div>
                   <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">🎯 Can Do Objectives</h3>
                   <ul className="space-y-2">
-                    {((round.syllabus as any).can_do || []).map((item: string, i: number) => (
+                    {(syllabus.can_do || []).map((item, i) => (
                       <li key={i} className="flex items-start gap-3 text-on-surface">
                         <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0"></div>
                         {item}
@@ -331,15 +339,15 @@ export default function RoundPage() {
                 </div>
 
                 {/* Vocabulary */}
-                {(round.syllabus as any).vocabulary && (
+                {syllabus.vocabulary && (
                   <div>
                     <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-3">📖 Vocabulary</h3>
                     <div className="space-y-4">
-                      {Object.entries((round.syllabus as any).vocabulary).map(([group, words]: [string, any]) => (
+                      {Object.entries(syllabus.vocabulary).map(([group, words]) => (
                         <div key={group}>
                           <p className="text-sm font-medium text-on-surface-variant mb-2">{group}</p>
                           <div className="flex flex-wrap gap-2">
-                            {(words as string[]).map((w: string, i: number) => (
+                            {words.map((w, i) => (
                               <span key={i} className="px-3 py-1.5 bg-white border border-surface-container rounded-xl text-on-surface text-sm">{w}</span>
                             ))}
                           </div>
@@ -350,11 +358,11 @@ export default function RoundPage() {
                 )}
 
                 {/* Grammar */}
-                {(round.syllabus as any).grammar && (
+                {syllabus.grammar && (
                   <div>
                     <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">📝 Grammar</h3>
                     <div className="space-y-2">
-                      {((round.syllabus as any).grammar || []).map((g: string, i: number) => (
+                      {syllabus.grammar.map((g, i) => (
                         <div key={i} className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-on-surface text-sm">{g}</div>
                       ))}
                     </div>
@@ -362,11 +370,11 @@ export default function RoundPage() {
                 )}
 
                 {/* Expressions */}
-                {(round.syllabus as any).expressions && (
+                {syllabus.expressions && (
                   <div>
                     <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">💬 Expressions</h3>
                     <div className="divide-y divide-surface-container">
-                      {((round.syllabus as any).expressions || []).map((e: string, i: number) => (
+                      {syllabus.expressions.map((e, i) => (
                         <div key={i} className="py-2 text-on-surface text-sm">{e}</div>
                       ))}
                     </div>
@@ -374,11 +382,11 @@ export default function RoundPage() {
                 )}
 
                 {/* Listening */}
-                {(round.syllabus as any).listening && (
+                {syllabus.listening && (
                   <div>
                     <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">👂 You Might Hear</h3>
                     <div className="flex flex-wrap gap-2">
-                      {((round.syllabus as any).listening || []).map((l: string, i: number) => (
+                      {syllabus.listening.map((l, i) => (
                         <span key={i} className="px-3 py-1.5 bg-white border border-surface-container rounded-xl text-on-surface text-sm">{l}</span>
                       ))}
                     </div>

@@ -61,23 +61,7 @@ export default function Lounge() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
 
-  // Check auth + fetch rivalries
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      await loadCurrentProfile(user);
-      setUserId(user.id);
-      await fetchRivalries(user.id);
-      setLoading(false);
-    };
-    init();
-  }, [router]);
-
-  const loadCurrentProfile = async (user: User) => {
+  async function loadCurrentProfile(user: User) {
     const authProfile = getEditableProfileFromUser(user);
     const { data } = await supabase
       .from("users")
@@ -96,9 +80,9 @@ export default function Lounge() {
     setProfile(resolvedProfile);
     setMyLang(resolvedProfile.preferredLanguage);
     setJoinLang(resolvedProfile.preferredLanguage);
-  };
+  }
 
-  const fetchRivalries = async (uid: string) => {
+  async function fetchRivalries(uid: string) {
     const { data, error } = await supabase
       .from("rivalries")
       .select("*")
@@ -108,7 +92,25 @@ export default function Lounge() {
     if (!error && data) {
       setRivalries(data);
     }
-  };
+  }
+
+  // Check auth + fetch rivalries
+  useEffect(() => {
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      await loadCurrentProfile(user);
+      setUserId(user.id);
+      await fetchRivalries(user.id);
+      setLoading(false);
+    };
+    init();
+  }, [router]);
 
   // Generate 6-char invite code
   const generateCode = () => {
@@ -237,8 +239,7 @@ export default function Lounge() {
   const avatarTheme = getAvatarTheme(profile?.avatarColor);
   const profileLetter = normalizeAvatarLetter(
     profile?.avatarLetter,
-    profile?.displayName || "",
-    profile?.email
+    profile?.displayName || ""
   );
 
   return (

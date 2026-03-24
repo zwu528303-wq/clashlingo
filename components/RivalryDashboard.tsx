@@ -6,7 +6,6 @@ import { supabase } from "../lib/supabase";
 import {
   ArrowLeft,
   Swords,
-  Trophy,
   Flame,
   Plus,
   ArrowRight,
@@ -68,76 +67,67 @@ export default function RivalryDashboard() {
         router.push("/login");
         return;
       }
+
       setUserId(user.id);
-      await loadRivalry(user.id);
-      setLoading(false);
-    };
-    init();
-  }, [router, rivalryId]);
 
-  const loadRivalry = async (uid: string) => {
-    // Fetch rivalry
-    const { data: rivalryData, error } = await supabase
-      .from("rivalries")
-      .select("*")
-      .eq("id", rivalryId)
-      .single();
+      const { data: rivalryData, error } = await supabase
+        .from("rivalries")
+        .select("*")
+        .eq("id", rivalryId)
+        .single();
 
-    if (error || !rivalryData) {
-      router.push("/lounge");
-      return;
-    }
+      if (error || !rivalryData) {
+        router.push("/lounge");
+        return;
+      }
 
-    // Check user is part of this rivalry
-    if (rivalryData.player_a_id !== uid && rivalryData.player_b_id !== uid) {
-      router.push("/lounge");
-      return;
-    }
+      if (
+        rivalryData.player_a_id !== user.id &&
+        rivalryData.player_b_id !== user.id
+      ) {
+        router.push("/lounge");
+        return;
+      }
 
-    setRivalry(rivalryData);
+      setRivalry(rivalryData);
 
-    // Load player names from users table
-    await loadPlayerNames(rivalryData.player_a_id, rivalryData.player_b_id);
-
-    // Fetch rounds
-    const { data: roundsData } = await supabase
-      .from("rounds")
-      .select("*")
-      .eq("rivalry_id", rivalryId)
-      .order("round_number", { ascending: false });
-
-    if (roundsData) {
-      setRounds(roundsData);
-    }
-  };
-
-  const loadPlayerNames = async (
-    aId: string,
-    bId: string | null
-  ) => {
-    // Try to get display names from users table
-    const { data: aData } = await supabase
-      .from("users")
-      .select("id, display_name")
-      .eq("id", aId)
-      .single<UserProfile>();
-
-    if (aData) {
-      setPlayerAName(resolveDisplayName(aData.display_name, "Player A"));
-    }
-
-    if (bId) {
-      const { data: bData } = await supabase
+      const { data: aData } = await supabase
         .from("users")
         .select("id, display_name")
-        .eq("id", bId)
+        .eq("id", rivalryData.player_a_id)
         .single<UserProfile>();
 
-      if (bData) {
-        setPlayerBName(resolveDisplayName(bData.display_name, "Player B"));
+      if (aData) {
+        setPlayerAName(resolveDisplayName(aData.display_name, "Player A"));
       }
-    }
-  };
+
+      if (rivalryData.player_b_id) {
+        const { data: bData } = await supabase
+          .from("users")
+          .select("id, display_name")
+          .eq("id", rivalryData.player_b_id)
+          .single<UserProfile>();
+
+        if (bData) {
+          setPlayerBName(resolveDisplayName(bData.display_name, "Player B"));
+        }
+      }
+
+      const { data: roundsData } = await supabase
+        .from("rounds")
+        .select("*")
+        .eq("rivalry_id", rivalryId)
+        .order("round_number", { ascending: false });
+
+      if (roundsData) {
+        setRounds(roundsData);
+      }
+
+      setLoading(false);
+    };
+
+    init();
+  }, [router, rivalryId]);
 
   const handleCopy = async () => {
     if (!rivalry) return;
@@ -148,8 +138,6 @@ export default function RivalryDashboard() {
 
   const isPlayerA = rivalry?.player_a_id === userId;
   const isPaired = !!rivalry?.player_b_id;
-  const myName = isPlayerA ? playerAName : playerBName;
-  const rivalName = isPlayerA ? playerBName : playerAName;
   const lang = isPlayerA
     ? rivalry?.player_a_lang
     : rivalry?.player_b_lang || rivalry?.player_a_lang;

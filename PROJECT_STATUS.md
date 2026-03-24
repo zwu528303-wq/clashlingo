@@ -100,20 +100,14 @@ Observed status values:
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
 - Results UI exists in `components/ResultsPage.tsx`
+- `npm run lint` currently passes
 - Production build currently passes
 
 ## Current Health Check
 
 Ran on 2026-03-24:
 - `npm run build` - passes
-- `npm run lint` - fails with 48 problems total (36 errors, 12 warnings)
-
-Lint failure themes:
-- `@typescript-eslint/no-explicit-any`
-- React hook rule violations
-- function ordering issues flagged by React hook immutability rules
-- unused imports / variables
-- route/component drift
+- `npm run lint` - passes
 
 ## Known Issues And Risks
 

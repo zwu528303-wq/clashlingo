@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
-  Trophy,
   Home,
   ArrowRight,
   CheckCircle2,
@@ -29,15 +28,51 @@ interface Submission {
   feedback_tags: string[] | null;
 }
 
+interface Syllabus {
+  can_do?: string[];
+  vocabulary?: Record<string, string[]>;
+  grammar?: string[];
+  expressions?: string[];
+}
+
+interface RoundResult {
+  id: string;
+  rivalry_id: string;
+  round_number: number;
+  topic: string | null;
+  target_lang: string | null;
+  prize_text: string | null;
+  syllabus: Syllabus | null;
+}
+
+interface ExamQuestion {
+  id: number;
+  type: "mcq" | "fitb" | "translation";
+  prompt: string;
+  options?: string[];
+}
+
+interface RubricItem {
+  id: number;
+  answer: string;
+  points: number;
+  keywords?: string[];
+}
+
+interface ExamRecord {
+  id: string;
+  questions: ExamQuestion[];
+  rubric: RubricItem[];
+}
+
 export default function ResultsPage() {
   const router = useRouter();
   const params = useParams();
   const roundId = params.id as string;
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [round, setRound] = useState<any>(null);
-  const [rivalry, setRivalry] = useState<any>(null);
-  const [exam, setExam] = useState<any>(null);
+  const [round, setRound] = useState<RoundResult | null>(null);
+  const [exam, setExam] = useState<ExamRecord | null>(null);
   const [mySub, setMySub] = useState<Submission | null>(null);
   const [rivalSub, setRivalSub] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,21 +94,14 @@ export default function ResultsPage() {
       .eq("id", roundId)
       .single();
     if (!roundData) { router.push("/lounge"); return; }
-    setRound(roundData);
-
-    const { data: rivalryData } = await supabase
-      .from("rivalries")
-      .select("*")
-      .eq("id", roundData.rivalry_id)
-      .single();
-    setRivalry(rivalryData);
+    setRound(roundData as RoundResult);
 
     const { data: examData } = await supabase
       .from("exams")
       .select("*")
       .eq("round_id", roundId)
       .single();
-    if (examData) setExam(examData);
+    if (examData) setExam(examData as ExamRecord);
 
     if (examData) {
       const { data: subs } = await supabase
@@ -106,9 +134,14 @@ export default function ResultsPage() {
   }, [router]);
 
   useEffect(() => {
-    if (userId) {
-      loadResults().then(() => setLoading(false));
-    }
+    if (!userId) return;
+
+    const syncResults = async () => {
+      await loadResults();
+      setLoading(false);
+    };
+
+    syncResults();
   }, [userId, loadResults]);
 
   // Realtime: auto-refresh when rival submits
@@ -154,6 +187,7 @@ export default function ResultsPage() {
   const iWon = rivalScore !== null && myScore > rivalScore;
   const tied = rivalScore !== null && myScore === rivalScore;
   const bothSubmitted = mySub && rivalSub;
+  const syllabus = round?.syllabus;
 
   if (loading) {
     return (
@@ -268,7 +302,7 @@ export default function ResultsPage() {
         )}
 
         {/* ===== Syllabus Review ===== */}
-        {round?.syllabus && (
+        {syllabus && (
           <section className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden">
             <button
               onClick={() => setShowSyllabus((v) => !v)}
@@ -286,11 +320,11 @@ export default function ResultsPage() {
 
             {showSyllabus && (
               <div className="px-8 pb-8 space-y-6 border-t border-surface-container">
-                {(round.syllabus as any).can_do?.length > 0 && (
+                {syllabus.can_do?.length ? (
                   <div className="pt-6">
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">🎯 Can Do</h3>
                     <ul className="space-y-2">
-                      {(round.syllabus as any).can_do.map((item: string, i: number) => (
+                      {syllabus.can_do.map((item, i) => (
                         <li key={i} className="flex items-start gap-3 text-on-surface text-sm">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
                           {item}
@@ -298,17 +332,17 @@ export default function ResultsPage() {
                       ))}
                     </ul>
                   </div>
-                )}
+                ) : null}
 
-                {(round.syllabus as any).vocabulary && (
+                {syllabus.vocabulary && (
                   <div>
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">📖 Vocabulary</h3>
                     <div className="space-y-3">
-                      {Object.entries((round.syllabus as any).vocabulary).map(([group, words]) => (
+                      {Object.entries(syllabus.vocabulary).map(([group, words]) => (
                         <div key={group}>
                           <p className="text-xs font-medium text-on-surface-variant mb-2">{group}</p>
                           <div className="flex flex-wrap gap-2">
-                            {(words as string[]).map((w, i) => (
+                            {words.map((w, i) => (
                               <span key={i} className="px-3 py-1 bg-surface-container-low border border-surface-container rounded-xl text-sm text-on-surface">{w}</span>
                             ))}
                           </div>
@@ -318,27 +352,27 @@ export default function ResultsPage() {
                   </div>
                 )}
 
-                {(round.syllabus as any).grammar?.length > 0 && (
+                {syllabus.grammar?.length ? (
                   <div>
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">📝 Grammar</h3>
                     <div className="space-y-2">
-                      {(round.syllabus as any).grammar.map((g: string, i: number) => (
+                      {syllabus.grammar.map((g, i) => (
                         <div key={i} className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-sm text-on-surface">{g}</div>
                       ))}
                     </div>
                   </div>
-                )}
+                ) : null}
 
-                {(round.syllabus as any).expressions?.length > 0 && (
+                {syllabus.expressions?.length ? (
                   <div>
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">💬 Expressions</h3>
                     <div className="divide-y divide-surface-container">
-                      {(round.syllabus as any).expressions.map((e: string, i: number) => (
+                      {syllabus.expressions.map((e, i) => (
                         <div key={i} className="py-2 text-sm text-on-surface">{e}</div>
                       ))}
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
           </section>
@@ -352,12 +386,12 @@ export default function ResultsPage() {
             </h2>
 
             <div className="bg-white rounded-[2rem] shadow-sm divide-y divide-surface-container overflow-hidden">
-              {(exam.questions as any[]).map((q: any) => {
+              {exam.questions.map((q) => {
                 const myAnswer = mySub.answers?.[q.id] || "(no answer)";
                 const score = mySub.scores?.[q.id] ?? 0;
-                const rubricItem = (exam.rubric as any[]).find((r: any) => r.id === q.id);
+                const rubricItem = exam.rubric.find((item) => item.id === q.id);
                 const correct = rubricItem?.answer || "";
-                const maxPts = parseInt(rubricItem?.points || "0");
+                const maxPts = Number(rubricItem?.points ?? 0);
                 const isCorrect = score === maxPts && maxPts > 0;
 
                 return (

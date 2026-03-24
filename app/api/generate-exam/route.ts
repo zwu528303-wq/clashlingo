@@ -172,10 +172,12 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
       .eq("id", roundId);
 
     return NextResponse.json({ success: true, exam: examData });
-  } catch (err: any) {
-    console.error("Exam generation error:", err);
+  } catch (error) {
+    console.error("Exam generation error:", error);
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

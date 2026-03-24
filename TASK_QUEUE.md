@@ -15,6 +15,9 @@ Last updated: 2026-03-24
   - Lounge, rivalry, and scopes now avoid showing email-derived display names.
 - Removed rivalry exit from current MVP rules.
   - This is no longer an active product task.
+- Restored a clean lint baseline.
+  - `npm run lint` now passes.
+  - Current expectation: whenever a page is touched, clear that page's lint issues before moving on.
 
 ## Highest Priority
 
@@ -34,11 +37,10 @@ Last updated: 2026-03-24
 
 ## Engineering Follow-Up
 
-4. Establish a clean lint baseline.
-   - Current lint result: 48 problems total (36 errors, 12 warnings).
-   - Remove `any` usage in API routes and round/exam/results files.
-   - Fix hook ordering / dependency issues in `components/Lounge.tsx`, `components/RivalryDashboard.tsx`, and `components/ScopesPage.tsx`.
-   - Clean up unused imports and variables.
+4. Keep the lint baseline clean while touching product work.
+   - `npm run lint` currently passes.
+   - Do not allow page-level lint debt to pile up again.
+   - When a screen is changed, fix that screen's lint issues in the same batch.
 
 ## Product Flow And UX
 

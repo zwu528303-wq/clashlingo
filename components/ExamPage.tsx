@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
@@ -20,13 +20,26 @@ interface Question {
   options?: string[];
 }
 
+interface RubricItem {
+  id: number;
+  answer: string;
+  points: number;
+  keywords?: string[];
+}
+
+interface ExamRecord {
+  id: string;
+  questions: Question[];
+  rubric: RubricItem[];
+}
+
 export default function ExamPage() {
   const router = useRouter();
   const params = useParams();
   const roundId = params.id as string;
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [exam, setExam] = useState<any>(null);
+  const [exam, setExam] = useState<ExamRecord | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [ready, setReady] = useState(false); // Only true when exam + questions are loaded
 
@@ -106,9 +119,14 @@ export default function ExamPage() {
         examData = newExam;
       }
 
-      if (examData && Array.isArray(examData.questions) && examData.questions.length > 0) {
-        setExam(examData);
-        setQuestions(examData.questions as Question[]);
+      if (
+        examData &&
+        Array.isArray(examData.questions) &&
+        examData.questions.length > 0
+      ) {
+        const typedExamData = examData as ExamRecord;
+        setExam(typedExamData);
+        setQuestions(typedExamData.questions);
         setReady(true);
       }
     };
@@ -146,15 +164,15 @@ export default function ExamPage() {
     setSubmitting(true);
 
     // Simple scoring
-    const rubric = (exam.rubric || []) as any[];
+    const rubric = exam.rubric ?? [];
     let totalScore = 0;
     const scores: Record<number, number> = {};
 
     questions.forEach((q) => {
       const myAnswer = (answers[q.id] || "").trim().toLowerCase();
-      const rubricItem = rubric.find((r: any) => r.id === q.id);
+      const rubricItem = rubric.find((item) => item.id === q.id);
       const correctAnswer = (rubricItem?.answer || "").toLowerCase();
-      const maxPoints = parseInt(rubricItem?.points || "0");
+      const maxPoints = Number(rubricItem?.points ?? 0);
 
       let score = 0;
       if (q.type === "mcq") {
