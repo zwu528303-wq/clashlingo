@@ -103,11 +103,13 @@ As of the latest reviewed state, the following product changes are already in th
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
+- settings save syncs shared nickname data through a server route
 - lounge now reads profile preferences and uses the new supported language list
 - lounge enforces a 2-rivalry limit in the UI
 - rivalry dashboard shows cumulative rivalry stats and round outcome context
 - scopes page exists
 - scopes now read from `rounds.syllabus`, so they can appear before exam creation
+- shared views no longer fall back to email-style public display names
 
 ## Approved But Not Yet Shipped
 

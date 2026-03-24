@@ -4,20 +4,26 @@ Date: 2026-03-24
 
 ## What Changed This Session
 
-- Added cross-session handoff docs in the project root:
+- Added and iterated on cross-session handoff docs:
   - `CLAUDE.md`
   - `AGENTS.md`
+  - `PROJECT_RULES.md`
   - `PROJECT_STATUS.md`
   - `TASK_QUEUE.md`
   - `ClashLingo-Session-Summary.md`
-- Added `PROJECT_RULES.md` as the product behavior source of truth.
 - Fixed `app/round/[id]/exam/page.tsx` so the exam route now renders `components/ExamPage.tsx`.
 - Added a first-pass `Settings` flow for nickname, letter avatar, avatar color, default language, and weekly match time.
+- Added `app/api/profile/route.ts` to sync public nickname data server-side.
+- Fixed the `users` sync bug by matching the real table shape.
+  - `users` has `id`, `display_name`, `avatar_url`, and `created_at`
+  - it does not have an `email` column
+- Removed email-style public identity fallback from lounge / rivalry / scopes.
+- Updated product rules to remove rivalry exit from the current MVP scope.
 
 ## What Was Verified
 
 - `npm run build` passes.
-- `npm run lint` fails with 36 problems total (26 errors, 10 warnings).
+- `npm run lint` fails with 48 problems total (36 errors, 12 warnings).
 
 ## Important Findings
 
@@ -27,16 +33,20 @@ Date: 2026-03-24
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `ANTHROPIC_API_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
+- The `users` table does not contain an `email` column, so shared identity code must not assume one exists.
+- No sensitive API key values were found in tracked files, git history, client HTML, or client build output during this session.
 - `README.md` is still boilerplate and should not be treated as accurate project documentation.
 
 ## Recommended Next Task
 
-1. Manually test the full round lifecycle now that the exam route is corrected.
-2. Start reducing the lint errors while preserving behavior.
-3. Replace the visible dev-only exam shortcut with a real countdown-to-exam transition.
+1. Move the countdown and match-status experience onto lounge rivalry cards.
+2. Align the UX copy and interaction model with the approved soft-countdown rule.
+3. Group scopes by target language when rivals study different languages.
+4. After those product-facing changes, clean up the lint baseline.
 
 ## Next Session Start Order
 
-1. Read `PROJECT_STATUS.md`
-2. Read `TASK_QUEUE.md`
-3. Read this file
+1. Read `PROJECT_RULES.md`
+2. Read `PROJECT_STATUS.md`
+3. Read `TASK_QUEUE.md`
+4. Read this file

@@ -6,62 +6,70 @@ Last updated: 2026-03-24
 
 - Fixed the exam route wiring.
   - `app/round/[id]/exam/page.tsx` now renders the real exam experience.
-  - This was the old top-priority task and is no longer in the active queue.
+- Added the first-pass settings and profile flow.
+  - `/settings` now supports nickname, letter avatar, avatar color, default language, and weekly match time.
+- Fixed nickname sync for shared views.
+  - `app/api/profile/route.ts` now syncs `users.display_name` server-side.
+  - This matches the real `users` table shape (`id`, `display_name`, `avatar_url`, `created_at`).
+- Removed email-style public identity fallback.
+  - Lounge, rivalry, and scopes now avoid showing email-derived display names.
+- Removed rivalry exit from current MVP rules.
+  - This is no longer an active product task.
 
 ## Highest Priority
 
-1. Establish a clean lint baseline.
-   - Remove `any` usage in API routes and round/exam/results files.
-   - Fix hook issues in `components/Lounge.tsx`, `components/RivalryDashboard.tsx`, and results-related pages.
-   - Clean up unused imports and variables.
+1. Move the main countdown experience onto lounge rivalry cards.
+   - Make each rivalry a clear status card in `components/Lounge.tsx`.
+   - Show rival identity, current language, round/week, countdown, and current action state.
+   - Reuse the new profile identity data from settings so the lounge feels like the main control surface.
 
-2. Replace the current dev-only exam shortcut with a real flow.
-   - Right now the countdown path depends on a visible `DEV: Skip to Exam Ready` button in `components/RoundPage.tsx`.
-   - Decide how the app should automatically transition from study countdown to exam generation.
-   - Hide dev-only controls outside development.
+2. Align the match-start flow with the approved soft-countdown rule.
+   - Weekly match time should remain a countdown / anticipation tool only.
+   - If both players are ready, they should be able to start early even before the countdown completes.
+   - Copy and button states should make this rule obvious.
+
+3. Classify scopes by target language.
+   - If two players study different languages, `/scopes` should group or filter clearly by language.
+   - Active and past scopes should still remain separate.
+
+## Engineering Follow-Up
+
+4. Establish a clean lint baseline.
+   - Current lint result: 48 problems total (36 errors, 12 warnings).
+   - Remove `any` usage in API routes and round/exam/results files.
+   - Fix hook ordering / dependency issues in `components/Lounge.tsx`, `components/RivalryDashboard.tsx`, and `components/ScopesPage.tsx`.
+   - Clean up unused imports and variables.
 
 ## Product Flow And UX
 
-3. Add realtime results and exam sync.
-   - Subscribe to `submissions` updates.
-   - Auto-refresh results when the rival submits.
-   - Optionally show opponent progress during the exam.
+5. Add realtime exam sync.
+   - Results realtime is already in place for rival submissions.
+   - The remaining gap is optional opponent progress during the exam itself.
+   - Use Supabase Realtime on the `submissions` table if that UX proves worthwhile.
 
-4. Add a social sharing card on the results page.
-   - Main target file: `components/ResultsPage.tsx`
-   - Generate a shareable card or image after each round.
-   - Keep the visual style aligned with the current playful UI.
+6. Deepen the results sharing experience.
+   - A share action exists already.
+   - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
-5. Create shared domain types.
+7. Create shared domain types.
    - Move `Round`, `Rivalry`, `Exam`, `Submission`, and syllabus shapes into a shared typed module.
    - Reuse those types across client components and API routes.
 
-6. Document local setup and data model.
+8. Document local setup and data model.
    - Add `.env.example`.
    - Add Supabase schema or migration notes for `users`, `rivalries`, `rounds`, `exams`, and `submissions`.
    - Replace the boilerplate `README.md`.
 
 ## Nice To Have
 
-7. Replace `alert()`-based errors with inline UI states or toasts.
+9. Replace `alert()`-based errors with inline UI states or toasts.
 
-8. Add a minimal regression test strategy.
+10. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-9. Review AI prompt robustness.
+11. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
-
-## Carry-Over From Prior Planning Note
-
-10. Social sharing card
-    - Google AI Studio `Results.tsx` had a share-card direction.
-    - Generate a shareable image/card after each round.
-    - Main file target: `components/ResultsPage.tsx`
-
-11. Real-time exam sync
-    - Show opponent progress during exam (optional).
-    - Use Supabase Realtime on the `submissions` table.
 
 ## Manual Smoke Test Checklist
 
@@ -69,7 +77,7 @@ Last updated: 2026-03-24
 2. Rivalry dashboard -> start round -> pick topic
 3. Generate syllabus -> verify vocabulary and grammar display
 4. Both players confirm -> countdown starts
-5. Trigger exam generation -> both players ready up
-6. Exam page loads with 24 questions
+5. Countdown completes -> exam becomes ready
+6. Both players ready up -> exam page loads with 24 questions
 7. Submit answers -> results page shows review
-8. Both players submit -> VS comparison and prize state update
+8. Both players submit -> VS comparison and share action update
