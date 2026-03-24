@@ -241,34 +241,34 @@ export default function RoundPage() {
               The syllabus will be generated soon. Once ready, both players need to confirm.
             </p>
 
-            {/* Temporary: move to confirming manually for now (AI integration later) */}
             <button
               onClick={async () => {
-                // For now, create a placeholder syllabus and move to confirming
-                await supabase
-                  .from("rounds")
-                  .update({
-                    status: "confirming",
-                    syllabus: {
-                      topic: round.topic,
-                      target_lang: round.target_lang,
-                      can_do: [
-                        `Discuss "${round.topic}" in ${round.target_lang}`,
-                        `Understand common vocabulary related to ${round.topic}`,
-                        `Form basic sentences about ${round.topic}`,
-                      ],
-                      vocabulary: ["(Syllabus will be AI-generated in Phase 4)"],
-                      grammar: ["(Grammar points will be AI-generated in Phase 4)"],
-                      expressions: ["(Expressions will be AI-generated in Phase 4)"],
-                      listening: ["(Listening phrases will be AI-generated in Phase 4)"],
-                    },
-                  })
-                  .eq("id", round.id);
+                setActionLoading(true);
+                const res = await fetch("/api/generate-syllabus", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    roundId: round.id,
+                    topic: round.topic,
+                    targetLang: round.target_lang,
+                    difficulty: "beginner",
+                  }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                  alert("Failed to generate syllabus: " + (data.error || "Unknown error"));
+                }
                 await loadRound();
+                setActionLoading(false);
               }}
-              className="bg-primary text-on-primary px-8 py-4 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all"
+              disabled={actionLoading}
+              className="bg-primary text-on-primary px-8 py-4 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              Generate Syllabus (Placeholder)
+              {actionLoading ? (
+                <><Loader2 size={20} className="animate-spin" /> Generating...</>
+              ) : (
+                "Generate Syllabus"
+              )}
             </button>
           </div>
         )}
@@ -293,27 +293,73 @@ export default function RoundPage() {
                   <h2 className="text-xl font-black text-on-surface">Exam Scope</h2>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                      🎯 Can Do Objectives
-                    </h3>
-                    <ul className="space-y-2">
-                      {(round.syllabus as any).can_do?.map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 text-on-surface">
-                          <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0"></div>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="pt-4 border-t border-surface-container">
-                    <p className="text-sm text-on-surface-variant font-medium">
-                      📝 Full syllabus with vocabulary, grammar, expressions will be available in Phase 4 (AI integration).
-                    </p>
-                  </div>
+                {/* Can Do */}
+                <div>
+                  <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">🎯 Can Do Objectives</h3>
+                  <ul className="space-y-2">
+                    {((round.syllabus as any).can_do || []).map((item: string, i: number) => (
+                      <li key={i} className="flex items-start gap-3 text-on-surface">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0"></div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+
+                {/* Vocabulary */}
+                {(round.syllabus as any).vocabulary && (
+                  <div>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-3">📖 Vocabulary</h3>
+                    <div className="space-y-4">
+                      {Object.entries((round.syllabus as any).vocabulary).map(([group, words]: [string, any]) => (
+                        <div key={group}>
+                          <p className="text-sm font-medium text-on-surface-variant mb-2">{group}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(words as string[]).map((w: string, i: number) => (
+                              <span key={i} className="px-3 py-1.5 bg-white border border-surface-container rounded-xl text-on-surface text-sm">{w}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Grammar */}
+                {(round.syllabus as any).grammar && (
+                  <div>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">📝 Grammar</h3>
+                    <div className="space-y-2">
+                      {((round.syllabus as any).grammar || []).map((g: string, i: number) => (
+                        <div key={i} className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-on-surface text-sm">{g}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Expressions */}
+                {(round.syllabus as any).expressions && (
+                  <div>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">💬 Expressions</h3>
+                    <div className="divide-y divide-surface-container">
+                      {((round.syllabus as any).expressions || []).map((e: string, i: number) => (
+                        <div key={i} className="py-2 text-on-surface text-sm">{e}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Listening */}
+                {(round.syllabus as any).listening && (
+                  <div>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">👂 You Might Hear</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {((round.syllabus as any).listening || []).map((l: string, i: number) => (
+                        <span key={i} className="px-3 py-1.5 bg-white border border-surface-container rounded-xl text-on-surface text-sm">{l}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -408,16 +454,25 @@ export default function RoundPage() {
             {/* DEV: Skip countdown for testing */}
             <button
               onClick={async () => {
-                await supabase
-                  .from("rounds")
-                  .update({ status: "exam_ready" })
-                  .eq("id", round.id);
+                setActionLoading(true);
+                const res = await fetch("/api/generate-exam", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ roundId: round.id }),
+                });
+                if (!res.ok) {
+                  const data = await res.json();
+                  alert("Failed: " + (data.error || "Unknown error"));
+                }
                 await loadRound();
+                setActionLoading(false);
               }}
-              className="bg-red-100 text-red-700 px-6 py-3 rounded-full font-bold text-sm"
+              disabled={actionLoading}
+              className="bg-red-100 text-red-700 px-6 py-3 rounded-full font-bold text-sm disabled:opacity-50"
             >
-              ⚡ DEV: Skip to Exam Ready
+              {actionLoading ? "Generating Exam..." : "⚡ DEV: Skip to Exam Ready"}
             </button>
+
             {/* Syllabus Access */}
             <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
               <div className="flex items-center gap-2 justify-center mb-4">
