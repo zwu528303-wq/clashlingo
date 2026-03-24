@@ -405,7 +405,19 @@ export default function RoundPage() {
                 Study hard! The exam starts when the countdown ends.
               </p>
             </div>
-
+            {/* DEV: Skip countdown for testing */}
+            <button
+              onClick={async () => {
+                await supabase
+                  .from("rounds")
+                  .update({ status: "exam_ready" })
+                  .eq("id", round.id);
+                await loadRound();
+              }}
+              className="bg-red-100 text-red-700 px-6 py-3 rounded-full font-bold text-sm"
+            >
+              ⚡ DEV: Skip to Exam Ready
+            </button>
             {/* Syllabus Access */}
             <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
               <div className="flex items-center gap-2 justify-center mb-4">
