@@ -24,14 +24,8 @@ When product behavior is ambiguous:
 ### 1. Rivalry Management
 
 - A user can be in at most 2 rivalries at a time.
-- Each rivalry should have a visible leave / exit action.
-- Recommended MVP leave behavior:
-  - leaving a rivalry should not hard-delete the historical data by default
-  - past rounds, exams, submissions, and results should remain available as history
-  - once either player leaves, that rivalry should become inactive for starting new rounds
-  - the remaining player should see a clear status that the rival left
-  - the UI should use an explicit confirmation step, but it should not be framed as destructive deletion
-- Permanent deletion, if ever added later, should be a separate admin-style cleanup action rather than the default user action.
+- Leaving / exiting a rivalry is not part of the current MVP scope.
+- The product should focus on creating, joining, and progressing active rivalries cleanly before introducing rivalry-exit flows.
 
 ### 2. Settings And Profile
 
@@ -119,7 +113,6 @@ As of the latest reviewed state, the following product changes are already in th
 
 These rules are approved but still need implementation work:
 
-- add leave rivalry action and post-exit inactive state behavior
 - move the main countdown experience onto lounge rivalry cards
 - classify scopes by target language when players use different languages
 - align weekly matching time behavior with the new "soft countdown, mutual early start allowed" rule across all relevant screens
