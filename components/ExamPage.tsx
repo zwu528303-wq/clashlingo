@@ -37,6 +37,7 @@ export default function ExamPage() {
   const [timeLeft, setTimeLeft] = useState(2400); // 40 minutes
   const [submitting, setSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const hasSubmitted = useRef(false);
 
   useEffect(() => {
@@ -190,14 +191,14 @@ export default function ExamPage() {
       console.error("Submit error:", error);
       hasSubmitted.current = false;
       setSubmitting(false);
-      alert("Failed to submit: " + error.message);
+      setSubmitError("Failed to submit: " + error.message);
       return;
     }
 
     // Check if both submitted
     const { data: allSubs } = await supabase
       .from("submissions")
-      .select("id")
+      .select("user_id, total_score")
       .eq("exam_id", exam.id);
 
     if (allSubs && allSubs.length >= 2) {
@@ -205,6 +206,43 @@ export default function ExamPage() {
         .from("rounds")
         .update({ status: "completed" })
         .eq("id", roundId);
+
+      // Update cumulative ledger on the rivalry
+      const { data: roundInfo } = await supabase
+        .from("rounds")
+        .select("rivalry_id")
+        .eq("id", roundId)
+        .single();
+
+      if (roundInfo?.rivalry_id) {
+        const s1 = allSubs[0];
+        const s2 = allSubs[1];
+        const winnerId: string | null =
+          s1.total_score > s2.total_score ? s1.user_id :
+          s2.total_score > s1.total_score ? s2.user_id : null;
+
+        const { data: rivalryData } = await supabase
+          .from("rivalries")
+          .select("cumulative_ledger")
+          .eq("id", roundInfo.rivalry_id)
+          .single();
+
+        type LedgerRound = { round_id: string; winner_id: string | null; scores: Record<string, number> };
+        type Ledger = { wins?: Record<string, number>; rounds?: LedgerRound[] };
+        const prev = ((rivalryData?.cumulative_ledger ?? {}) as Ledger);
+        const wins: Record<string, number> = { ...(prev.wins ?? {}) };
+        const roundHistory: LedgerRound[] = [...(prev.rounds ?? [])];
+
+        if (winnerId) wins[winnerId] = (wins[winnerId] ?? 0) + 1;
+        const roundScores: Record<string, number> = {};
+        allSubs.forEach(s => { roundScores[s.user_id] = s.total_score; });
+        roundHistory.push({ round_id: roundId, winner_id: winnerId, scores: roundScores });
+
+        await supabase
+          .from("rivalries")
+          .update({ cumulative_ledger: { wins, rounds: roundHistory } })
+          .eq("id", roundInfo.rivalry_id);
+      }
     }
 
     router.push(`/round/${roundId}/results`);
@@ -382,8 +420,13 @@ export default function ExamPage() {
               You&apos;ve answered <strong>{answeredCount} of {questions.length}</strong> questions.
             </p>
             {answeredCount < questions.length && (
-              <p className="text-sm text-red-600 font-medium mb-6">
+              <p className="text-sm text-red-600 font-medium mb-2">
                 ⚠️ {questions.length - answeredCount} questions are unanswered.
+              </p>
+            )}
+            {submitError && (
+              <p className="text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-2">
+                {submitError}
               </p>
             )}
             <div className="flex gap-4 mt-6">

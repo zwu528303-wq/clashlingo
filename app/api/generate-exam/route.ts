@@ -34,6 +34,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No syllabus found" }, { status: 400 });
     }
 
+    // Idempotency: if exam already exists, skip Claude and just ensure status is exam_ready
+    const { data: existingExam } = await supabase
+      .from("exams")
+      .select("id")
+      .eq("round_id", roundId)
+      .maybeSingle();
+
+    if (existingExam) {
+      await supabase
+        .from("rounds")
+        .update({ status: "exam_ready" })
+        .eq("id", roundId);
+      return NextResponse.json({ success: true });
+    }
+
     const syllabus = round.syllabus;
 
     const prompt = `You are an exam generator for ClashLingo, a competitive language learning app.

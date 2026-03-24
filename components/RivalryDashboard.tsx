@@ -35,6 +35,7 @@ interface Round {
   round_number: number;
   status: string;
   topic: string | null;
+  target_lang: string | null;
   prize: string | null;
   created_at: string;
 }
@@ -160,6 +161,24 @@ export default function RivalryDashboard() {
   // Find current active round (not completed)
   const activeRound = rounds.find((r) => r.status !== "completed");
   const completedRounds = rounds.filter((r) => r.status === "completed");
+
+  // Ledger stats
+  type LedgerRound = { round_id: string; winner_id: string | null; scores: Record<string, number> };
+  type Ledger = { wins?: Record<string, number>; rounds?: LedgerRound[] };
+  const ledger = ((rivalry?.cumulative_ledger ?? {}) as Ledger);
+  const rivalId = isPlayerA ? rivalry?.player_b_id : rivalry?.player_a_id;
+  const myWins = (userId && ledger.wins?.[userId]) || 0;
+  const rivalWins = (rivalId && ledger.wins?.[rivalId]) || 0;
+  const myStreak = (() => {
+    if (!ledger.rounds?.length || !userId) return 0;
+    let streak = 0;
+    for (let i = ledger.rounds.length - 1; i >= 0; i--) {
+      if (ledger.rounds[i].winner_id === userId) streak++;
+      else break;
+    }
+    return streak;
+  })();
+  const getRoundResult = (roundId: string) => ledger.rounds?.find(r => r.round_id === roundId);
 
   if (loading) {
     return (
@@ -298,33 +317,54 @@ export default function RivalryDashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {completedRounds.map((round) => (
-                    <div
-                      key={round.id}
-                      onClick={() =>
-                        router.push(`/round/${round.id}/results`)
-                      }
-                      className="bg-surface-container-lowest p-6 rounded-[1.5rem] flex items-center justify-between hover:scale-[1.02] transition-transform duration-200 shadow-sm cursor-pointer"
-                    >
-                      <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center text-primary font-black text-xl">
-                          {round.round_number}
-                        </div>
-                        <div>
-                          <div className="font-bold text-lg text-on-surface">
-                            Round {round.round_number}
+                  {completedRounds.map((round) => {
+                    const result = getRoundResult(round.id);
+                    const iWon = result?.winner_id === userId;
+                    const tied = result !== undefined && result.winner_id === null;
+                    const myScore = userId ? result?.scores?.[userId] : undefined;
+                    const rivalScore = rivalId ? result?.scores?.[rivalId] : undefined;
+                    return (
+                      <div
+                        key={round.id}
+                        onClick={() => router.push(`/round/${round.id}/results`)}
+                        className="bg-surface-container-lowest p-6 rounded-[1.5rem] flex items-center justify-between hover:scale-[1.02] transition-transform duration-200 shadow-sm cursor-pointer"
+                      >
+                        <div className="flex items-center gap-6">
+                          <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-xl ${iWon ? "bg-primary-container text-primary" : tied ? "bg-tertiary-container text-on-tertiary-container" : "bg-surface-container text-on-surface-variant"}`}>
+                            {round.round_number}
                           </div>
-                          <div className="text-sm text-on-surface-variant font-medium mt-1">
-                            {round.topic || "No topic"}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <div className="font-bold text-lg text-on-surface">
+                                Round {round.round_number}
+                              </div>
+                              {result && (
+                                <span className={`text-xs font-black px-2 py-0.5 rounded-full ${iWon ? "bg-primary-container text-on-primary-container" : tied ? "bg-tertiary-container text-on-tertiary-container" : "bg-surface-container-high text-on-surface-variant"}`}>
+                                  {iWon ? "Win" : tied ? "Tie" : "Loss"}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              {round.target_lang && (
+                                <span className="text-xs font-bold px-2 py-0.5 bg-primary-container text-on-primary-container rounded-full">
+                                  {round.target_lang}
+                                </span>
+                              )}
+                              <span className="text-sm text-on-surface-variant font-medium">
+                                {round.topic || "No topic"}
+                              </span>
+                              {myScore !== undefined && rivalScore !== undefined && (
+                                <span className="text-sm font-bold text-on-surface-variant">
+                                  · {myScore}–{rivalScore}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <ArrowRight size={20} className="text-on-surface-variant" />
                       </div>
-                      <ArrowRight
-                        size={20}
-                        className="text-on-surface-variant"
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -346,6 +386,14 @@ export default function RivalryDashboard() {
                       <h4 className="text-2xl font-black mb-2">
                         Round {activeRound.round_number}
                       </h4>
+                      {activeRound.target_lang && (
+                        <p className="text-on-surface-variant text-sm font-medium mb-1">
+                          Language:{" "}
+                          <span className="text-primary font-bold">
+                            {activeRound.target_lang}
+                          </span>
+                        </p>
+                      )}
                       <p className="text-on-surface-variant text-sm font-medium">
                         Status:{" "}
                         <span className="text-primary font-bold">
@@ -391,10 +439,12 @@ export default function RivalryDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-surface-container-lowest p-6 rounded-[1.5rem] text-center shadow-sm">
                   <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                    Rounds
+                    W / L
                   </div>
-                  <div className="text-3xl font-black text-on-surface">
-                    {completedRounds.length}
+                  <div className="text-2xl font-black text-on-surface">
+                    <span className="text-primary">{myWins}</span>
+                    <span className="text-on-surface-variant/40 mx-1">–</span>
+                    <span className="text-secondary">{rivalWins}</span>
                   </div>
                 </div>
                 <div className="bg-surface-container-lowest p-6 rounded-[1.5rem] text-center shadow-sm">
@@ -402,7 +452,7 @@ export default function RivalryDashboard() {
                     Streak
                   </div>
                   <div className="text-3xl font-black text-secondary flex items-center justify-center gap-1">
-                    0 <Flame size={24} className="fill-secondary" />
+                    {myStreak} <Flame size={24} className="fill-secondary" />
                   </div>
                 </div>
               </div>

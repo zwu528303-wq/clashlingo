@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { Swords, Plus, UserPlus, ArrowRight, X, Copy, Check, LogOut } from "lucide-react";
+import { Swords, Plus, UserPlus, ArrowRight, X, Copy, Check, LogOut, BookOpen } from "lucide-react";
 
 interface Rivalry {
   id: string;
@@ -30,6 +30,7 @@ export default function Lounge() {
   const [myLang, setMyLang] = useState("French");
   const [creating, setCreating] = useState(false);
   const [createdCode, setCreatedCode] = useState("");
+  const [createError, setCreateError] = useState("");
   const [copied, setCopied] = useState(false);
 
   // Join form
@@ -79,6 +80,7 @@ export default function Lounge() {
 
   const handleCreate = async () => {
     if (!userId) return;
+    if (rivalries.length >= 2) return;
     setCreating(true);
 
     const code = generateCode();
@@ -99,7 +101,7 @@ export default function Lounge() {
         player_a_difficulty: "beginner",
       });
       if (retryError) {
-        alert("Failed to create rivalry: " + retryError.message);
+        setCreateError("Failed to create rivalry. Please try again.");
         setCreating(false);
         return;
       }
@@ -114,6 +116,11 @@ export default function Lounge() {
 
   const handleJoin = async () => {
     if (!userId) return;
+    if (rivalries.length >= 2) {
+      setJoinError("You can only be in 2 rivalries at a time.");
+      setJoining(false);
+      return;
+    }
     setJoining(true);
     setJoinError("");
 
@@ -190,13 +197,22 @@ export default function Lounge() {
       {/* Header */}
       <header className="flex justify-between items-center px-6 py-5 max-w-5xl mx-auto">
         <h1 className="text-2xl font-black text-primary tracking-tighter">ClashLingo</h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
-        >
-          <LogOut size={18} />
-          Log out
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push("/scopes")}
+            className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
+          >
+            <BookOpen size={16} />
+            Scopes
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
+          >
+            <LogOut size={18} />
+            Log out
+          </button>
+        </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-6 pb-12 space-y-10">
@@ -230,7 +246,7 @@ export default function Lounge() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <button
-                  onClick={() => { setShowCreate(true); setCreatedCode(""); }}
+                  onClick={() => { setShowCreate(true); setCreatedCode(""); setCreateError(""); }}
                   className="bg-primary text-on-primary px-8 py-4 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <Plus size={24} /> CREATE RIVALRY
@@ -248,20 +264,34 @@ export default function Lounge() {
           /* ========== Rivalry Cards ========== */
           <div className="space-y-8">
             {/* Action buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={() => { setShowCreate(true); setCreatedCode(""); }}
-                className="bg-primary text-on-primary px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm"
-              >
-                <Plus size={20} /> New Rivalry
-              </button>
-              <button
-                onClick={() => { setShowJoin(true); setJoinError(""); setJoinCode(""); }}
-                className="bg-white text-on-surface border-2 border-surface-container px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all"
-              >
-                <UserPlus size={20} /> Join
-              </button>
-            </div>
+            {(() => {
+              const atLimit = rivalries.length >= 2;
+              return (
+                <div className="space-y-3">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => { if (!atLimit) { setShowCreate(true); setCreatedCode(""); setCreateError(""); } }}
+                      disabled={atLimit}
+                      className={`bg-primary text-on-primary px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all shadow-sm ${atLimit ? "opacity-40 cursor-not-allowed" : "hover:scale-105 active:scale-95"}`}
+                    >
+                      <Plus size={20} /> New Rivalry
+                    </button>
+                    <button
+                      onClick={() => { if (!atLimit) { setShowJoin(true); setJoinError(""); setJoinCode(""); } }}
+                      disabled={atLimit}
+                      className={`bg-white text-on-surface border-2 border-surface-container px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all ${atLimit ? "opacity-40 cursor-not-allowed" : "hover:scale-105 active:scale-95"}`}
+                    >
+                      <UserPlus size={20} /> Join
+                    </button>
+                  </div>
+                  {atLimit && (
+                    <p className="text-sm text-on-surface-variant font-medium">
+                      You&apos;ve reached the 2-rivalry limit.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -377,6 +407,11 @@ export default function Lounge() {
                   </div>
                 </div>
 
+                {createError && (
+                  <div className="text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                    {createError}
+                  </div>
+                )}
                 <button
                   onClick={handleCreate}
                   disabled={creating}

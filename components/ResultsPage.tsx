@@ -12,6 +12,10 @@ import {
   Frown,
   Meh,
   Smile,
+  Share2,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface Submission {
@@ -41,6 +45,12 @@ export default function ResultsPage() {
   // Feedback
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [feedbackSaved, setFeedbackSaved] = useState(false);
+
+  // Share
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // Syllabus
+  const [showSyllabus, setShowSyllabus] = useState(false);
 
   const loadResults = useCallback(async () => {
     const { data: roundData } = await supabase
@@ -100,6 +110,34 @@ export default function ResultsPage() {
       loadResults().then(() => setLoading(false));
     }
   }, [userId, loadResults]);
+
+  // Realtime: auto-refresh when rival submits
+  useEffect(() => {
+    if (!exam?.id) return;
+
+    const channel = supabase
+      .channel(`submissions-${exam.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "submissions", filter: `exam_id=eq.${exam.id}` },
+        () => { loadResults(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [exam?.id, loadResults]);
+
+  const handleShare = async () => {
+    const result = iWon ? "I won" : tied ? "We tied" : "I lost";
+    const text = `🗡️ ClashLingo — Round ${round?.round_number}\n${round?.topic} • ${round?.target_lang}\nMe: ${myScore} vs Rival: ${rivalScore}\n${result}!`;
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(text);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
 
   const saveFeedback = async (diff: string) => {
     if (!mySub) return;
@@ -187,6 +225,122 @@ export default function ResultsPage() {
                 <>😅 You lost! You owe: <span className="underline decoration-wavy underline-offset-8 decoration-secondary">{round.prize_text}</span></>
               )}
             </p>
+          </section>
+        )}
+
+        {/* ===== Share Card ===== */}
+        {bothSubmitted && (
+          <section className="bg-white rounded-[2.5rem] p-8 shadow-sm space-y-6">
+            <div className="bg-surface-container-low rounded-[2rem] p-8 text-center space-y-5">
+              <div className="inline-block px-4 py-1 bg-primary rounded-full text-on-primary text-xs font-black uppercase tracking-widest">
+                ClashLingo
+              </div>
+              <div className="text-sm font-bold text-on-surface-variant">
+                Round {round?.round_number}
+                {round?.topic && <> · {round.topic}</>}
+                {round?.target_lang && <> · {round.target_lang}</>}
+              </div>
+              <div className="flex items-center justify-center gap-8">
+                <div className="text-center">
+                  <div className={`text-5xl font-black ${iWon ? "text-primary" : "text-on-surface"}`}>{myScore}</div>
+                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mt-1">Me</div>
+                </div>
+                <div className="text-2xl font-black italic text-on-surface-variant/30">VS</div>
+                <div className="text-center">
+                  <div className={`text-5xl font-black ${!iWon && !tied ? "text-secondary" : "text-on-surface opacity-50"}`}>{rivalScore}</div>
+                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mt-1">Rival</div>
+                </div>
+              </div>
+              <div className={`inline-block px-6 py-2 rounded-full font-black text-sm ${
+                iWon ? "bg-primary-container text-on-primary-container" : tied ? "bg-tertiary-container text-on-tertiary-container" : "bg-surface-container-high text-on-surface-variant"
+              }`}>
+                {iWon ? "I won! 🏆" : tied ? "We tied!" : "I lost 😤"}
+              </div>
+            </div>
+            <button
+              onClick={handleShare}
+              className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-4 rounded-2xl font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <Share2 size={20} />
+              {shareCopied ? "Copied!" : "Share Result"}
+            </button>
+          </section>
+        )}
+
+        {/* ===== Syllabus Review ===== */}
+        {round?.syllabus && (
+          <section className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden">
+            <button
+              onClick={() => setShowSyllabus((v) => !v)}
+              className="w-full flex items-center justify-between px-8 py-6 hover:bg-surface-container-lowest transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen size={20} className="text-primary" />
+                <span className="text-lg font-black text-on-surface">Study Material</span>
+                <span className="text-sm font-medium text-on-surface-variant">
+                  {round.topic}{round.target_lang ? ` · ${round.target_lang}` : ""}
+                </span>
+              </div>
+              {showSyllabus ? <ChevronUp size={20} className="text-on-surface-variant" /> : <ChevronDown size={20} className="text-on-surface-variant" />}
+            </button>
+
+            {showSyllabus && (
+              <div className="px-8 pb-8 space-y-6 border-t border-surface-container">
+                {(round.syllabus as any).can_do?.length > 0 && (
+                  <div className="pt-6">
+                    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">🎯 Can Do</h3>
+                    <ul className="space-y-2">
+                      {(round.syllabus as any).can_do.map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-3 text-on-surface text-sm">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(round.syllabus as any).vocabulary && (
+                  <div>
+                    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">📖 Vocabulary</h3>
+                    <div className="space-y-3">
+                      {Object.entries((round.syllabus as any).vocabulary).map(([group, words]) => (
+                        <div key={group}>
+                          <p className="text-xs font-medium text-on-surface-variant mb-2">{group}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(words as string[]).map((w, i) => (
+                              <span key={i} className="px-3 py-1 bg-surface-container-low border border-surface-container rounded-xl text-sm text-on-surface">{w}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(round.syllabus as any).grammar?.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">📝 Grammar</h3>
+                    <div className="space-y-2">
+                      {(round.syllabus as any).grammar.map((g: string, i: number) => (
+                        <div key={i} className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-sm text-on-surface">{g}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(round.syllabus as any).expressions?.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">💬 Expressions</h3>
+                    <div className="divide-y divide-surface-container">
+                      {(round.syllabus as any).expressions.map((e: string, i: number) => (
+                        <div key={i} className="py-2 text-sm text-on-surface">{e}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         )}
 

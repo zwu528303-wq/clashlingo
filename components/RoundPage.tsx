@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
@@ -51,6 +51,8 @@ export default function RoundPage() {
   const [rivalry, setRivalry] = useState<Rivalry | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [syllabusError, setSyllabusError] = useState("");
+  const examGenerationTriggered = useRef(false);
 
   // Countdown
   const [timeLeft, setTimeLeft] = useState("");
@@ -117,8 +119,23 @@ export default function RoundPage() {
 
       if (diff <= 0) {
         setTimeLeft("00:00:00");
-        loadRound(); // Refresh to check status change
         clearInterval(interval);
+        if (!examGenerationTriggered.current) {
+          examGenerationTriggered.current = true;
+          setActionLoading(true);
+          fetch("/api/generate-exam", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ roundId }),
+          }).then(async (res) => {
+            if (!res.ok) {
+              const data = await res.json();
+              console.error("Exam generation failed:", data.error);
+            }
+            await loadRound();
+            setActionLoading(false);
+          });
+        }
         return;
       }
 
@@ -256,7 +273,9 @@ export default function RoundPage() {
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                  alert("Failed to generate syllabus: " + (data.error || "Unknown error"));
+                  setSyllabusError(data.error || "Failed to generate syllabus. Please try again.");
+                } else {
+                  setSyllabusError("");
                 }
                 await loadRound();
                 setActionLoading(false);
@@ -270,6 +289,11 @@ export default function RoundPage() {
                 "Generate Syllabus"
               )}
             </button>
+            {syllabusError && (
+              <div className="text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-2xl px-5 py-3">
+                {syllabusError}
+              </div>
+            )}
           </div>
         )}
 
@@ -451,27 +475,12 @@ export default function RoundPage() {
                 Study hard! The exam starts when the countdown ends.
               </p>
             </div>
-            {/* DEV: Skip countdown for testing */}
-            <button
-              onClick={async () => {
-                setActionLoading(true);
-                const res = await fetch("/api/generate-exam", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ roundId: round.id }),
-                });
-                if (!res.ok) {
-                  const data = await res.json();
-                  alert("Failed: " + (data.error || "Unknown error"));
-                }
-                await loadRound();
-                setActionLoading(false);
-              }}
-              disabled={actionLoading}
-              className="bg-red-100 text-red-700 px-6 py-3 rounded-full font-bold text-sm disabled:opacity-50"
-            >
-              {actionLoading ? "Generating Exam..." : "⚡ DEV: Skip to Exam Ready"}
-            </button>
+            {actionLoading && (
+              <div className="flex items-center gap-2 text-on-surface-variant font-medium">
+                <Loader2 size={20} className="animate-spin text-primary" />
+                Generating your exam...
+              </div>
+            )}
 
             {/* Syllabus Access */}
             <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
@@ -576,7 +585,7 @@ export default function RoundPage() {
               Exam is Live! 🔥
             </h1>
             <p className="text-on-surface-variant text-lg">
-              The exam page will be built in Phase 3. For now, this is a placeholder.
+              Head to the exam page and give it your best shot!
             </p>
             <button
               onClick={() => router.push(`/round/${round.id}/exam`)}
