@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
 const authClient = createClient(supabaseUrl, supabaseAnonKey);
 const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-function buildFallbackName(email?: string | null) {
+function buildFallbackName() {
   return "Language Warrior";
 }
 
@@ -42,21 +42,18 @@ export async function POST(req: NextRequest) {
 
     const payload = (await req.json()) as {
       displayName?: string;
-      email?: string;
     };
 
-    const email = payload.email?.trim() || user.email || null;
     const displayName =
       payload.displayName?.trim() ||
       (typeof user.user_metadata?.display_name === "string"
         ? user.user_metadata.display_name.trim()
         : "") ||
-      buildFallbackName(email);
+      buildFallbackName();
 
     const { error: upsertError } = await adminClient.from("users").upsert(
       {
         id: user.id,
-        email,
         display_name: displayName,
       },
       { onConflict: "id" }

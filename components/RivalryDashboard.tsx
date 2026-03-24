@@ -43,7 +43,6 @@ interface Round {
 
 interface UserProfile {
   id: string;
-  email?: string;
   display_name?: string;
 }
 
@@ -119,9 +118,9 @@ export default function RivalryDashboard() {
     // Try to get display names from users table
     const { data: aData } = await supabase
       .from("users")
-      .select("id, display_name, email")
+      .select("id, display_name")
       .eq("id", aId)
-      .single();
+      .single<UserProfile>();
 
     if (aData) {
       setPlayerAName(resolveDisplayName(aData.display_name, "Player A"));
@@ -130,9 +129,9 @@ export default function RivalryDashboard() {
     if (bId) {
       const { data: bData } = await supabase
         .from("users")
-        .select("id, display_name, email")
+        .select("id, display_name")
         .eq("id", bId)
-        .single();
+        .single<UserProfile>();
 
       if (bData) {
         setPlayerBName(resolveDisplayName(bData.display_name, "Player B"));

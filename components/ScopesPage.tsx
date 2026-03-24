@@ -83,7 +83,7 @@ export default function ScopesPage() {
     if (uniqueRivalIds.length > 0) {
       const { data: profiles } = await supabase
         .from("users")
-        .select("id, display_name, email")
+        .select("id, display_name")
         .in("id", uniqueRivalIds);
       if (profiles) {
         for (const p of profiles) {

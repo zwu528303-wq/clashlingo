@@ -26,7 +26,6 @@ import {
 
 interface PublicUserRow {
   display_name: string | null;
-  email: string | null;
 }
 
 export default function SettingsPage() {
@@ -56,7 +55,7 @@ export default function SettingsPage() {
       const authProfile = getEditableProfileFromUser(user);
       const { data: publicUser } = await supabase
         .from("users")
-        .select("display_name, email")
+        .select("display_name")
         .eq("id", user.id)
         .maybeSingle<PublicUserRow>();
 
@@ -134,7 +133,6 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           displayName: nextProfile.displayName,
-          email: authUser.email ?? nextProfile.email,
         }),
       });
 
