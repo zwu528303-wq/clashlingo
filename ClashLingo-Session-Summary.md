@@ -26,6 +26,9 @@ Date: 2026-03-24
 - Rebuilt the lounge as a rivalry-card control surface.
   - Rival cards now show rival identity, round number, target language, current status, and countdown / action panels
   - The lounge includes an in-grid "Start New Rivalry" card when the user is below the 2-rivalry limit
+- Added weekly rhythm countdowns to paired lounge cards.
+  - Even before a round hits the real `countdown` status, rivalry cards now show the weekly countdown timer from the lounge itself.
+  - The remaining soft-countdown gap is the actual "both players can start early" behavior, not countdown visibility.
 
 ## What Was Verified
 
@@ -46,7 +49,7 @@ Date: 2026-03-24
 
 ## Recommended Next Task
 
-1. Align the UX copy and interaction model with the approved soft-countdown rule.
+1. Finish the behavioral side of the approved soft-countdown rule.
 2. Group scopes by target language when rivals study different languages.
 3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 

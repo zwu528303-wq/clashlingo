@@ -91,6 +91,7 @@ Observed status values:
 - Email/password sign-up and sign-in through Supabase
 - Lounge UI for creating a rivalry and joining by invite code
 - Lounge now presents rivalries as status cards with countdown / action panels
+- Lounge now keeps a weekly rhythm countdown visible on paired rivalry cards, even before a round reaches the actual study-countdown state
 - Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
 - Settings save now syncs public nickname server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
@@ -117,7 +118,7 @@ Ran on 2026-03-24:
 - There is no committed `.env.example`.
 - There are no checked-in Supabase migrations or schema notes, so local setup still depends on external context.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
-- The lounge now shows countdown/status cards, but the approved soft-countdown early-start behavior is not fully aligned across all screens yet.
+- The lounge now shows both weekly rhythm countdowns and round status panels, but the approved mutual early-start behavior is not fully aligned across all screens yet.
 - `/scopes` is visible and functional, but it does not yet classify scopes by target language when two rivals learn different languages.
 
 ## Notes For The Next Session

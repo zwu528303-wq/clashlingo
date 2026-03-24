@@ -21,13 +21,16 @@ Last updated: 2026-03-24
 - Moved the lounge into a rivalry-card control surface.
   - Lounge now shows rivalry cards with rival identity, round context, and countdown/status panels.
   - Active rounds surface key states such as topic selection, confirmation, countdown, exam ready, and exam live.
+- Added always-visible weekly rhythm countdowns to paired lounge cards.
+  - Rivalry cards now keep a weekly countdown visible before a round enters the actual `countdown` state.
+  - This shipped the display side of the soft-countdown rule, but not the mutual early-start state transition yet.
 
 ## Highest Priority
 
 1. Align the match-start flow with the approved soft-countdown rule.
-   - Weekly match time should remain a countdown / anticipation tool only.
-   - If both players are ready, they should be able to start early even before the countdown completes.
-   - Copy and button states should make this rule obvious.
+   - Weekly match time now shows up in the lounge as a real countdown / anticipation tool.
+   - The remaining gap is behavior: if both players are ready, they should be able to start early even before the countdown completes.
+   - Copy and button states should make that rule obvious on both lounge and round screens.
 
 2. Classify scopes by target language.
    - If two players study different languages, `/scopes` should group or filter clearly by language.

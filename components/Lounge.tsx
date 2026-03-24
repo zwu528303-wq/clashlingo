@@ -51,16 +51,49 @@ interface ActiveRound {
   player_b_exam_ready: boolean;
 }
 
-function formatWeeklyTime(value: string) {
+function parseWeeklyTime(value: string) {
   const [hoursText = "19", minutesText = "00"] = value.split(":");
   const hours = Number(hoursText);
   const minutes = Number(minutesText);
+
+  return {
+    hours: Number.isFinite(hours) ? hours : 19,
+    minutes: Number.isFinite(minutes) ? minutes : 0,
+  };
+}
+
+function formatWeeklyTime(value: string) {
+  const { hours, minutes } = parseWeeklyTime(value);
   const suffix = hours >= 12 ? "PM" : "AM";
   const normalizedHours = hours % 12 || 12;
 
   return `${normalizedHours.toString().padStart(2, "0")}:${minutes
     .toString()
     .padStart(2, "0")} ${suffix}`;
+}
+
+function getNextWeeklyRhythmTarget(
+  anchorIso: string,
+  weeklyTime: string,
+  nowMs: number
+) {
+  const anchor = new Date(anchorIso);
+  if (Number.isNaN(anchor.getTime())) return null;
+
+  const { hours, minutes } = parseWeeklyTime(weeklyTime);
+  const firstTarget = new Date(anchor);
+  firstTarget.setHours(hours, minutes, 0, 0);
+
+  const firstTargetMs = firstTarget.getTime();
+  if (firstTargetMs > nowMs) {
+    return firstTarget.toISOString();
+  }
+
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const elapsedSinceFirstTarget = nowMs - firstTargetMs;
+  const weeksToAdd = Math.floor(elapsedSinceFirstTarget / weekMs) + 1;
+
+  return new Date(firstTargetMs + weeksToAdd * weekMs).toISOString();
 }
 
 function formatCountdown(target: string | null, nowMs: number) {
@@ -248,18 +281,27 @@ export default function Lounge() {
   }, [router]);
 
   useEffect(() => {
-    const hasCountdown = Object.values(activeRounds).some(
-      (round) => round.status === "countdown"
-    );
+    const shouldTick = rivalries.some((rivalry) => Boolean(rivalry.player_b_id));
 
-    if (!hasCountdown) return;
+    if (!shouldTick) return;
+
+    const updateNow = () => {
+      setCountdownNow(Date.now());
+    };
+
+    const timeout = window.setTimeout(() => {
+      updateNow();
+    }, 0);
 
     const interval = setInterval(() => {
-      setCountdownNow(Date.now());
+      updateNow();
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [activeRounds]);
+    return () => {
+      window.clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [rivalries]);
 
   // Generate 6-char invite code
   const generateCode = () => {
@@ -503,12 +545,24 @@ export default function Lounge() {
               {rivalries.map((r) => {
                 const isPlayerA = r.player_a_id === userId;
                 const isPaired = Boolean(r.player_b_id);
+                const weeklyMatchTime = profile?.weeklyMatchTime || "19:00";
                 const rivalName = rivalNames[r.id] || "Rival";
                 const activeRound = activeRounds[r.id] ?? null;
                 const targetLang =
                   activeRound?.target_lang ||
                   (isPlayerA ? r.player_a_lang : r.player_b_lang || r.player_a_lang);
                 const roundNumber = activeRound?.round_number ?? r.current_round_num + 1;
+                const weeklyRhythmTarget = isPaired
+                  ? getNextWeeklyRhythmTarget(
+                      r.created_at,
+                      weeklyMatchTime,
+                      countdownNow
+                    )
+                  : null;
+                const weeklyRhythmText = formatCountdown(
+                  weeklyRhythmTarget,
+                  countdownNow
+                );
                 const countdownText = formatCountdown(
                   activeRound?.exam_at ?? null,
                   countdownNow
@@ -529,12 +583,14 @@ export default function Lounge() {
                 let badgeLabel = isPaired ? "Ready to Duel" : "Invite Ready";
                 let badgeClassName =
                   "bg-surface-container-high text-on-surface-variant";
-                let panelTitle = isPaired ? "Weekly rhythm" : "Invite code";
+                let panelTitle = isPaired ? "Next weekly match in" : "Invite code";
                 let panelValue = isPaired
-                  ? formatWeeklyTime(profile?.weeklyMatchTime || "19:00")
+                  ? weeklyRhythmText
                   : r.invite_code;
                 let panelHint = isPaired
-                  ? "Countdown preference only. If both players want to play, start early."
+                  ? `Default rhythm based on your ${formatWeeklyTime(
+                      weeklyMatchTime
+                    )} preference. If both players want to play, start early.`
                   : "Share this code so your rival can join.";
                 let actionLabel = isPaired ? "Start Round" : "Copy Code";
                 const actionClassName =
@@ -564,7 +620,8 @@ export default function Lounge() {
                   if (activeRound.status === "topic_selection") {
                     panelTitle = "Next step";
                     panelValue = activeRound.topic || "Pick a topic";
-                    panelHint = "Generate the scope to kick off this round.";
+                    panelHint =
+                      "Generate the scope to kick off this round, or sync up and start before the weekly timer if both players are ready.";
                   } else if (activeRound.status === "confirming") {
                     panelTitle = "Confirmation";
                     panelValue = myConfirmed
@@ -573,8 +630,8 @@ export default function Lounge() {
                         : "You confirmed"
                       : "Your confirmation needed";
                     panelHint = rivalConfirmed
-                      ? "Your rival already locked in."
-                      : "Both players must confirm before the countdown starts.";
+                      ? "Your rival already locked in. Once you confirm, the study countdown begins."
+                      : "Both players must confirm before the study countdown begins.";
                   } else if (activeRound.status === "countdown") {
                     panelTitle = "Exam unlocks in";
                     panelValue = countdownText;
@@ -599,6 +656,13 @@ export default function Lounge() {
                     actionLabel = "Take Exam";
                   }
                 }
+
+                const showWeeklyRhythmPanel =
+                  isPaired &&
+                  (activeRound?.status === "topic_selection" ||
+                    activeRound?.status === "confirming");
+                const emphasizeCountdown =
+                  (isPaired && !activeRound) || activeRound?.status === "countdown";
 
                 return (
                   <article
@@ -656,7 +720,7 @@ export default function Lounge() {
                       </p>
                       <div
                         className={`font-black tracking-tight ${
-                          activeRound?.status === "countdown"
+                          emphasizeCountdown
                             ? "text-4xl md:text-[2.6rem] text-primary"
                             : "text-2xl text-on-surface"
                         }`}
@@ -713,6 +777,20 @@ export default function Lounge() {
                         </div>
                       )}
                     </div>
+
+                    {showWeeklyRhythmPanel && (
+                      <div className="rounded-[1.75rem] bg-surface-container-low p-5 text-center space-y-2">
+                        <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                          Weekly rhythm in
+                        </p>
+                        <div className="text-3xl font-black tracking-tight text-primary">
+                          {weeklyRhythmText}
+                        </div>
+                        <p className="text-sm text-on-surface-variant leading-relaxed">
+                          Default pulse based on your {formatWeeklyTime(weeklyMatchTime)} preference. It is a guide, not a lock.
+                        </p>
+                      </div>
+                    )}
 
                     <button
                       onClick={action}
