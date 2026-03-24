@@ -65,7 +65,7 @@ export default function NewRoundPage() {
       .insert({
         rivalry_id: rivalryId,
         round_number: newRoundNumber,
-        target_lang: rivalry.player_a_lang,
+        target_lang: (newRoundNumber % 2 === 1) ? rivalry.player_a_lang : (rivalry.player_b_lang || rivalry.player_a_lang),
         topic: topic.trim(),
         study_days: studyDays,
         prize_text: prize.trim() || null,

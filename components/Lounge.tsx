@@ -34,6 +34,7 @@ export default function Lounge() {
 
   // Join form
   const [joinCode, setJoinCode] = useState("");
+  const [joinLang, setJoinLang] = useState("Spanish");  
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
 
@@ -148,7 +149,7 @@ export default function Lounge() {
       .from("rivalries")
       .update({
         player_b_id: userId,
-        player_b_lang: data.player_a_lang, // Same language for now
+        player_b_lang: joinLang, // dif language for now
         player_b_difficulty: "beginner",
       })
       .eq("id", data.id);
@@ -446,6 +447,28 @@ export default function Lounge() {
                 placeholder="XXXXXX"
                 className="w-full text-center text-3xl font-black tracking-[0.3em] font-mono bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/30 rounded-2xl py-5 outline-none focus:ring-2 focus:ring-primary transition-all"
               />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                I want to learn
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {languages.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setJoinLang(lang)}
+                    className={`py-3 px-4 rounded-xl font-bold text-sm transition-all ${
+                      joinLang === lang
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "bg-surface-container-low text-on-surface hover:bg-surface-container"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {joinError && (
