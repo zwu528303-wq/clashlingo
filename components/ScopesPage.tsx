@@ -19,10 +19,7 @@ interface ScopeRound {
   target_lang: string | null;
   rivalry_id: string;
   rivalName: string;
-  exam: {
-    id: string;
-    syllabus: Record<string, unknown> | null;
-  } | null;
+  syllabus: Record<string, unknown> | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -99,30 +96,16 @@ export default function ScopesPage() {
     // Fetch all rounds for these rivalries
     const { data: rounds } = await supabase
       .from("rounds")
-      .select("id, round_number, status, topic, target_lang, rivalry_id")
+      .select("id, round_number, status, topic, target_lang, rivalry_id, syllabus")
       .in("rivalry_id", rivalryIds)
       .order("created_at", { ascending: false });
 
     if (!rounds || rounds.length === 0) { setScopes([]); return; }
 
-    // Only care about rounds that have a topic (scope exists)
-    const roundsWithTopic = rounds.filter((r) => r.topic);
-    const roundIds = roundsWithTopic.map((r) => r.id);
+    // A scope should appear as soon as the syllabus exists, not only after an exam record is created.
+    const roundsWithSyllabus = rounds.filter((r) => r.topic && r.syllabus);
 
-    // Fetch exams for those rounds
-    const { data: exams } = await supabase
-      .from("exams")
-      .select("id, round_id, syllabus")
-      .in("round_id", roundIds);
-
-    const examByRound: Record<string, { id: string; syllabus: Record<string, unknown> | null }> = {};
-    if (exams) {
-      for (const e of exams) {
-        examByRound[e.round_id] = { id: e.id, syllabus: e.syllabus };
-      }
-    }
-
-    const built: ScopeRound[] = roundsWithTopic.map((r) => ({
+    const built: ScopeRound[] = roundsWithSyllabus.map((r) => ({
       id: r.id,
       round_number: r.round_number,
       status: r.status,
@@ -130,14 +113,14 @@ export default function ScopesPage() {
       target_lang: r.target_lang,
       rivalry_id: r.rivalry_id,
       rivalName: nameMap[rivalIdMap[r.rivalry_id]] || "Rival",
-      exam: examByRound[r.id] ?? null,
+      syllabus: r.syllabus,
     }));
 
     setScopes(built);
   };
 
-  const activeScope = scopes.find((s) => ACTIVE_STATUSES.includes(s.status) && s.exam);
-  const pastScopes = scopes.filter((s) => s.status === "completed" && s.exam);
+  const activeScope = scopes.find((s) => ACTIVE_STATUSES.includes(s.status) && s.syllabus);
+  const pastScopes = scopes.filter((s) => s.status === "completed" && s.syllabus);
 
   const allLangs = ["All", ...Array.from(new Set(pastScopes.map((s) => s.target_lang).filter(Boolean) as string[]))];
   const filteredPast = langFilter === "All"
@@ -215,7 +198,7 @@ export default function ScopesPage() {
 
           {!activeScope ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm">
-              No active scope right now. Start a new round to get one!
+              No active scope right now. Generate a syllabus in a round to see it here.
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -256,7 +239,7 @@ export default function ScopesPage() {
 
                 {expandedId === activeScope.id && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    {renderSyllabus(activeScope.exam?.syllabus ?? null)}
+                    {renderSyllabus(activeScope.syllabus)}
                   </div>
                 )}
               </div>
@@ -334,7 +317,7 @@ export default function ScopesPage() {
 
                       {expandedId === scope.id && (
                         <div className="mt-3 pt-3 border-t border-gray-100">
-                          {renderSyllabus(scope.exam?.syllabus ?? null)}
+                          {renderSyllabus(scope.syllabus)}
                         </div>
                       )}
                     </div>
