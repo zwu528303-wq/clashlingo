@@ -442,7 +442,7 @@ export default function Lounge() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="flex flex-col gap-5 md:flex-row md:justify-between md:items-center px-6 py-5 max-w-5xl mx-auto">
+      <header className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center px-6 py-5 max-w-5xl mx-auto">
         <div className="flex items-center gap-4">
           <div
             className={`w-14 h-14 rounded-[1.25rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-2xl font-black shadow-sm`}
@@ -487,7 +487,7 @@ export default function Lounge() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 pb-12 space-y-10">
+      <div className="max-w-5xl mx-auto px-6 pb-10 space-y-8">
         {/* Welcome */}
         <div>
           <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
@@ -534,14 +534,14 @@ export default function Lounge() {
           </div>
         ) : (
           /* ========== Rivalry Cards ========== */
-          <div className="space-y-6">
+          <div className="space-y-5">
             {rivalries.length >= 2 && (
               <p className="text-sm text-on-surface-variant font-medium">
                 You&apos;ve reached the 2-rivalry limit.
               </p>
             )}
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
               {rivalries.map((r) => {
                 const isPlayerA = r.player_a_id === userId;
                 const isPaired = Boolean(r.player_b_id);
@@ -667,34 +667,34 @@ export default function Lounge() {
                 return (
                   <article
                     key={r.id}
-                    className="relative overflow-hidden rounded-[2.75rem] bg-white border border-surface-container shadow-sm p-8 space-y-8"
+                    className="relative overflow-hidden rounded-[2.4rem] bg-white border border-surface-container shadow-sm p-6 space-y-6"
                   >
-                    <div className="absolute inset-x-6 top-0 h-20 bg-gradient-to-r from-primary-container/35 via-transparent to-secondary-container/30 blur-3xl pointer-events-none" />
+                    <div className="absolute inset-x-5 top-0 h-16 bg-gradient-to-r from-primary-container/35 via-transparent to-secondary-container/30 blur-3xl pointer-events-none" />
 
-                    <div className="relative flex items-start justify-between gap-4">
+                    <div className="relative flex items-start justify-between gap-3">
                       <div
-                        className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.22em] ${badgeClassName}`}
+                        className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.22em] ${badgeClassName}`}
                       >
                         {badgeLabel}
                       </div>
                       <button
                         onClick={() => router.push(`/rivalry/${r.id}`)}
-                        className="text-sm font-bold text-on-surface-variant hover:text-primary transition-colors"
+                        className="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
                       >
                         Dashboard
                       </button>
                     </div>
 
-                    <div className="relative space-y-4 text-center">
-                      <div className="flex items-center justify-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-primary-container text-primary flex items-center justify-center text-2xl font-black shadow-md">
+                    <div className="relative space-y-3 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="w-14 h-14 rounded-full bg-primary-container text-primary flex items-center justify-center text-xl font-black shadow-md">
                           {profileLetter}
                         </div>
-                        <div className="text-2xl font-black italic text-on-surface-variant/35">
+                        <div className="text-xl font-black italic text-on-surface-variant/35">
                           VS
                         </div>
                         <div
-                          className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-md ${
+                          className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shadow-md ${
                             isPaired
                               ? "bg-secondary-container text-secondary"
                               : "bg-surface-container text-on-surface-variant"
@@ -705,34 +705,34 @@ export default function Lounge() {
                       </div>
 
                       <div>
-                        <h3 className="text-3xl font-black text-on-surface tracking-tight">
+                        <h3 className="text-[1.9rem] font-black text-on-surface tracking-tight leading-none">
                           {isPaired ? `vs ${rivalName}` : "Waiting for rival"}
                         </h3>
-                        <p className="text-on-surface-variant text-lg">
+                        <p className="text-on-surface-variant text-base mt-1">
                           {targetLang} • Round {roundNumber}
                         </p>
                       </div>
                     </div>
 
-                    <div className="rounded-[2rem] border border-surface-container bg-surface-container-lowest p-6 text-center space-y-3">
+                    <div className="rounded-[1.75rem] border border-surface-container bg-surface-container-lowest p-5 text-center space-y-2.5">
                       <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
                         {panelTitle}
                       </p>
                       <div
                         className={`font-black tracking-tight ${
                           emphasizeCountdown
-                            ? "text-4xl md:text-[2.6rem] text-primary"
-                            : "text-2xl text-on-surface"
+                            ? "text-3xl md:text-[2.2rem] text-primary"
+                            : "text-xl text-on-surface"
                         }`}
                       >
                         {panelValue}
                       </div>
-                      <p className="text-sm text-on-surface-variant leading-relaxed">
+                      <p className="text-xs text-on-surface-variant leading-relaxed">
                         {panelHint}
                       </p>
 
                       {activeRound?.status === "confirming" && (
-                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                        <div className="flex flex-wrap justify-center gap-2 pt-1.5">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-bold ${
                               myConfirmed
@@ -755,7 +755,7 @@ export default function Lounge() {
                       )}
 
                       {activeRound?.status === "countdown" && (
-                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                        <div className="flex flex-wrap justify-center gap-2 pt-1.5">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-bold ${
                               myReady
@@ -778,7 +778,7 @@ export default function Lounge() {
                       )}
 
                       {activeRound?.status === "exam_ready" && (
-                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                        <div className="flex flex-wrap justify-center gap-2 pt-1.5">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-bold ${
                               myReady
@@ -802,14 +802,14 @@ export default function Lounge() {
                     </div>
 
                     {showWeeklyRhythmPanel && (
-                      <div className="rounded-[1.75rem] bg-surface-container-low p-5 text-center space-y-2">
+                      <div className="rounded-[1.5rem] bg-surface-container-low p-4 text-center space-y-1.5">
                         <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
                           Weekly rhythm in
                         </p>
-                        <div className="text-3xl font-black tracking-tight text-primary">
+                        <div className="text-[1.8rem] font-black tracking-tight text-primary">
                           {weeklyRhythmText}
                         </div>
-                        <p className="text-sm text-on-surface-variant leading-relaxed">
+                        <p className="text-xs text-on-surface-variant leading-relaxed">
                           Default pulse based on your {formatWeeklyTime(weeklyMatchTime)} preference. It is a guide, not a lock.
                         </p>
                       </div>
@@ -817,7 +817,7 @@ export default function Lounge() {
 
                     <button
                       onClick={action}
-                      className={`w-full py-4 rounded-[1.75rem] font-black text-lg transition-all ${actionClassName}`}
+                      className={`w-full py-3.5 rounded-[1.4rem] font-black text-base transition-all ${actionClassName}`}
                     >
                       {copiedInviteId === r.id ? "Code Copied" : actionLabel}
                     </button>
@@ -826,26 +826,26 @@ export default function Lounge() {
               })}
 
               {rivalries.length < 2 && (
-                <article className="rounded-[2.75rem] border-2 border-dashed border-surface-container-high bg-white/70 p-8 flex flex-col items-center justify-center text-center min-h-[28rem]">
-                  <div className="w-24 h-24 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant shadow-inner mb-8">
-                    <Plus size={42} />
+                <article className="rounded-[2.4rem] border-2 border-dashed border-surface-container-high bg-white/70 p-6 flex flex-col items-center justify-center text-center min-h-[22rem]">
+                  <div className="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant shadow-inner mb-6">
+                    <Plus size={36} />
                   </div>
-                  <div className="space-y-3 max-w-sm">
-                    <h3 className="text-3xl font-black text-on-surface tracking-tight">
+                  <div className="space-y-2 max-w-sm">
+                    <h3 className="text-[1.9rem] font-black text-on-surface tracking-tight leading-none">
                       Start New Rivalry
                     </h3>
-                    <p className="text-on-surface-variant text-lg leading-relaxed">
+                    <p className="text-on-surface-variant text-base leading-relaxed">
                       Challenge another friend and add a fresh duel to your lounge.
                     </p>
                   </div>
-                  <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                     <button
                       onClick={() => {
                         setShowCreate(true);
                         setCreatedCode("");
                         setCreateError("");
                       }}
-                      className="flex-1 bg-primary text-on-primary py-4 rounded-[1.5rem] font-black text-base hover:scale-[1.01] active:scale-[0.99] transition-all"
+                      className="flex-1 bg-primary text-on-primary py-3.5 rounded-[1.3rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
                     >
                       Create
                     </button>
@@ -855,7 +855,7 @@ export default function Lounge() {
                         setJoinError("");
                         setJoinCode("");
                       }}
-                      className="flex-1 bg-white text-on-surface border border-surface-container py-4 rounded-[1.5rem] font-black text-base hover:scale-[1.01] active:scale-[0.99] transition-all"
+                      className="flex-1 bg-white text-on-surface border border-surface-container py-3.5 rounded-[1.3rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
                     >
                       Join with Code
                     </button>
