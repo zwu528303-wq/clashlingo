@@ -118,19 +118,41 @@ export default function SettingsPage() {
       return;
     }
 
-    const { error: publicUserError } = await supabase.from("users").upsert(
-      {
-        id: authUser.id,
-        email: authUser.email ?? nextProfile.email,
-        display_name: nextProfile.displayName,
-      },
-      { onConflict: "id" }
-    );
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    let publicUserErrorMessage: string | null = null;
+
+    if (!session?.access_token) {
+      publicUserErrorMessage = "Missing session for profile sync.";
+    } else {
+      const syncResponse = await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          displayName: nextProfile.displayName,
+          email: authUser.email ?? nextProfile.email,
+        }),
+      });
+
+      if (!syncResponse.ok) {
+        const payload = (await syncResponse.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+
+        publicUserErrorMessage =
+          payload?.error || "Failed to sync nickname for shared views.";
+      }
+    }
 
     setProfile(nextProfile);
     setSaving(false);
 
-    if (publicUserError) {
+    if (publicUserErrorMessage) {
       setMessage({
         type: "error",
         text: "Saved your personal settings, but nickname sync for shared views failed.",
