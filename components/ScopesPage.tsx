@@ -10,7 +10,15 @@ import {
   ChevronUp,
   ArrowRight,
 } from "lucide-react";
-import { resolveDisplayName } from "@/lib/profile";
+import { SUPPORTED_LANGUAGES, resolveDisplayName } from "@/lib/profile";
+
+interface ScopeSyllabus {
+  can_do?: string[];
+  vocabulary?: Record<string, string[]>;
+  grammar?: string[];
+  expressions?: string[];
+  listening?: string[];
+}
 
 interface ScopeRound {
   id: string;
@@ -20,7 +28,7 @@ interface ScopeRound {
   target_lang: string | null;
   rivalry_id: string;
   rivalName: string;
-  syllabus: Record<string, unknown> | null;
+  syllabus: ScopeSyllabus | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -42,13 +50,46 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const ACTIVE_STATUSES = ["topic_selection", "confirming", "countdown", "exam_ready", "exam_live"];
+const LANGUAGE_FALLBACK = "Unassigned";
+const LANGUAGE_ORDER = new Map<string, number>(
+  SUPPORTED_LANGUAGES.map((language, index) => [language, index])
+);
+
+function getLanguageLabel(value: string | null) {
+  return value || LANGUAGE_FALLBACK;
+}
+
+function compareLanguageGroups(a: string, b: string) {
+  const aIndex = LANGUAGE_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER;
+  const bIndex = LANGUAGE_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER;
+
+  if (aIndex !== bIndex) {
+    return aIndex - bIndex;
+  }
+
+  return a.localeCompare(b);
+}
+
+function groupScopesByLanguage(scopes: ScopeRound[]) {
+  const grouped = new Map<string, ScopeRound[]>();
+
+  scopes.forEach((scope) => {
+    const key = getLanguageLabel(scope.target_lang);
+    const current = grouped.get(key) ?? [];
+    current.push(scope);
+    grouped.set(key, current);
+  });
+
+  return [...grouped.entries()].sort(([left], [right]) =>
+    compareLanguageGroups(left, right)
+  );
+}
 
 export default function ScopesPage() {
   const router = useRouter();
   const [scopes, setScopes] = useState<ScopeRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [langFilter, setLangFilter] = useState<string>("All");
 
   async function loadScopes(uid: string) {
     // Fetch all rivalries the user belongs to
@@ -102,7 +143,7 @@ export default function ScopesPage() {
       target_lang: r.target_lang,
       rivalry_id: r.rivalry_id,
       rivalName: nameMap[rivalIdMap[r.rivalry_id]] || "Rival",
-      syllabus: r.syllabus,
+      syllabus: r.syllabus as ScopeSyllabus | null,
     }));
 
     setScopes(built);
@@ -123,19 +164,18 @@ export default function ScopesPage() {
     init();
   }, [router]);
 
-  const activeScope = scopes.find((s) => ACTIVE_STATUSES.includes(s.status) && s.syllabus);
+  const activeScopes = scopes.filter(
+    (scope) => ACTIVE_STATUSES.includes(scope.status) && scope.syllabus
+  );
   const pastScopes = scopes.filter((s) => s.status === "completed" && s.syllabus);
-
-  const allLangs = ["All", ...Array.from(new Set(pastScopes.map((s) => s.target_lang).filter(Boolean) as string[]))];
-  const filteredPast = langFilter === "All"
-    ? pastScopes
-    : pastScopes.filter((s) => s.target_lang === langFilter);
+  const activeScopeGroups = groupScopesByLanguage(activeScopes);
+  const pastScopeGroups = groupScopesByLanguage(pastScopes);
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  const renderSyllabus = (syllabus: Record<string, unknown> | null) => {
+  const renderSyllabus = (syllabus: ScopeSyllabus | null) => {
     if (!syllabus) return <p className="text-sm text-gray-400 italic">No syllabus available yet.</p>;
 
     const sections = [
@@ -143,13 +183,42 @@ export default function ScopesPage() {
       { key: "vocabulary", label: "Vocabulary" },
       { key: "grammar", label: "Grammar" },
       { key: "expressions", label: "Expressions" },
+      { key: "listening", label: "Listening" },
     ];
 
     return (
       <div className="space-y-3 mt-3">
         {sections.map(({ key, label }) => {
-          const val = syllabus[key];
+          const val = syllabus[key as keyof ScopeSyllabus];
           if (!val) return null;
+
+          if (key === "vocabulary" && typeof val === "object" && val !== null) {
+            return (
+              <div key={key}>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{label}</p>
+                <div className="space-y-3">
+                  {Object.entries(val).map(([group, words]) => (
+                    <div key={group}>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                        {group}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(words as string[]).map((word, index) => (
+                          <span
+                            key={`${group}-${index}`}
+                            className="px-2.5 py-1 rounded-full bg-[#953f4d]/10 text-[#953f4d] text-xs font-medium"
+                          >
+                            {word}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
           const items: string[] = Array.isArray(val) ? val : [String(val)];
           return (
             <div key={key}>
@@ -198,55 +267,74 @@ export default function ScopesPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
         {/* Current Scope */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Current Scope</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Current Scopes</h2>
 
-          {!activeScope ? (
+          {activeScopeGroups.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm">
               No active scope right now. Generate a syllabus in a round to see it here.
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">
-                      vs {activeScope.rivalName} · Round {activeScope.round_number}
-                      {activeScope.target_lang && (
-                        <span className="ml-2 px-2 py-0.5 bg-[#953f4d]/10 text-[#953f4d] rounded-full text-xs font-medium">
-                          {activeScope.target_lang}
-                        </span>
-                      )}
-                    </p>
-                    <h3 className="text-lg font-bold text-gray-900">{activeScope.topic}</h3>
+            <div className="space-y-4">
+              {activeScopeGroups.map(([language, languageScopes]) => (
+                <div key={language} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-[#953f4d]/10 text-[#953f4d] text-xs font-semibold uppercase tracking-wide">
+                      {language}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {languageScopes.length} active
+                    </span>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${STATUS_COLOR[activeScope.status] ?? "bg-gray-100 text-gray-600"}`}>
-                    {STATUS_LABEL[activeScope.status] ?? activeScope.status}
-                  </span>
-                </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => toggleExpand(activeScope.id)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#953f4d] text-white text-sm font-medium hover:bg-[#7d3440] transition-colors"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    {expandedId === activeScope.id ? "Hide Scope" : "Review Scope"}
-                    {expandedId === activeScope.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
-                  <button
-                    onClick={() => router.push(`/round/${activeScope.id}`)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
-                  >
-                    Go to Round <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+                  <div className="space-y-3">
+                    {languageScopes.map((scope) => (
+                      <div
+                        key={scope.id}
+                        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                      >
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div>
+                              <p className="text-xs text-gray-400 mb-1">
+                                vs {scope.rivalName} · Round {scope.round_number}
+                              </p>
+                              <h3 className="text-lg font-bold text-gray-900">
+                                {scope.topic}
+                              </h3>
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${STATUS_COLOR[scope.status] ?? "bg-gray-100 text-gray-600"}`}>
+                              {STATUS_LABEL[scope.status] ?? scope.status}
+                            </span>
+                          </div>
 
-                {expandedId === activeScope.id && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    {renderSyllabus(activeScope.syllabus)}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => toggleExpand(scope.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#953f4d] text-white text-sm font-medium hover:bg-[#7d3440] transition-colors"
+                            >
+                              <BookOpen className="w-4 h-4" />
+                              {expandedId === scope.id ? "Hide Scope" : "Review Scope"}
+                              {expandedId === scope.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                            <button
+                              onClick={() => router.push(`/round/${scope.id}`)}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                            >
+                              Go to Round <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {expandedId === scope.id && (
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                              {renderSyllabus(scope.syllabus)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
           )}
         </section>
@@ -260,81 +348,69 @@ export default function ScopesPage() {
               Completed rounds will appear here.
             </div>
           ) : (
-            <>
-              {/* Language filter pills */}
-              {allLangs.length > 2 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {allLangs.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLangFilter(lang)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        langFilter === lang
-                          ? "bg-[#953f4d] text-white"
-                          : "bg-white border border-gray-200 text-gray-600 hover:border-[#953f4d] hover:text-[#953f4d]"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {filteredPast.map((scope) => (
-                  <div
-                    key={scope.id}
-                    className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-                  >
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-400 mb-0.5 truncate">
-                            vs {scope.rivalName} · Round {scope.round_number}
-                          </p>
-                          <p className="text-sm font-semibold text-gray-900 leading-snug">{scope.topic}</p>
-                        </div>
-                        {scope.target_lang && (
-                          <span className="flex-shrink-0 px-2 py-0.5 bg-[#953f4d]/10 text-[#953f4d] rounded-full text-xs font-medium">
-                            {scope.target_lang}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => toggleExpand(scope.id)}
-                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          {expandedId === scope.id ? "Hide" : "Scope"}
-                          {expandedId === scope.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        </button>
-                        <span className="text-gray-200">·</span>
-                        <button
-                          onClick={() => router.push(`/round/${scope.id}/results`)}
-                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
-                        >
-                          Results <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {expandedId === scope.id && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          {renderSyllabus(scope.syllabus)}
-                        </div>
-                      )}
-                    </div>
+            <div className="space-y-5">
+              {pastScopeGroups.map(([language, languageScopes]) => (
+                <div key={language} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-[#953f4d]/10 text-[#953f4d] text-xs font-semibold uppercase tracking-wide">
+                      {language}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {languageScopes.length} completed
+                    </span>
                   </div>
-                ))}
-              </div>
 
-              {filteredPast.length === 0 && (
-                <div className="text-center text-gray-400 text-sm py-6">
-                  No scopes for {langFilter} yet.
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {languageScopes.map((scope) => (
+                      <div
+                        key={scope.id}
+                        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-2 mb-3">
+                            <div className="min-w-0">
+                              <p className="text-xs text-gray-400 mb-0.5 truncate">
+                                vs {scope.rivalName} · Round {scope.round_number}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900 leading-snug">
+                                {scope.topic}
+                              </p>
+                            </div>
+                            <span className="flex-shrink-0 px-2 py-0.5 bg-[#953f4d]/10 text-[#953f4d] rounded-full text-xs font-medium">
+                              {language}
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => toggleExpand(scope.id)}
+                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                              {expandedId === scope.id ? "Hide" : "Scope"}
+                              {expandedId === scope.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                            <span className="text-gray-200">·</span>
+                            <button
+                              onClick={() => router.push(`/round/${scope.id}/results`)}
+                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
+                            >
+                              Results <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {expandedId === scope.id && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              {renderSyllabus(scope.syllabus)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </section>
       </div>

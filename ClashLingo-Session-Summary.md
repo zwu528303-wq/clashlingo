@@ -31,6 +31,9 @@ Date: 2026-03-24
 - Finished the behavioral side of soft-countdown in the round flow.
   - During the `countdown` phase, both players can now mark ready and start the exam early.
   - If the timer finishes first, the existing `exam_ready` sync flow still takes over.
+- Grouped the scopes experience by target language.
+  - Current scopes and past scopes now render under language sections instead of relying on a past-only filter.
+  - Scope review now renders grouped vocabulary correctly.
 
 ## What Was Verified
 
@@ -51,9 +54,9 @@ Date: 2026-03-24
 
 ## Recommended Next Task
 
-1. Group scopes by target language when rivals study different languages.
-2. Polish remaining round-flow copy so "countdown as rhythm, not lock" reads consistently.
-3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
+1. Polish remaining round-flow copy so "countdown as rhythm, not lock" reads consistently.
+2. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
+3. Consider shared domain types or README/schema docs after the UX polish pass.
 
 ## Next Session Start Order
 

@@ -27,52 +27,51 @@ Last updated: 2026-03-24
 - Shipped the behavioral side of soft-countdown.
   - During the `countdown` phase, both players can now tap ready and start the exam early.
   - `exam_ready` still works as the synchronized fallback when the timer expires first.
+- Grouped `/scopes` by target language.
+  - Current scopes and past scopes now classify cards under language sections.
+  - The scopes review view also renders grouped vocabulary entries instead of flattening them into `[object Object]`.
 
 ## Highest Priority
 
-1. Classify scopes by target language.
-   - If two players study different languages, `/scopes` should group or filter clearly by language.
-   - Active and past scopes should still remain separate.
-
-2. Polish the remaining round-flow copy.
+1. Polish the remaining round-flow copy.
    - The behavior is now soft-countdown, but there are still some old "study days" phrases worth reviewing.
    - Make sure lounge, round, and settings language all describe countdown as a rhythm rather than a lock.
 
 ## Engineering Follow-Up
 
-3. Keep the lint baseline clean while touching product work.
+2. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
 ## Product Flow And UX
 
-4. Add realtime exam sync.
+3. Add realtime exam sync.
    - Results realtime is already in place for rival submissions.
    - The remaining gap is optional opponent progress during the exam itself.
    - Use Supabase Realtime on the `submissions` table if that UX proves worthwhile.
 
-5. Deepen the results sharing experience.
+4. Deepen the results sharing experience.
    - A share action exists already.
    - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
-6. Create shared domain types.
+5. Create shared domain types.
    - Move `Round`, `Rivalry`, `Exam`, `Submission`, and syllabus shapes into a shared typed module.
    - Reuse those types across client components and API routes.
 
-7. Document local setup and data model.
+6. Document local setup and data model.
    - Add `.env.example`.
    - Add Supabase schema or migration notes for `users`, `rivalries`, `rounds`, `exams`, and `submissions`.
    - Replace the boilerplate `README.md`.
 
 ## Nice To Have
 
-8. Replace `alert()`-based errors with inline UI states or toasts.
+7. Replace `alert()`-based errors with inline UI states or toasts.
 
-9. Add a minimal regression test strategy.
+8. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-10. Review AI prompt robustness.
+9. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

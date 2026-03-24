@@ -102,6 +102,7 @@ Observed status values:
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
 - Results UI exists in `components/ResultsPage.tsx`
+- Scopes now group current and past scope cards by target language
 - `npm run lint` currently passes
 - Production build currently passes
 
@@ -118,11 +119,9 @@ Ran on 2026-03-24:
 - There is no committed `.env.example`.
 - There are no checked-in Supabase migrations or schema notes, so local setup still depends on external context.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
-- `/scopes` is visible and functional, but it does not yet classify scopes by target language when two rivals learn different languages.
-
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize `/scopes` language grouping next, then continue polishing the round flow copy where needed.
+- Prioritize round-flow copy polish next, then consider shared type extraction or README/schema docs.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, document the Supabase schema and add an `.env.example`.
