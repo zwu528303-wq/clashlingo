@@ -102,6 +102,7 @@ As of the latest reviewed state, the following product changes are already in th
 - results page includes syllabus / study material review
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point
+- lounge now uses rivalry cards as the main control surface
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
 - settings save syncs shared nickname data through a server route
 - lounge now reads profile preferences and uses the new supported language list
@@ -115,7 +116,6 @@ As of the latest reviewed state, the following product changes are already in th
 
 These rules are approved but still need implementation work:
 
-- move the main countdown experience onto lounge rivalry cards
 - classify scopes by target language when players use different languages
 - align weekly matching time behavior with the new "soft countdown, mutual early start allowed" rule across all relevant screens
 

@@ -18,58 +18,56 @@ Last updated: 2026-03-24
 - Restored a clean lint baseline.
   - `npm run lint` now passes.
   - Current expectation: whenever a page is touched, clear that page's lint issues before moving on.
+- Moved the lounge into a rivalry-card control surface.
+  - Lounge now shows rivalry cards with rival identity, round context, and countdown/status panels.
+  - Active rounds surface key states such as topic selection, confirmation, countdown, exam ready, and exam live.
 
 ## Highest Priority
 
-1. Move the main countdown experience onto lounge rivalry cards.
-   - Make each rivalry a clear status card in `components/Lounge.tsx`.
-   - Show rival identity, current language, round/week, countdown, and current action state.
-   - Reuse the new profile identity data from settings so the lounge feels like the main control surface.
-
-2. Align the match-start flow with the approved soft-countdown rule.
+1. Align the match-start flow with the approved soft-countdown rule.
    - Weekly match time should remain a countdown / anticipation tool only.
    - If both players are ready, they should be able to start early even before the countdown completes.
    - Copy and button states should make this rule obvious.
 
-3. Classify scopes by target language.
+2. Classify scopes by target language.
    - If two players study different languages, `/scopes` should group or filter clearly by language.
    - Active and past scopes should still remain separate.
 
 ## Engineering Follow-Up
 
-4. Keep the lint baseline clean while touching product work.
+3. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
 ## Product Flow And UX
 
-5. Add realtime exam sync.
+4. Add realtime exam sync.
    - Results realtime is already in place for rival submissions.
    - The remaining gap is optional opponent progress during the exam itself.
    - Use Supabase Realtime on the `submissions` table if that UX proves worthwhile.
 
-6. Deepen the results sharing experience.
+5. Deepen the results sharing experience.
    - A share action exists already.
    - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
-7. Create shared domain types.
+6. Create shared domain types.
    - Move `Round`, `Rivalry`, `Exam`, `Submission`, and syllabus shapes into a shared typed module.
    - Reuse those types across client components and API routes.
 
-8. Document local setup and data model.
+7. Document local setup and data model.
    - Add `.env.example`.
    - Add Supabase schema or migration notes for `users`, `rivalries`, `rounds`, `exams`, and `submissions`.
    - Replace the boilerplate `README.md`.
 
 ## Nice To Have
 
-9. Replace `alert()`-based errors with inline UI states or toasts.
+8. Replace `alert()`-based errors with inline UI states or toasts.
 
-10. Add a minimal regression test strategy.
+9. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-11. Review AI prompt robustness.
+10. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

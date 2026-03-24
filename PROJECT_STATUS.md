@@ -22,7 +22,7 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 - Rounded shapes and oversized cards
 - Primary color: `#953f4d`
 - Secondary color: `#0c693d`
-- Font: Plus Jakarta Sans, currently loaded via Google Fonts in `app/layout.tsx`
+- Font: Plus Jakarta Sans, currently loaded via `next/font/google` in `app/layout.tsx`
 
 ## Main Routes
 
@@ -90,6 +90,7 @@ Observed status values:
 
 - Email/password sign-up and sign-in through Supabase
 - Lounge UI for creating a rivalry and joining by invite code
+- Lounge now presents rivalries as status cards with countdown / action panels
 - Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
 - Settings save now syncs public nickname server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
@@ -115,14 +116,13 @@ Ran on 2026-03-24:
 - `README.md` is still the default create-next-app boilerplate and is not the source of truth.
 - There is no committed `.env.example`.
 - There are no checked-in Supabase migrations or schema notes, so local setup still depends on external context.
-- `app/layout.tsx` loads Google Fonts directly in `<head>`, which is already flagged by lint.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
-- The lounge is still list-oriented. It does not yet reflect the approved rivalry-card countdown control surface.
+- The lounge now shows countdown/status cards, but the approved soft-countdown early-start behavior is not fully aligned across all screens yet.
 - `/scopes` is visible and functional, but it does not yet classify scopes by target language when two rivals learn different languages.
 
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize the lounge rivalry-card countdown experience before lower-level cleanup work if product-facing impact matters most.
-- Re-run the full round flow manually after any lounge or countdown changes.
+- Prioritize soft-countdown UX alignment and `/scopes` language grouping next.
+- Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, document the Supabase schema and add an `.env.example`.

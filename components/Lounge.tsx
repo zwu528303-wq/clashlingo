@@ -5,7 +5,6 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
-  ArrowRight,
   BookOpen,
   Check,
   Copy,
@@ -20,6 +19,7 @@ import {
   SUPPORTED_LANGUAGES,
   type EditableProfile,
   type SupportedLanguage,
+  getDisplayInitial,
   getAvatarTheme,
   getEditableProfileFromUser,
   normalizeAvatarLetter,
@@ -37,12 +37,84 @@ interface Rivalry {
   created_at: string;
 }
 
+interface ActiveRound {
+  id: string;
+  rivalry_id: string;
+  round_number: number;
+  status: string;
+  topic: string | null;
+  target_lang: string | null;
+  exam_at: string | null;
+  player_a_confirmed: boolean;
+  player_b_confirmed: boolean;
+  player_a_exam_ready: boolean;
+  player_b_exam_ready: boolean;
+}
+
+function formatWeeklyTime(value: string) {
+  const [hoursText = "19", minutesText = "00"] = value.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const normalizedHours = hours % 12 || 12;
+
+  return `${normalizedHours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")} ${suffix}`;
+}
+
+function formatCountdown(target: string | null, nowMs: number) {
+  if (!target) return "00:00:00";
+  if (nowMs === 0) return "--:--:--";
+
+  const diff = new Date(target).getTime() - nowMs;
+  if (diff <= 0) return "00:00:00";
+
+  const totalSeconds = Math.floor(diff / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return `${days}d ${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }
+
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function getRoundStatusLabel(status: string) {
+  switch (status) {
+    case "topic_selection":
+      return "Topic Selection";
+    case "confirming":
+      return "Scope Review";
+    case "countdown":
+      return "Study Countdown";
+    case "exam_ready":
+      return "Exam Ready";
+    case "exam_live":
+      return "Exam Live";
+    default:
+      return status.replace(/_/g, " ");
+  }
+}
+
 export default function Lounge() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
+  const [rivalNames, setRivalNames] = useState<Record<string, string>>({});
+  const [activeRounds, setActiveRounds] = useState<Record<string, ActiveRound>>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
+  const [countdownNow, setCountdownNow] = useState(0);
 
   // Modal states
   const [showCreate, setShowCreate] = useState(false);
@@ -54,6 +126,7 @@ export default function Lounge() {
   const [createdCode, setCreatedCode] = useState("");
   const [createError, setCreateError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   // Join form
   const [joinCode, setJoinCode] = useState("");
@@ -91,6 +164,68 @@ export default function Lounge() {
 
     if (!error && data) {
       setRivalries(data);
+
+      if (data.length === 0) {
+        setRivalNames({});
+        setActiveRounds({});
+        return;
+      }
+
+      const rivalryIds = data.map((rivalry) => rivalry.id);
+      const rivalryNameMap: Record<string, string> = {};
+      const rivalIdPairs = data
+        .map((rivalry) => ({
+          rivalryId: rivalry.id,
+          rivalId:
+            rivalry.player_a_id === uid ? rivalry.player_b_id : rivalry.player_a_id,
+        }))
+        .filter(
+          (
+            pair
+          ): pair is {
+            rivalryId: string;
+            rivalId: string;
+          } => Boolean(pair.rivalId)
+        );
+
+      const uniqueRivalIds = [...new Set(rivalIdPairs.map((pair) => pair.rivalId))];
+      if (uniqueRivalIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("users")
+          .select("id, display_name")
+          .in("id", uniqueRivalIds);
+
+        const profileMap = new Map(
+          (profiles ?? []).map((item) => [
+            item.id,
+            resolveDisplayName(item.display_name, "Rival"),
+          ])
+        );
+
+        rivalIdPairs.forEach(({ rivalryId, rivalId }) => {
+          rivalryNameMap[rivalryId] = profileMap.get(rivalId) ?? "Rival";
+        });
+      }
+
+      setRivalNames(rivalryNameMap);
+
+      const { data: rounds } = await supabase
+        .from("rounds")
+        .select(
+          "id, rivalry_id, round_number, status, topic, target_lang, exam_at, player_a_confirmed, player_b_confirmed, player_a_exam_ready, player_b_exam_ready"
+        )
+        .in("rivalry_id", rivalryIds)
+        .neq("status", "completed")
+        .order("round_number", { ascending: false });
+
+      const nextActiveRounds: Record<string, ActiveRound> = {};
+      (rounds ?? []).forEach((round) => {
+        if (!nextActiveRounds[round.rivalry_id]) {
+          nextActiveRounds[round.rivalry_id] = round as ActiveRound;
+        }
+      });
+
+      setActiveRounds(nextActiveRounds);
     }
   }
 
@@ -111,6 +246,20 @@ export default function Lounge() {
     };
     init();
   }, [router]);
+
+  useEffect(() => {
+    const hasCountdown = Object.values(activeRounds).some(
+      (round) => round.status === "countdown"
+    );
+
+    if (!hasCountdown) return;
+
+    const interval = setInterval(() => {
+      setCountdownNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeRounds]);
 
   // Generate 6-char invite code
   const generateCode = () => {
@@ -221,6 +370,12 @@ export default function Lounge() {
     await navigator.clipboard.writeText(createdCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleInviteCopy = async (rivalryId: string, inviteCode: string) => {
+    await navigator.clipboard.writeText(inviteCode);
+    setCopiedInviteId(rivalryId);
+    setTimeout(() => setCopiedInviteId((current) => (current === rivalryId ? null : current)), 2000);
   };
 
   const handleLogout = async () => {
@@ -337,106 +492,275 @@ export default function Lounge() {
           </div>
         ) : (
           /* ========== Rivalry Cards ========== */
-          <div className="space-y-8">
-            {/* Action buttons */}
-            {(() => {
-              const atLimit = rivalries.length >= 2;
-              return (
-                <div className="space-y-3">
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => { if (!atLimit) { setShowCreate(true); setCreatedCode(""); setCreateError(""); } }}
-                      disabled={atLimit}
-                      className={`bg-primary text-on-primary px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all shadow-sm ${atLimit ? "opacity-40 cursor-not-allowed" : "hover:scale-105 active:scale-95"}`}
-                    >
-                      <Plus size={20} /> New Rivalry
-                    </button>
-                    <button
-                      onClick={() => { if (!atLimit) { setShowJoin(true); setJoinError(""); setJoinCode(""); } }}
-                      disabled={atLimit}
-                      className={`bg-white text-on-surface border-2 border-surface-container px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all ${atLimit ? "opacity-40 cursor-not-allowed" : "hover:scale-105 active:scale-95"}`}
-                    >
-                      <UserPlus size={20} /> Join
-                    </button>
-                  </div>
-                  {atLimit && (
-                    <p className="text-sm text-on-surface-variant font-medium">
-                      You&apos;ve reached the 2-rivalry limit.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
+          <div className="space-y-6">
+            {rivalries.length >= 2 && (
+              <p className="text-sm text-on-surface-variant font-medium">
+                You&apos;ve reached the 2-rivalry limit.
+              </p>
+            )}
 
-            {/* Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {rivalries.map((r) => {
                 const isPlayerA = r.player_a_id === userId;
-                const isPaired = !!r.player_b_id;
-                const lang = isPlayerA ? r.player_a_lang : (r.player_b_lang || r.player_a_lang);
+                const isPaired = Boolean(r.player_b_id);
+                const rivalName = rivalNames[r.id] || "Rival";
+                const activeRound = activeRounds[r.id] ?? null;
+                const targetLang =
+                  activeRound?.target_lang ||
+                  (isPlayerA ? r.player_a_lang : r.player_b_lang || r.player_a_lang);
+                const roundNumber = activeRound?.round_number ?? r.current_round_num + 1;
+                const countdownText = formatCountdown(
+                  activeRound?.exam_at ?? null,
+                  countdownNow
+                );
+                const myConfirmed = isPlayerA
+                  ? activeRound?.player_a_confirmed
+                  : activeRound?.player_b_confirmed;
+                const rivalConfirmed = isPlayerA
+                  ? activeRound?.player_b_confirmed
+                  : activeRound?.player_a_confirmed;
+                const myReady = isPlayerA
+                  ? activeRound?.player_a_exam_ready
+                  : activeRound?.player_b_exam_ready;
+                const rivalReady = isPlayerA
+                  ? activeRound?.player_b_exam_ready
+                  : activeRound?.player_a_exam_ready;
+
+                let badgeLabel = isPaired ? "Ready to Duel" : "Invite Ready";
+                let badgeClassName =
+                  "bg-surface-container-high text-on-surface-variant";
+                let panelTitle = isPaired ? "Weekly rhythm" : "Invite code";
+                let panelValue = isPaired
+                  ? formatWeeklyTime(profile?.weeklyMatchTime || "19:00")
+                  : r.invite_code;
+                let panelHint = isPaired
+                  ? "Countdown preference only. If both players want to play, start early."
+                  : "Share this code so your rival can join.";
+                let actionLabel = isPaired ? "Start Round" : "Copy Code";
+                const actionClassName =
+                  "bg-primary text-on-primary hover:scale-[1.01] active:scale-[0.99]";
+                let action = () =>
+                  isPaired
+                    ? router.push(`/rivalry/${r.id}/new-round`)
+                    : handleInviteCopy(r.id, r.invite_code);
+
+                if (isPaired && activeRound) {
+                  badgeLabel = getRoundStatusLabel(activeRound.status);
+                  badgeClassName =
+                    activeRound.status === "countdown"
+                      ? "bg-secondary-container text-on-secondary-container"
+                      : activeRound.status === "exam_ready" ||
+                          activeRound.status === "exam_live"
+                        ? "bg-primary-container text-on-primary-container"
+                        : "bg-surface-container-high text-on-surface-variant";
+                  actionLabel = "Open Match";
+                  action = () =>
+                    router.push(
+                      activeRound.status === "exam_live"
+                        ? `/round/${activeRound.id}/exam`
+                        : `/round/${activeRound.id}`
+                    );
+
+                  if (activeRound.status === "topic_selection") {
+                    panelTitle = "Next step";
+                    panelValue = activeRound.topic || "Pick a topic";
+                    panelHint = "Generate the scope to kick off this round.";
+                  } else if (activeRound.status === "confirming") {
+                    panelTitle = "Confirmation";
+                    panelValue = myConfirmed
+                      ? rivalConfirmed
+                        ? "Both confirmed"
+                        : "You confirmed"
+                      : "Your confirmation needed";
+                    panelHint = rivalConfirmed
+                      ? "Your rival already locked in."
+                      : "Both players must confirm before the countdown starts.";
+                  } else if (activeRound.status === "countdown") {
+                    panelTitle = "Exam unlocks in";
+                    panelValue = countdownText;
+                    panelHint = activeRound.topic
+                      ? `${activeRound.topic} · keep studying until the exam unlocks.`
+                      : "Keep studying until the exam unlocks.";
+                    actionLabel = "Open Study Round";
+                  } else if (activeRound.status === "exam_ready") {
+                    panelTitle = "Ready check";
+                    panelValue = myReady
+                      ? rivalReady
+                        ? "Both players ready"
+                        : "You are ready"
+                      : "Tap ready when you are set";
+                    panelHint = rivalReady
+                      ? "Your rival is already ready."
+                      : "The exam starts as soon as both players are ready.";
+                  } else if (activeRound.status === "exam_live") {
+                    panelTitle = "Live now";
+                    panelValue = "Exam in progress";
+                    panelHint = "Jump in and submit before your rival pulls ahead.";
+                    actionLabel = "Take Exam";
+                  }
+                }
 
                 return (
-                  <div
+                  <article
                     key={r.id}
-                    onClick={() => isPaired && router.push(`/rivalry/${r.id}`)}
-                    className={`bg-white rounded-[2.5rem] p-8 shadow-sm border-2 transition-all ${
-                      isPaired
-                        ? "border-primary/20 hover:border-primary hover:scale-[1.02] cursor-pointer"
-                        : "border-surface-container"
-                    }`}
+                    className="relative overflow-hidden rounded-[2.75rem] bg-white border border-surface-container shadow-sm p-8 space-y-8"
                   >
-                    {/* Status badge */}
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="absolute inset-x-6 top-0 h-20 bg-gradient-to-r from-primary-container/35 via-transparent to-secondary-container/30 blur-3xl pointer-events-none" />
+
+                    <div className="relative flex items-start justify-between gap-4">
                       <div
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${
-                          isPaired
-                            ? "bg-primary-container text-on-primary-container"
-                            : "bg-surface-container-high text-on-surface-variant"
+                        className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.22em] ${badgeClassName}`}
+                      >
+                        {badgeLabel}
+                      </div>
+                      <button
+                        onClick={() => router.push(`/rivalry/${r.id}`)}
+                        className="text-sm font-bold text-on-surface-variant hover:text-primary transition-colors"
+                      >
+                        Dashboard
+                      </button>
+                    </div>
+
+                    <div className="relative space-y-4 text-center">
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-primary-container text-primary flex items-center justify-center text-2xl font-black shadow-md">
+                          {profileLetter}
+                        </div>
+                        <div className="text-2xl font-black italic text-on-surface-variant/35">
+                          VS
+                        </div>
+                        <div
+                          className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-md ${
+                            isPaired
+                              ? "bg-secondary-container text-secondary"
+                              : "bg-surface-container text-on-surface-variant"
+                          }`}
+                        >
+                          {isPaired ? getDisplayInitial(rivalName, "R") : "?"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-3xl font-black text-on-surface tracking-tight">
+                          {isPaired ? `vs ${rivalName}` : "Waiting for rival"}
+                        </h3>
+                        <p className="text-on-surface-variant text-lg">
+                          {targetLang} • Round {roundNumber}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[2rem] border border-surface-container bg-surface-container-lowest p-6 text-center space-y-3">
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                        {panelTitle}
+                      </p>
+                      <div
+                        className={`font-black tracking-tight ${
+                          activeRound?.status === "countdown"
+                            ? "text-4xl md:text-[2.6rem] text-primary"
+                            : "text-2xl text-on-surface"
                         }`}
                       >
-                        {isPaired ? `Round ${r.current_round_num}` : "Waiting for rival..."}
+                        {panelValue}
                       </div>
+                      <p className="text-sm text-on-surface-variant leading-relaxed">
+                        {panelHint}
+                      </p>
+
+                      {activeRound?.status === "confirming" && (
+                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              myConfirmed
+                                ? "bg-primary-container text-on-primary-container"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {myConfirmed ? "You confirmed" : "You pending"}
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              rivalConfirmed
+                                ? "bg-secondary-container text-on-secondary-container"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {rivalConfirmed ? "Rival confirmed" : "Rival pending"}
+                          </span>
+                        </div>
+                      )}
+
+                      {activeRound?.status === "exam_ready" && (
+                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              myReady
+                                ? "bg-primary-container text-on-primary-container"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {myReady ? "You ready" : "You pending"}
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              rivalReady
+                                ? "bg-secondary-container text-on-secondary-container"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {rivalReady ? "Rival ready" : "Rival pending"}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Players */}
-                    <div className="flex flex-col items-center text-center mb-6">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center text-primary font-black text-xl border-2 border-white shadow-md">
-                          {isPlayerA ? "A" : "B"}
-                        </div>
-                        <div className="text-xl font-black italic text-surface-container-highest">VS</div>
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-xl border-2 border-white shadow-md ${
-                          isPaired
-                            ? "bg-secondary-container text-secondary"
-                            : "bg-surface-container text-on-surface-variant"
-                        }`}>
-                          {isPaired ? (isPlayerA ? "B" : "A") : "?"}
-                        </div>
-                      </div>
-                      <p className="text-on-surface-variant font-medium">{lang} • {isPaired ? "Active" : "Pending"}</p>
-                    </div>
-
-                    {/* Invite code (for unpaired) */}
-                    {!isPaired && isPlayerA && (
-                      <div className="bg-surface-container-lowest rounded-2xl p-4 text-center border border-surface-container">
-                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                          Share this code
-                        </p>
-                        <p className="text-2xl font-black text-primary tracking-[0.3em] font-mono">
-                          {r.invite_code}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Enter button (for paired) */}
-                    {isPaired && (
-                      <div className="flex items-center justify-center gap-2 text-primary font-bold">
-                        Enter Rivalry <ArrowRight size={18} />
-                      </div>
-                    )}
-                  </div>
+                    <button
+                      onClick={action}
+                      className={`w-full py-4 rounded-[1.75rem] font-black text-lg transition-all ${actionClassName}`}
+                    >
+                      {copiedInviteId === r.id ? "Code Copied" : actionLabel}
+                    </button>
+                  </article>
                 );
               })}
+
+              {rivalries.length < 2 && (
+                <article className="rounded-[2.75rem] border-2 border-dashed border-surface-container-high bg-white/70 p-8 flex flex-col items-center justify-center text-center min-h-[28rem]">
+                  <div className="w-24 h-24 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant shadow-inner mb-8">
+                    <Plus size={42} />
+                  </div>
+                  <div className="space-y-3 max-w-sm">
+                    <h3 className="text-3xl font-black text-on-surface tracking-tight">
+                      Start New Rivalry
+                    </h3>
+                    <p className="text-on-surface-variant text-lg leading-relaxed">
+                      Challenge another friend and add a fresh duel to your lounge.
+                    </p>
+                  </div>
+                  <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                    <button
+                      onClick={() => {
+                        setShowCreate(true);
+                        setCreatedCode("");
+                        setCreateError("");
+                      }}
+                      className="flex-1 bg-primary text-on-primary py-4 rounded-[1.5rem] font-black text-base hover:scale-[1.01] active:scale-[0.99] transition-all"
+                    >
+                      Create
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowJoin(true);
+                        setJoinError("");
+                        setJoinCode("");
+                      }}
+                      className="flex-1 bg-white text-on-surface border border-surface-container py-4 rounded-[1.5rem] font-black text-base hover:scale-[1.01] active:scale-[0.99] transition-all"
+                    >
+                      Join with Code
+                    </button>
+                  </div>
+                </article>
+              )}
             </div>
           </div>
         )}

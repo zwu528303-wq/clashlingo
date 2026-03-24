@@ -23,6 +23,9 @@ Date: 2026-03-24
   - `Lounge`, `RivalryDashboard`, `Scopes`, `Settings`, `RoundPage`, `ExamPage`, `ResultsPage`
   - `app/api/generate-syllabus`, `app/api/generate-exam`, `app/rivalry/[id]/new-round/page.tsx`
   - `app/layout.tsx` now uses `next/font/google` for `Plus Jakarta Sans`
+- Rebuilt the lounge as a rivalry-card control surface.
+  - Rival cards now show rival identity, round number, target language, current status, and countdown / action panels
+  - The lounge includes an in-grid "Start New Rivalry" card when the user is below the 2-rivalry limit
 
 ## What Was Verified
 
@@ -43,10 +46,9 @@ Date: 2026-03-24
 
 ## Recommended Next Task
 
-1. Move the countdown and match-status experience onto lounge rivalry cards.
-2. Align the UX copy and interaction model with the approved soft-countdown rule.
-3. Group scopes by target language when rivals study different languages.
-4. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
+1. Align the UX copy and interaction model with the approved soft-countdown rule.
+2. Group scopes by target language when rivals study different languages.
+3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order
 
