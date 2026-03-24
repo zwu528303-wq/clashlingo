@@ -28,7 +28,9 @@ Date: 2026-03-24
   - The lounge includes an in-grid "Start New Rivalry" card when the user is below the 2-rivalry limit
 - Added weekly rhythm countdowns to paired lounge cards.
   - Even before a round hits the real `countdown` status, rivalry cards now show the weekly countdown timer from the lounge itself.
-  - The remaining soft-countdown gap is the actual "both players can start early" behavior, not countdown visibility.
+- Finished the behavioral side of soft-countdown in the round flow.
+  - During the `countdown` phase, both players can now mark ready and start the exam early.
+  - If the timer finishes first, the existing `exam_ready` sync flow still takes over.
 
 ## What Was Verified
 
@@ -49,8 +51,8 @@ Date: 2026-03-24
 
 ## Recommended Next Task
 
-1. Finish the behavioral side of the approved soft-countdown rule.
-2. Group scopes by target language when rivals study different languages.
+1. Group scopes by target language when rivals study different languages.
+2. Polish remaining round-flow copy so "countdown as rhythm, not lock" reads consistently.
 3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order

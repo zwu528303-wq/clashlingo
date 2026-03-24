@@ -98,7 +98,7 @@ Observed status values:
 - Rivalry dashboard and round list
 - New round flow with topic, study days, and optional prize/stake
 - AI syllabus generation and confirmation flow
-- Round countdown UI and exam-ready ready-up flow
+- Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
 - Results UI exists in `components/ResultsPage.tsx`
@@ -118,12 +118,11 @@ Ran on 2026-03-24:
 - There is no committed `.env.example`.
 - There are no checked-in Supabase migrations or schema notes, so local setup still depends on external context.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
-- The lounge now shows both weekly rhythm countdowns and round status panels, but the approved mutual early-start behavior is not fully aligned across all screens yet.
 - `/scopes` is visible and functional, but it does not yet classify scopes by target language when two rivals learn different languages.
 
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize soft-countdown UX alignment and `/scopes` language grouping next.
+- Prioritize `/scopes` language grouping next, then continue polishing the round flow copy where needed.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, document the Supabase schema and add an `.env.example`.

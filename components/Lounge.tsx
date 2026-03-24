@@ -636,8 +636,8 @@ export default function Lounge() {
                     panelTitle = "Exam unlocks in";
                     panelValue = countdownText;
                     panelHint = activeRound.topic
-                      ? `${activeRound.topic} · keep studying until the exam unlocks.`
-                      : "Keep studying until the exam unlocks.";
+                      ? `${activeRound.topic} · keep studying, or both tap ready inside the round to start early.`
+                      : "Keep studying, or both tap ready inside the round to start early.";
                     actionLabel = "Open Study Round";
                   } else if (activeRound.status === "exam_ready") {
                     panelTitle = "Ready check";
@@ -750,6 +750,29 @@ export default function Lounge() {
                             }`}
                           >
                             {rivalConfirmed ? "Rival confirmed" : "Rival pending"}
+                          </span>
+                        </div>
+                      )}
+
+                      {activeRound?.status === "countdown" && (
+                        <div className="flex flex-wrap justify-center gap-2 pt-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              myReady
+                                ? "bg-primary-container text-on-primary-container"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {myReady ? "You ready now" : "You still studying"}
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              rivalReady
+                                ? "bg-secondary-container text-on-secondary-container"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {rivalReady ? "Rival ready now" : "Rival still studying"}
                           </span>
                         </div>
                       )}

@@ -59,6 +59,7 @@ export default function RoundPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [syllabusError, setSyllabusError] = useState("");
+  const [actionError, setActionError] = useState("");
   const examGenerationTriggered = useRef(false);
 
   // Countdown
@@ -166,6 +167,7 @@ export default function RoundPage() {
   const handleConfirm = async () => {
     if (!round || !userId) return;
     setActionLoading(true);
+    setActionError("");
 
     const field = isPlayerA ? "player_a_confirmed" : "player_b_confirmed";
     await supabase.from("rounds").update({ [field]: true }).eq("id", round.id);
@@ -200,7 +202,86 @@ export default function RoundPage() {
 
   const myConfirmed = isPlayerA ? round?.player_a_confirmed : round?.player_b_confirmed;
   const rivalConfirmed = isPlayerA ? round?.player_b_confirmed : round?.player_a_confirmed;
+  const myExamReady = isPlayerA ? round?.player_a_exam_ready : round?.player_b_exam_ready;
+  const rivalExamReady = isPlayerA ? round?.player_b_exam_ready : round?.player_a_exam_ready;
   const syllabus = round?.syllabus;
+
+  const handleExamReady = async () => {
+    if (!round || !userId) return;
+
+    setActionLoading(true);
+    setActionError("");
+
+    const field = isPlayerA ? "player_a_exam_ready" : "player_b_exam_ready";
+    const { error: readyError } = await supabase
+      .from("rounds")
+      .update({ [field]: true })
+      .eq("id", round.id);
+
+    if (readyError) {
+      setActionError(readyError.message || "Failed to save your ready state.");
+      setActionLoading(false);
+      return;
+    }
+
+    const { data: updated, error: updatedError } = await supabase
+      .from("rounds")
+      .select("status, player_a_exam_ready, player_b_exam_ready")
+      .eq("id", round.id)
+      .single<{
+        status: string;
+        player_a_exam_ready: boolean;
+        player_b_exam_ready: boolean;
+      }>();
+
+    if (updatedError || !updated) {
+      setActionError("Failed to refresh the latest ready state.");
+      await loadRound();
+      setActionLoading(false);
+      return;
+    }
+
+    const bothReady =
+      updated.player_a_exam_ready && updated.player_b_exam_ready;
+
+    if (bothReady) {
+      if (updated.status === "countdown") {
+        const examResponse = await fetch("/api/generate-exam", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roundId }),
+        });
+
+        if (!examResponse.ok) {
+          const payload = (await examResponse.json().catch(() => null)) as
+            | { error?: string }
+            | null;
+          setActionError(payload?.error || "Failed to unlock the exam early.");
+          await loadRound();
+          setActionLoading(false);
+          return;
+        }
+      }
+
+      const { error: liveError } = await supabase
+        .from("rounds")
+        .update({
+          status: "exam_live",
+          exam_started_at: new Date().toISOString(),
+        })
+        .eq("id", round.id);
+
+      if (liveError) {
+        setActionError(liveError.message || "Failed to start the exam.");
+        await loadRound();
+        setActionLoading(false);
+        return;
+      }
+    }
+
+    await loadRound();
+    setActionLoading(false);
+  };
 
   if (loading) {
     return (
@@ -480,13 +561,13 @@ export default function RoundPage() {
                 <span className="text-primary">{timeLeft || "..."}</span>
               </h1>
               <p className="text-on-surface-variant text-lg">
-                Study hard! The exam starts when the countdown ends.
+                This is your default study rhythm. If both players are ready, you can start the exam early.
               </p>
             </div>
             {actionLoading && (
               <div className="flex items-center gap-2 text-on-surface-variant font-medium">
                 <Loader2 size={20} className="animate-spin text-primary" />
-                Generating your exam...
+                Syncing the exam start...
               </div>
             )}
 
@@ -503,6 +584,60 @@ export default function RoundPage() {
                 Study using your preferred tools and methods. The syllabus tells you what to learn — how you learn is up to you.
               </p>
             </div>
+
+            <div className="bg-surface-container-low rounded-[2rem] p-8 shadow-sm space-y-6">
+              <div>
+                <h2 className="text-xl font-black text-on-surface mb-2">
+                  Start Early If You Both Want In
+                </h2>
+                <p className="text-on-surface-variant">
+                  Weekly timing is just the default rhythm. Tap ready here if you want to jump into the exam before the countdown ends.
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-12">
+                <div className="flex flex-col items-center gap-3">
+                  {myExamReady ? (
+                    <CheckCircle2 size={48} className="text-primary" />
+                  ) : (
+                    <Circle size={48} className="text-on-surface-variant/30" />
+                  )}
+                  <span className="font-bold text-on-surface">You</span>
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">
+                    {myExamReady ? "Ready Now" : "Still Studying"}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-3">
+                  {rivalExamReady ? (
+                    <CheckCircle2 size={48} className="text-secondary" />
+                  ) : (
+                    <Circle size={48} className="text-on-surface-variant/30" />
+                  )}
+                  <span className="font-bold text-on-surface">Rival</span>
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">
+                    {rivalExamReady ? "Ready Now" : "Still Studying"}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleExamReady}
+                disabled={actionLoading || myExamReady}
+                className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {actionLoading
+                  ? "Starting..."
+                  : myExamReady
+                    ? "Waiting for rival..."
+                    : "Ready to Start Early"}
+              </button>
+            </div>
+
+            {actionError && (
+              <div className="text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-2xl px-5 py-3">
+                {actionError}
+              </div>
+            )}
 
             {/* Prize */}
             {round.prize_text && (
@@ -525,7 +660,7 @@ export default function RoundPage() {
               Exam is Ready
             </h1>
             <p className="text-on-surface-variant text-lg">
-              Both players need to click Ready to start the exam at the same time.
+              The exam is unlocked. As soon as both players are ready, it goes live.
             </p>
 
             <div className="flex justify-center gap-12">
@@ -548,41 +683,24 @@ export default function RoundPage() {
             </div>
 
             <button
-              onClick={async () => {
-                setActionLoading(true);
-                const field = isPlayerA ? "player_a_exam_ready" : "player_b_exam_ready";
-                await supabase.from("rounds").update({ [field]: true }).eq("id", round.id);
-
-                const { data: updated } = await supabase
-                  .from("rounds")
-                  .select("player_a_exam_ready, player_b_exam_ready")
-                  .eq("id", round.id)
-                  .single();
-
-                if (updated?.player_a_exam_ready && updated?.player_b_exam_ready) {
-                  await supabase
-                    .from("rounds")
-                    .update({
-                      status: "exam_live",
-                      exam_started_at: new Date().toISOString(),
-                    })
-                    .eq("id", round.id);
-                }
-
-                await loadRound();
-                setActionLoading(false);
-              }}
-              disabled={actionLoading || (isPlayerA ? round.player_a_exam_ready : round.player_b_exam_ready)}
+              onClick={handleExamReady}
+              disabled={actionLoading || myExamReady}
               className="bg-primary text-on-primary py-5 px-12 rounded-full font-black text-xl shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2 size={24} className="animate-spin" />
-              ) : (isPlayerA ? round.player_a_exam_ready : round.player_b_exam_ready) ? (
+              ) : myExamReady ? (
                 "Waiting for rival..."
               ) : (
                 "Ready to Start"
               )}
             </button>
+
+            {actionError && (
+              <div className="text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-2xl px-5 py-3">
+                {actionError}
+              </div>
+            )}
           </div>
         )}
 
