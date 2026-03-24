@@ -7,6 +7,7 @@ This version has breaking changes - APIs, conventions, and file structure may al
 # ClashLingo Agent Handoff Rules
 
 Before making code changes:
+- Read `PROJECT_RULES.md` first.
 - Read `PROJECT_STATUS.md` first.
 - Read `TASK_QUEUE.md` next.
 - Read the latest `ClashLingo-Session-Summary.md` if it exists.
@@ -15,12 +16,14 @@ Before making code changes:
 - Prefer updating existing components in `components/` instead of rewriting routes from scratch.
 
 When finishing work:
+- Update `PROJECT_RULES.md` if approved product behavior changed.
 - Update `PROJECT_STATUS.md` if architecture, health, or known issues changed.
 - Update `TASK_QUEUE.md` if priorities changed or a task moved.
 - Refresh `ClashLingo-Session-Summary.md` with what was done, what is blocked, and what should happen next.
 - Run at least one verification command (`npm run lint` or `npm run build`) and record the real result.
 
 Current source of truth:
+- Product rules and intended behavior: `PROJECT_RULES.md`
 - Product status and architecture: `PROJECT_STATUS.md`
 - Prioritized backlog: `TASK_QUEUE.md`
 - Session-to-session baton pass: `ClashLingo-Session-Summary.md`

@@ -109,6 +109,6 @@ Lint failure themes:
 
 ## Notes For The Next Session
 
-- Start by reading this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
+- Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Re-run the full round flow manually after the exam route fix.
 - If you change infra assumptions, document the Supabase schema and add an `.env.example`.

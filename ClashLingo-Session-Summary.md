@@ -10,6 +10,7 @@ Date: 2026-03-24
   - `PROJECT_STATUS.md`
   - `TASK_QUEUE.md`
   - `ClashLingo-Session-Summary.md`
+- Added `PROJECT_RULES.md` as the product behavior source of truth.
 - Fixed `app/round/[id]/exam/page.tsx` so the exam route now renders `components/ExamPage.tsx`.
 
 ## What Was Verified
