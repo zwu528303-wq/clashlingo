@@ -13,8 +13,7 @@ const authClient = createClient(supabaseUrl, supabaseAnonKey);
 const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 function buildFallbackName(email?: string | null) {
-  const candidate = email?.split("@")[0]?.trim();
-  return candidate ? candidate : "Language Warrior";
+  return "Language Warrior";
 }
 
 export async function POST(req: NextRequest) {

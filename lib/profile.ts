@@ -68,11 +68,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function buildFallbackName(
-  email?: string,
   fallback = "Language Warrior"
 ) {
-  const candidate = email?.split("@")[0]?.trim();
-  return candidate ? candidate : fallback;
+  return fallback;
+}
+
+export function looksLikeEmail(value?: string | null) {
+  if (typeof value !== "string") return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+export function resolveDisplayName(
+  value: unknown,
+  fallback = "Language Warrior"
+) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed && !looksLikeEmail(trimmed)) {
+      return trimmed;
+    }
+  }
+
+  return fallback;
 }
 
 export function getDisplayInitial(value?: string, fallback = "L") {
@@ -116,7 +133,7 @@ export function normalizeAvatarLetter(
   if (typeof value === "string" && value.trim()) {
     return value.trim().charAt(0).toUpperCase();
   }
-  return getDisplayInitial(displayName, getDisplayInitial(email, "L"));
+  return getDisplayInitial(displayName, "L");
 }
 
 export function getAvatarTheme(themeId?: string) {
@@ -138,10 +155,10 @@ export function getStableAvatarTheme(seed?: string | null) {
 export function getEditableProfileFromUser(user: User): EditableProfile {
   const metadata = isRecord(user.user_metadata) ? user.user_metadata : {};
   const email = user.email ?? "";
-  const displayNameCandidate =
-    typeof metadata.display_name === "string" && metadata.display_name.trim()
-      ? metadata.display_name.trim()
-      : buildFallbackName(email);
+  const displayNameCandidate = resolveDisplayName(
+    metadata.display_name,
+    buildFallbackName()
+  );
 
   return {
     displayName: displayNameCandidate,

@@ -23,6 +23,7 @@ import {
   getAvatarTheme,
   getEditableProfileFromUser,
   normalizeAvatarLetter,
+  resolveDisplayName,
 } from "@/lib/profile";
 
 interface Rivalry {
@@ -86,7 +87,10 @@ export default function Lounge() {
 
     const resolvedProfile: EditableProfile = {
       ...authProfile,
-      displayName: data?.display_name?.trim() || authProfile.displayName,
+      displayName: resolveDisplayName(
+        data?.display_name,
+        authProfile.displayName
+      ),
     };
 
     setProfile(resolvedProfile);

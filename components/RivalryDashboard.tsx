@@ -14,6 +14,7 @@ import {
   Check,
   Settings,
 } from "lucide-react";
+import { resolveDisplayName } from "@/lib/profile";
 
 interface Rivalry {
   id: string;
@@ -123,9 +124,7 @@ export default function RivalryDashboard() {
       .single();
 
     if (aData) {
-      setPlayerAName(
-        aData.display_name || aData.email?.split("@")[0] || "Player A"
-      );
+      setPlayerAName(resolveDisplayName(aData.display_name, "Player A"));
     }
 
     if (bId) {
@@ -136,9 +135,7 @@ export default function RivalryDashboard() {
         .single();
 
       if (bData) {
-        setPlayerBName(
-          bData.display_name || bData.email?.split("@")[0] || "Player B"
-        );
+        setPlayerBName(resolveDisplayName(bData.display_name, "Player B"));
       }
     }
   };

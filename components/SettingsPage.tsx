@@ -21,6 +21,7 @@ import {
   getDisplayInitial,
   getEditableProfileFromUser,
   normalizeAvatarLetter,
+  resolveDisplayName,
 } from "@/lib/profile";
 
 interface PublicUserRow {
@@ -60,7 +61,7 @@ export default function SettingsPage() {
         .maybeSingle<PublicUserRow>();
 
       const displayName =
-        publicUser?.display_name?.trim() || authProfile.displayName;
+        resolveDisplayName(publicUser?.display_name, authProfile.displayName);
 
       setProfile({
         ...authProfile,
@@ -84,9 +85,7 @@ export default function SettingsPage() {
     setMessage(null);
 
     const displayName =
-      profile.displayName.trim() ||
-      profile.email.split("@")[0] ||
-      "Language Warrior";
+      resolveDisplayName(profile.displayName);
     const avatarLetter = normalizeAvatarLetter(
       profile.avatarLetter,
       displayName,

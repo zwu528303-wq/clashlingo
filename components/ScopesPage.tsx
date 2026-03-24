@@ -10,6 +10,7 @@ import {
   ChevronUp,
   ArrowRight,
 } from "lucide-react";
+import { resolveDisplayName } from "@/lib/profile";
 
 interface ScopeRound {
   id: string;
@@ -86,7 +87,7 @@ export default function ScopesPage() {
         .in("id", uniqueRivalIds);
       if (profiles) {
         for (const p of profiles) {
-          nameMap[p.id] = p.display_name || p.email || "Rival";
+          nameMap[p.id] = resolveDisplayName(p.display_name, "Rival");
         }
       }
     }
