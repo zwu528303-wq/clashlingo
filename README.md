@@ -21,6 +21,7 @@ This UI-language setting is separate from the learning language and does not cha
 1. Sign in with email/password.
 2. Create or join a rivalry from `/lounge`.
 3. Start a new round with a topic and default study window.
+   One rivalry can only open one new round per rolling 24 hours.
 4. Generate a syllabus with `/api/generate-syllabus`.
 5. Both players confirm the scope.
 6. Follow the weekly countdown rhythm or start early together.
@@ -88,6 +89,7 @@ Supabase is the source of truth for auth and gameplay data.
 - Public/shared display identity is mirrored into the public `users` table.
 - Gameplay data lives in `rivalries`, `rounds`, `exams`, and `submissions`.
 - UI language is currently saved in Supabase Auth metadata as `website_language`.
+- New round creation now goes through `/api/create-round`, which enforces one new round per rivalry per rolling 24 hours.
 
 See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relationship notes.
 

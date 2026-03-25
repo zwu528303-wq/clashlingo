@@ -279,6 +279,10 @@ export const en = {
       `Ready for Round ${roundNumber}?`,
     readyForRoundDescription:
       "Start a new round whenever you want the next showdown.",
+    roundCooldownTitle: "Next round unlocks soon",
+    roundCooldownDescription: (time: string) =>
+      `This rivalry can only open one new round every 24 hours. The next round unlocks after ${time}.`,
+    roundCooldownButton: "Locked for now",
     continueRound: "Continue Round",
     startRound: "Start Round",
     winsLabel: "W / L",

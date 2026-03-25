@@ -215,6 +215,9 @@ export interface TranslationDictionary {
     liveRoundTitle: (roundNumber: number) => string;
     readyForRoundTitle: (roundNumber: number) => string;
     readyForRoundDescription: string;
+    roundCooldownTitle: string;
+    roundCooldownDescription: (time: string) => string;
+    roundCooldownButton: string;
     continueRound: string;
     startRound: string;
     winsLabel: string;

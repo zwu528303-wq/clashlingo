@@ -259,6 +259,10 @@ export const zhCN = {
     liveRoundTitle: (roundNumber: number) => `第 ${roundNumber} 轮正在进行`,
     readyForRoundTitle: (roundNumber: number) => `准备开始第 ${roundNumber} 轮？`,
     readyForRoundDescription: "只要你想，随时都可以开启下一轮 showdown。",
+    roundCooldownTitle: "下一轮很快就能开启",
+    roundCooldownDescription: (time: string) =>
+      `每段对战 24 小时内最多只能开启 1 轮。下一轮可在 ${time} 之后开启。`,
+    roundCooldownButton: "暂时锁定",
     continueRound: "继续这一轮",
     startRound: "开始新一轮",
     winsLabel: "胜 / 负",

@@ -44,6 +44,10 @@ Date: 2026-03-25
   - Rivalry Hub now supports a confirmed leave action.
   - Leaving preserves rivalry history, removes the rivalry from lounge, and blocks future rounds.
   - Leaving is blocked while any active round still exists.
+- Added a hard one-round-per-24-hours guard for each rivalry.
+  - New round creation now goes through `/api/create-round` instead of inserting directly from the client.
+  - The server blocks a new round if that rivalry already started one in the last rolling 24 hours.
+  - Rivalry Hub and the new-round page now show when the next round becomes available.
 - Cleaned lint issues across the active pages and supporting routes.
   - `Lounge`, `RivalryDashboard`, `Scopes`, `Settings`, `RoundPage`, `ExamPage`, `ResultsPage`
   - `app/api/generate-syllabus`, `app/api/generate-exam`, `app/rivalry/[id]/new-round/page.tsx`

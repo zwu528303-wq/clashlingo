@@ -85,10 +85,13 @@ When product behavior is ambiguous:
 - Matches operate on a weekly cadence.
 - Weekly matching time is no longer a hard gate for starting a match.
 - Weekly matching time is used only for countdown / reminder / anticipation UX.
+- Each rivalry can start at most one new round per rolling 24 hours.
+- This is a hard backend limit, not a soft UI suggestion.
 - Settings define the default weekly rhythm for newly created rivalries.
 - Each rivalry should then keep its own shared weekly countdown pulse for both players.
 - If both players click start, the match can begin immediately even if the weekly countdown has not completed.
 - The product should feel like "weekly rhythm with optional early mutual start", not "locked until the clock ends".
+- When the limit is hit, the UI should tell the user when the next round becomes available instead of failing silently.
 
 ### 3B. Language Level Rules
 
@@ -175,6 +178,7 @@ As of the latest reviewed state, the following product changes are already in th
 - lounge now uses rivalry cards as the main control surface
 - lounge, rivalries, scopes, and settings now share a sidebar navigation shell
 - paired lounge cards now show a weekly rhythm countdown even before a round reaches the actual study countdown
+- each rivalry is now limited to one newly created round per rolling 24 hours, enforced server-side
 - countdown rounds now allow both players to ready up and start the exam early before the timer expires
 - `/rivalries` now exists as a real hub route, while `/rivalry/[id]` remains a deep link into the same hub experience
 - lounge now routes rivalry-detail entry points toward the rivalry hub flow

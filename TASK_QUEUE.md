@@ -84,6 +84,10 @@ Last updated: 2026-03-25
   - `components/Lounge.tsx` now uses a more featured duel-card layout, stronger countdown panels, and a more designed `Start New Rivalry` card.
   - `components/RivalryDashboard.tsx` now uses a stronger hub-style VS hero, rivalry selector cards, richer history cards, and a clearer action/stats rail.
   - `components/AppSidebar.tsx` now matches the same visual language more closely.
+- Added a server-side one-round-per-24-hours guard for each rivalry.
+  - `/api/create-round` now owns new round creation instead of client-side inserts.
+  - The route blocks creation if a rivalry is inactive, if an active round still exists, or if a round was started in the last 24 hours.
+  - `Rivalries` and `new-round` now show when the next round becomes available.
 
 ## Highest Priority
 

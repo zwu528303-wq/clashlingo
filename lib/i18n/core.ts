@@ -78,3 +78,20 @@ export function formatWebsiteTime(
     minute: "2-digit",
   }).format(date);
 }
+
+export function formatWebsiteDateTime(
+  value: string,
+  language: WebsiteLanguage
+) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(language === "zh-CN" ? "zh-CN" : "en-US", {
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}

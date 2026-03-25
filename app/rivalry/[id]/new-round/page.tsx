@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import type { Rivalry } from "@/lib/domain-types";
+import { formatWebsiteDateTime, resolveClientWebsiteLanguage } from "@/lib/i18n";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
+import { getEditableProfileFromUser } from "@/lib/profile";
+import { getRoundCreationLockState } from "@/lib/round-creation";
 import { isRivalryInactive } from "@/lib/rivalry-ledger";
 import { ArrowLeft, Sparkles, Clock, Trophy, ArrowRight, Loader2 } from "lucide-react";
 
@@ -15,6 +18,12 @@ export default function NewRoundPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [rivalry, setRivalry] = useState<Rivalry | null>(null);
+  const [websiteLanguage, setWebsiteLanguage] = useState(
+    resolveClientWebsiteLanguage()
+  );
+  const [latestRoundCreatedAt, setLatestRoundCreatedAt] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<{
@@ -43,6 +52,7 @@ export default function NewRoundPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUserId(user.id);
+      setWebsiteLanguage(getEditableProfileFromUser(user).websiteLanguage);
 
       const { data } = await supabase
         .from("rivalries")
@@ -55,13 +65,39 @@ export default function NewRoundPage() {
         return;
       }
       setRivalry(data);
+
+      const { data: latestRound } = await supabase
+        .from("rounds")
+        .select("created_at")
+        .eq("rivalry_id", rivalryId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ created_at: string }>();
+
+      setLatestRoundCreatedAt(latestRound?.created_at ?? null);
       setLoading(false);
     };
     init();
   }, [router, rivalryId]);
 
+  const roundCreationLock = getRoundCreationLockState(latestRoundCreatedAt);
+  const nextRoundAvailableText = roundCreationLock.nextAvailableAt
+    ? formatWebsiteDateTime(roundCreationLock.nextAvailableAt, websiteLanguage)
+    : null;
+
   const handleCreate = async () => {
     if (!userId || !rivalry || !topic.trim()) return;
+
+    if (roundCreationLock.isLocked) {
+      setMessage({
+        type: "error",
+        text: nextRoundAvailableText
+          ? `This rivalry can start the next round after ${nextRoundAvailableText}.`
+          : "This rivalry already started a round in the last 24 hours.",
+      });
+      return;
+    }
+
     setCreating(true);
     setMessage(null);
 
@@ -74,40 +110,64 @@ export default function NewRoundPage() {
       return;
     }
 
-    const newRoundNumber = rivalry.current_round_num + 1;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    // Create round
-    const { data: round, error } = await supabase
-      .from("rounds")
-      .insert({
-        rivalry_id: rivalryId,
-        round_number: newRoundNumber,
-        target_lang: (newRoundNumber % 2 === 1) ? rivalry.player_a_lang : (rivalry.player_b_lang || rivalry.player_a_lang),
-        topic: topic.trim(),
-        study_days: studyDays,
-        prize_text: prize.trim() || null,
-        status: "topic_selection",
-      })
-      .select()
-      .single();
-
-    if (error) {
+    if (!session?.access_token) {
       setMessage({
         type: "error",
-        text: error.message || "Failed to create round.",
+        text: "Your session expired. Please sign in again.",
       });
       setCreating(false);
       return;
     }
 
-    // Update rivalry current_round_num
-    await supabase
-      .from("rivalries")
-      .update({ current_round_num: newRoundNumber })
-      .eq("id", rivalryId);
+    const response = await fetch("/api/create-round", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        rivalryId,
+        topic: topic.trim(),
+        studyDays,
+        prizeText: prize.trim() || null,
+      }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | {
+          error?: string;
+          code?: string;
+          nextAvailableAt?: string | null;
+          latestRoundCreatedAt?: string | null;
+          round?: { id: string };
+        }
+      | null;
+
+    if (!response.ok || !payload?.round) {
+      if (payload?.code === "ROUND_CREATION_COOLDOWN") {
+        setLatestRoundCreatedAt(payload.latestRoundCreatedAt ?? latestRoundCreatedAt);
+      }
+
+      setMessage({
+        type: "error",
+        text:
+          payload?.code === "ROUND_CREATION_COOLDOWN" && payload.nextAvailableAt
+            ? `This rivalry can start the next round after ${formatWebsiteDateTime(
+                payload.nextAvailableAt,
+                websiteLanguage
+              )}.`
+            : payload?.error || "Failed to create round.",
+      });
+      setCreating(false);
+      return;
+    }
 
     // Navigate to the round page
-    router.push(`/round/${round.id}`);
+    router.push(`/round/${payload.round.id}`);
   };
 
   if (loading) {
@@ -154,6 +214,15 @@ export default function NewRoundPage() {
             </p>
           )}
         </div>
+
+        {roundCreationLock.isLocked && nextRoundAvailableText && (
+          <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
+            <div className="font-bold">One round per rivalry every 24 hours.</div>
+            <div className="mt-1 text-sm font-medium">
+              You can open the next round after {nextRoundAvailableText}.
+            </div>
+          </div>
+        )}
 
         {/* Topic Selection */}
         <section className="space-y-4">
@@ -238,7 +307,7 @@ export default function NewRoundPage() {
         {/* Submit */}
         <button
           onClick={handleCreate}
-          disabled={creating || !topic.trim()}
+          disabled={creating || !topic.trim() || roundCreationLock.isLocked}
           className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
         >
           {creating ? (

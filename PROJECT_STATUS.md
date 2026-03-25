@@ -41,6 +41,12 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 
 ## Server Endpoints
 
+- `/api/create-round`
+  - validates the signed-in user on the server
+  - blocks new round creation if the rivalry is inactive
+  - blocks new round creation if any active round still exists
+  - blocks new round creation if the rivalry already started a round in the last 24 hours
+  - inserts the round and updates `rivalries.current_round_num`
 - `/api/generate-syllabus`
   - uses Anthropic to generate a syllabus from topic + target language
   - writes syllabus into `rounds.syllabus`
@@ -137,6 +143,9 @@ Observed status values:
 - Lounge and rivalry surfaces now read shared avatar letter/color from the public identity layer instead of inventing rival avatars locally
 - Weekly time in settings now acts as the default for new rivalries, while each rivalry keeps its own shared weekly countdown pulse
 - Lounge countdown cards now use rivalry-shared weekly rhythm data instead of per-viewer-only timing
+- Each rivalry can now start at most one new round per rolling 24 hours
+- New round creation is now enforced server-side through `/api/create-round`
+- Rivalry Hub and the new-round page now show when the next round becomes available if the 24-hour limit is active
 - Users can now leave a rivalry from the rivalry hub when no active round exists
 - Leaving a rivalry now preserves history, hides that rivalry from lounge, and blocks future rounds
 - Rivalry dashboard and round list
@@ -172,6 +181,7 @@ Ran on 2026-03-24:
   - `ResultsPage`
   - some API-returned status/error strings
   still need a second translation pass if full bilingual coverage becomes a priority.
+- The 24-hour new-round limit currently shows a localized frontend hint in `Rivalries`, but `app/rivalry/[id]/new-round/page.tsx` itself is still part of the untranslated second batch.
 
 ## Notes For The Next Session
 
@@ -182,6 +192,10 @@ Ran on 2026-03-24:
   - Preserve history.
   - Keep inactive rivalries out of lounge.
   - Do not let new rounds start once a rivalry is inactive.
+- Preserve the new round cadence guard.
+  - It is a rolling 24-hour limit per rivalry.
+  - It is enforced server-side by `/api/create-round`.
+  - Frontend copy should show the next available time when possible.
 - Language level is now a shipped product rule. Preserve the current split:
   - `Settings` stores the user's default level
   - `rivalries.player_a_difficulty / player_b_difficulty` store per-rivalry levels

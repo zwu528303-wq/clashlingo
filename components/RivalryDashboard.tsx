@@ -22,6 +22,7 @@ import {
   Trophy,
 } from "lucide-react";
 import {
+  formatWebsiteDateTime,
   getDictionary,
   getLocalizedLearningLanguageLabel,
   getLocalizedRoundStatusLabel,
@@ -44,6 +45,7 @@ import {
   parsePublicAvatarValue,
   resolveDisplayName,
 } from "@/lib/profile";
+import { getRoundCreationLockState } from "@/lib/round-creation";
 import { isRivalryInactive } from "@/lib/rivalry-ledger";
 
 interface RivalPublicProfile {
@@ -254,6 +256,11 @@ export default function RivalryDashboard() {
   const completedRounds = selectedRounds.filter(
     (round) => round.status === "completed"
   );
+  const latestRoundCreatedAt = selectedRounds[0]?.created_at ?? null;
+  const roundCreationLock = getRoundCreationLockState(latestRoundCreatedAt);
+  const nextRoundAvailableText = roundCreationLock.nextAvailableAt
+    ? formatWebsiteDateTime(roundCreationLock.nextAvailableAt, websiteLanguage)
+    : null;
 
   const isPlayerA = selectedRivalry?.player_a_id === userId;
   const rivalId = isPlayerA
@@ -846,6 +853,25 @@ export default function RivalryDashboard() {
                               >
                                 {dictionary.rivalries.continueRound}
                                 <ArrowRight size={20} />
+                              </button>
+                            </>
+                          ) : roundCreationLock.isLocked && nextRoundAvailableText ? (
+                            <>
+                              <div className="space-y-2">
+                                <h4 className="text-3xl font-black tracking-[-0.05em]">
+                                  {dictionary.rivalries.roundCooldownTitle}
+                                </h4>
+                                <p className="text-on-surface-variant text-sm px-4 font-medium leading-relaxed">
+                                  {dictionary.rivalries.roundCooldownDescription(
+                                    nextRoundAvailableText
+                                  )}
+                                </p>
+                              </div>
+                              <button
+                                disabled
+                                className="w-full bg-surface-container text-on-surface-variant py-5 rounded-full font-black text-lg cursor-not-allowed"
+                              >
+                                {dictionary.rivalries.roundCooldownButton}
                               </button>
                             </>
                           ) : (
