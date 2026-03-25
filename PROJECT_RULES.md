@@ -105,6 +105,7 @@ As of the latest reviewed state, the following product changes are already in th
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point
 - lounge now uses rivalry cards as the main control surface
+- lounge, scopes, and settings now share a sidebar navigation shell
 - paired lounge cards now show a weekly rhythm countdown even before a round reaches the actual study countdown
 - countdown rounds now allow both players to ready up and start the exam early before the timer expires
 - scopes now classify current and past scope cards by target language

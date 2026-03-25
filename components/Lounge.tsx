@@ -5,22 +5,19 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
-  BookOpen,
   Check,
   Copy,
-  LogOut,
   Plus,
-  Settings,
   Swords,
   UserPlus,
   X,
 } from "lucide-react";
+import AppSidebar from "@/components/AppSidebar";
 import {
   SUPPORTED_LANGUAGES,
   type EditableProfile,
   type SupportedLanguage,
   getDisplayInitial,
-  getAvatarTheme,
   getEditableProfileFromUser,
   normalizeAvatarLetter,
   resolveDisplayName,
@@ -420,12 +417,7 @@ export default function Lounge() {
     setTimeout(() => setCopiedInviteId((current) => (current === rivalryId ? null : current)), 2000);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="text-on-surface-variant font-medium">Loading...</div>
@@ -433,70 +425,27 @@ export default function Lounge() {
     );
   }
 
-  const avatarTheme = getAvatarTheme(profile?.avatarColor);
   const profileLetter = normalizeAvatarLetter(
-    profile?.avatarLetter,
-    profile?.displayName || ""
+    profile.avatarLetter,
+    profile.displayName
   );
 
   return (
     <div className="min-h-screen bg-surface">
-      {/* Header */}
-      <header className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center px-6 py-5 max-w-5xl mx-auto">
-        <div className="flex items-center gap-4">
-          <div
-            className={`w-14 h-14 rounded-[1.25rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-2xl font-black shadow-sm`}
-          >
-            {profileLetter}
-          </div>
+      <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
+        <AppSidebar active="lounge" profile={profile} />
+
+        <main className="space-y-8">
           <div>
-            <h1 className="text-2xl font-black text-primary tracking-tighter">
-              ClashLingo
-            </h1>
-            <p className="text-sm text-on-surface-variant font-medium">
-              {profile?.displayName || "Language Warrior"} ·{" "}
-              {profile?.preferredLanguage || SUPPORTED_LANGUAGES[0]} learner
-            </p>
-            <p className="text-xs text-on-surface-variant/70 font-medium">
-              Weekly match time {profile?.weeklyMatchTime || "19:00"}
+            <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
+              Your Lounge
+            </h2>
+            <p className="text-on-surface-variant text-lg">
+              Ready to crush some dreams today?
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/scopes")}
-            className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
-          >
-            <BookOpen size={16} />
-            Scopes
-          </button>
-          <button
-            onClick={() => router.push("/settings")}
-            className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
-          >
-            <Settings size={16} />
-            Settings
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium"
-          >
-            <LogOut size={18} />
-            Log out
-          </button>
-        </div>
-      </header>
 
-      <div className="max-w-5xl mx-auto px-6 pb-10 space-y-8">
-        {/* Welcome */}
-        <div>
-          <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
-            Your Lounge
-          </h2>
-          <p className="text-on-surface-variant text-lg">Ready to crush some dreams today?</p>
-        </div>
-
-        {rivalries.length === 0 ? (
+          {rivalries.length === 0 ? (
           /* ========== Empty State ========== */
           <div className="bg-surface-container-low rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[50vh] relative overflow-hidden">
             <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-primary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
@@ -532,7 +481,7 @@ export default function Lounge() {
               </div>
             </div>
           </div>
-        ) : (
+          ) : (
           /* ========== Rivalry Cards ========== */
           <div className="space-y-5">
             {rivalries.length >= 2 && (
@@ -864,7 +813,8 @@ export default function Lounge() {
               )}
             </div>
           </div>
-        )}
+          )}
+        </main>
       </div>
 
       {/* ========== Create Modal ========== */}

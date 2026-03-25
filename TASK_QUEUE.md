@@ -34,6 +34,9 @@ Last updated: 2026-03-24
   - `study_days` is now framed in the UI as a default study window instead of a hard lock.
   - Weekly time is described as a lounge rhythm, not a round gate.
   - Realtime opponent exam progress is explicitly out of scope for the current MVP.
+- Moved `Scopes` and `Settings` into a shared sidebar shell.
+  - Lounge, scopes, and settings now share the same left-side navigation and profile block.
+  - The old top-row `Scopes / Settings / Log out` navigation on lounge has been folded into the sidebar.
 
 ## Highest Priority
 

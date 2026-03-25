@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
-  ArrowLeft,
   BookOpen,
   ChevronDown,
   ChevronUp,
   ArrowRight,
 } from "lucide-react";
-import { SUPPORTED_LANGUAGES, resolveDisplayName } from "@/lib/profile";
+import AppSidebar from "@/components/AppSidebar";
+import {
+  SUPPORTED_LANGUAGES,
+  type EditableProfile,
+  getEditableProfileFromUser,
+  resolveDisplayName,
+} from "@/lib/profile";
 
 interface ScopeSyllabus {
   can_do?: string[];
@@ -87,9 +93,24 @@ function groupScopesByLanguage(scopes: ScopeRound[]) {
 
 export default function ScopesPage() {
   const router = useRouter();
+  const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [scopes, setScopes] = useState<ScopeRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  async function loadCurrentProfile(user: User) {
+    const authProfile = getEditableProfileFromUser(user);
+    const { data } = await supabase
+      .from("users")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle<{ display_name: string | null }>();
+
+    setProfile({
+      ...authProfile,
+      displayName: resolveDisplayName(data?.display_name, authProfile.displayName),
+    });
+  }
 
   async function loadScopes(uid: string) {
     // Fetch all rivalries the user belongs to
@@ -158,6 +179,7 @@ export default function ScopesPage() {
         router.push("/login");
         return;
       }
+      await loadCurrentProfile(user);
       await loadScopes(user.id);
       setLoading(false);
     };
@@ -238,7 +260,7 @@ export default function ScopesPage() {
     );
   };
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#953f4d] border-t-transparent rounded-full animate-spin" />
@@ -247,24 +269,23 @@ export default function ScopesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button
-            onClick={() => router.push("/lounge")}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-[#953f4d]" />
-            <h1 className="text-xl font-bold text-gray-900">Exam Scopes</h1>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-surface">
+      <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
+        <AppSidebar active="scopes" profile={profile} />
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+        <main className="max-w-3xl space-y-8">
+          <div className="flex items-center gap-3">
+            <BookOpen className="w-6 h-6 text-primary" />
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-on-surface tracking-tight">
+                Exam Scopes
+              </h1>
+              <p className="text-on-surface-variant mt-1">
+                Review what is in play right now and what you have already conquered.
+              </p>
+            </div>
+          </div>
+
         {/* Current Scope */}
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Current Scopes</h2>
@@ -413,6 +434,7 @@ export default function ScopesPage() {
             </div>
           )}
         </section>
+        </main>
       </div>
     </div>
   );

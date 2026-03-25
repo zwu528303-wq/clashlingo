@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
-  ArrowLeft,
   Clock3,
   Palette,
   Save,
   Sparkles,
   UserRound,
 } from "lucide-react";
+import AppSidebar from "@/components/AppSidebar";
 import { supabase } from "@/lib/supabase";
 import {
   AVATAR_THEMES,
@@ -175,21 +175,11 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto">
-        <button
-          onClick={() => router.push("/lounge")}
-          className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
-        >
-          <ArrowLeft size={20} />
-          Back to Lounge
-        </button>
-        <div className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">
-          Settings
-        </div>
-      </header>
+      <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
+        <AppSidebar active="settings" profile={profile} />
 
-      <div className="max-w-5xl mx-auto px-6 pb-12 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
-        <section className="bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
+        <main className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8">
+          <section className="bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
               Your Identity
@@ -375,9 +365,9 @@ export default function SettingsPage() {
               </>
             )}
           </button>
-        </section>
+          </section>
 
-        <aside className="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-6 h-fit">
+          <aside className="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-6 h-fit">
           <div className="flex items-center gap-3">
             <div
               className={`w-16 h-16 rounded-[1.5rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-3xl font-black shadow-sm`}
@@ -434,7 +424,8 @@ export default function SettingsPage() {
               <li>Weekly time shapes lounge countdowns, not round locks</li>
             </ul>
           </div>
-        </aside>
+          </aside>
+        </main>
       </div>
     </div>
   );
