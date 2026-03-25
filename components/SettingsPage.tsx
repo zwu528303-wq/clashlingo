@@ -269,7 +269,7 @@ export default function SettingsPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-full ${theme.avatarClassName} flex items-center justify-center font-black`}
+                        className={`w-10 h-10 shrink-0 rounded-full ${theme.avatarClassName} flex items-center justify-center font-black`}
                       >
                         {normalizeAvatarLetter(
                           profile.avatarLetter,
@@ -279,7 +279,7 @@ export default function SettingsPage() {
                       <div>
                         <p className="font-bold text-on-surface">{theme.label}</p>
                         <div
-                          className={`w-6 h-6 rounded-full mt-1 ${theme.swatchClassName}`}
+                          className={`w-6 h-6 shrink-0 rounded-full mt-1 ${theme.swatchClassName}`}
                         />
                       </div>
                     </div>
