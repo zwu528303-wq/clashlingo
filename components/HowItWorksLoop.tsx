@@ -72,10 +72,12 @@ function StepCard({
   index,
   step,
   compact,
+  className = "",
 }: {
   index: number;
   step: LoopStep;
   compact: boolean;
+  className?: string;
 }) {
   const tone = getStepTone(index);
 
@@ -83,7 +85,7 @@ function StepCard({
     <div
       className={`rounded-[1.8rem] border bg-white/92 px-5 py-4 shadow-[0_16px_30px_rgba(48,46,43,0.05)] ${tone.borderClassName} ${
         compact ? "max-w-[15rem]" : "max-w-[16.5rem]"
-      }`}
+      } ${className}`}
     >
       <div
         className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${tone.badgeClassName}`}
@@ -153,8 +155,42 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
         ))}
       </div>
 
+      {compact ? (
+        <div className="hidden lg:block rounded-[2.2rem] border border-white/80 bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low px-6 py-6 shadow-[0_20px_45px_rgba(149,63,77,0.08)] space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-[1rem] bg-primary-container text-primary flex items-center justify-center shrink-0">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
+                Weekly Loop
+              </p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">
+                The same round cycle repeats inside each rivalry.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {WEEKLY_LOOP_STEPS.map((step, index) => (
+              <StepCard
+                key={step.key}
+                index={index}
+                step={step}
+                compact={compact}
+                className="max-w-none h-full"
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="hidden lg:block">
-        <div className={`relative mx-auto ${compact ? "h-[37rem] max-w-[52rem]" : "h-[40rem] max-w-[58rem]"}`}>
+        <div
+          className={`relative mx-auto ${
+            compact ? "hidden" : "h-[40rem] max-w-[58rem]"
+          }`}
+        >
           <div className="absolute inset-[16%] rounded-full border border-dashed border-outline-variant/60 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.6),_transparent_70%)]" />
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-white/80 bg-white/88 px-6 py-5 text-center shadow-[0_20px_45px_rgba(149,63,77,0.08)] max-w-[14rem]">
