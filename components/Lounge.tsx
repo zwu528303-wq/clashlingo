@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import type { Rivalry, Round } from "@/lib/domain-types";
+import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
 import { getSharedWeeklyMatchTime, setSharedWeeklyMatchTime } from "@/lib/rivalry-ledger";
 import {
   DEFAULT_WEEKLY_MATCH_TIME,
@@ -382,7 +383,8 @@ export default function Lounge() {
       player_a_id: userId,
       invite_code: code,
       player_a_lang: myLang,
-      player_a_difficulty: "beginner",
+      player_a_difficulty:
+        profile?.defaultLanguageLevel || DEFAULT_LANGUAGE_LEVEL,
       cumulative_ledger: setSharedWeeklyMatchTime(
         null,
         profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
@@ -396,7 +398,8 @@ export default function Lounge() {
         player_a_id: userId,
         invite_code: retryCode,
         player_a_lang: myLang,
-        player_a_difficulty: "beginner",
+        player_a_difficulty:
+          profile?.defaultLanguageLevel || DEFAULT_LANGUAGE_LEVEL,
         cumulative_ledger: setSharedWeeklyMatchTime(
           null,
           profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
@@ -462,7 +465,8 @@ export default function Lounge() {
       .update({
         player_b_id: userId,
         player_b_lang: joinLang, // dif language for now
-        player_b_difficulty: "beginner",
+        player_b_difficulty:
+          profile?.defaultLanguageLevel || DEFAULT_LANGUAGE_LEVEL,
       })
       .eq("id", data.id);
 

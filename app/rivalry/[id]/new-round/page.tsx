@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import type { Rivalry } from "@/lib/domain-types";
+import { resolveRoundLanguageLevel } from "@/lib/language-level";
 import { ArrowLeft, Sparkles, Clock, Trophy, ArrowRight, Loader2 } from "lucide-react";
 
 export default function NewRoundPage() {
@@ -107,6 +108,14 @@ export default function NewRoundPage() {
     );
   }
 
+  const nextRoundNumber = (rivalry?.current_round_num ?? 0) + 1;
+  const targetLanguage = rivalry
+    ? nextRoundNumber % 2 === 1
+      ? rivalry.player_a_lang
+      : rivalry.player_b_lang || rivalry.player_a_lang
+    : null;
+  const targetLevel = resolveRoundLanguageLevel(rivalry, targetLanguage);
+
   return (
     <div className="min-h-screen bg-surface">
       <header className="flex items-center px-6 py-5 max-w-3xl mx-auto">
@@ -127,6 +136,13 @@ export default function NewRoundPage() {
           <p className="text-on-surface-variant text-lg">
             Pick a topic, choose the default study window, and challenge your rival.
           </p>
+          {targetLanguage && (
+            <p className="text-sm text-on-surface-variant font-medium mt-3">
+              This round will target {targetLanguage} at{" "}
+              <span className="text-on-surface font-bold">{targetLevel}</span>{" "}
+              level.
+            </p>
+          )}
         </div>
 
         {/* Topic Selection */}

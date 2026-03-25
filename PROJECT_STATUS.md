@@ -30,7 +30,7 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 - `/login` - auth UI (`components/Login.tsx`)
 - `/lounge` - countdown-first control surface for active rivalries, create rivalry, and join by invite code (`components/Lounge.tsx`)
 - `/rivalries` - rivalry hub with rivalry selection, W/L, streak, and match history (`components/RivalryDashboard.tsx`)
-- `/settings` - user profile and weekly preference settings (`components/SettingsPage.tsx`)
+- `/settings` - user profile, default language level, and weekly preference settings (`components/SettingsPage.tsx`)
 - `/rivalry/[id]` - deep link into the same rivalry hub component used by `/rivalries`
 - `/rivalry/[id]/new-round` - create a new round
 - `/round/[id]` - round lifecycle page (`components/RoundPage.tsx`)
@@ -97,6 +97,8 @@ Observed status values:
 - Email/password sign-up and sign-in through Supabase
 - Sign-up now asks for `Display Nickname` up front and writes it into auth metadata during account creation
 - Lounge UI for creating a rivalry and joining by invite code
+- Settings page now supports a four-tier default language level: `Beginner`, `Elementary`, `Intermediate`, `Advanced`
+- Create/join rivalry now writes each player's default level into `player_a_difficulty` / `player_b_difficulty`
 - Lounge now presents rivalries as status cards with countdown / action panels
 - Lounge now keeps a weekly rhythm countdown visible on paired rivalry cards, even before a round reaches the actual study-countdown state
 - Lounge, rivalries, scopes, and settings now share a sidebar navigation shell
@@ -106,7 +108,8 @@ Observed status values:
 - Lounge and Rivalries now have a first-pass fused visual language inspired by the approved AI Studio reference.
   - Lounge uses a more featured duel-card layout and stronger countdown/action panels.
   - Rivalries uses a more explicit VS hero, rivalry selector cards, richer history rows, and a clearer action/stats column.
-- Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
+- Settings page for nickname, letter avatar, avatar color, default language, default language level, and weekly match time
+- Settings page now also stores `Default Language Level` in auth metadata
 - Settings save now syncs public nickname + letter avatar + avatar color server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
 - Lounge and rivalry surfaces now read shared avatar letter/color from the public identity layer instead of inventing rival avatars locally
@@ -115,6 +118,8 @@ Observed status values:
 - Rivalry dashboard and round list
 - New round flow with topic, default study window, and optional prize/stake
 - AI syllabus generation and confirmation flow
+- AI syllabus and exam generation now resolve the effective level server-side from the rivalry plus the round target language
+- If both players study the same language at different levels, AI generation now uses the lower of the two saved levels
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
@@ -143,6 +148,10 @@ Ran on 2026-03-24:
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
 - Shared avatar sync and rivalry-shared weekly rhythm are now shipped; if a later session touches them, preserve the public-identity/public-ledger split instead of moving those values back into viewer-local rendering.
+- Language level is now a shipped product rule. Preserve the current split:
+  - `Settings` stores the user's default level
+  - `rivalries.player_a_difficulty / player_b_difficulty` store per-rivalry levels
+  - AI routes resolve the effective round level server-side from `target_lang`
 - If you continue the UI pass, keep pushing the current `Lounge` vs `Rivalries` split instead of blending those two responsibilities together again.
 - Any follow-up lounge / rivalries edits should be visual polish only unless the product rules change again.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.

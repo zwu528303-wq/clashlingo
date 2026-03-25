@@ -1,4 +1,9 @@
 import type { User } from "@supabase/supabase-js";
+import {
+  DEFAULT_LANGUAGE_LEVEL,
+  type LanguageLevel,
+  normalizeLanguageLevel,
+} from "@/lib/language-level";
 
 export const SUPPORTED_LANGUAGES = [
   "French",
@@ -66,6 +71,7 @@ export interface EditableProfile {
   avatarLetter: string;
   avatarColor: string;
   preferredLanguage: SupportedLanguage;
+  defaultLanguageLevel: LanguageLevel;
   weeklyMatchTime: string;
   email: string;
 }
@@ -205,7 +211,12 @@ export function getEditableProfileFromUser(user: User): EditableProfile {
     ),
     avatarColor: normalizeAvatarThemeId(metadata.avatar_color),
     preferredLanguage: normalizeSupportedLanguage(metadata.preferred_language),
+    defaultLanguageLevel: normalizeLanguageLevel(
+      metadata.default_language_level
+    ),
     weeklyMatchTime: normalizeWeeklyMatchTime(metadata.weekly_match_time),
     email,
   };
 }
+
+export { DEFAULT_LANGUAGE_LEVEL };

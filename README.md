@@ -2,7 +2,7 @@
 
 ClashLingo is a playful 1v1 language-learning MVP built with Next.js, React, Supabase, and Anthropic.
 
-Two players create a rivalry, pick a topic, get an AI-generated syllabus, study on their own, start early together if they want, take an exam, and compare results.
+Two players create a rivalry, pick a topic, get an AI-generated syllabus tuned to the target learner's level, study on their own, start early together if they want, take an exam, and compare results.
 
 ## Stack
 
@@ -29,7 +29,7 @@ Two players create a rivalry, pick a topic, get an AI-generated syllabus, study 
 - `/` redirects to `/login` or `/lounge` based on auth.
 - `/login` handles auth.
 - `/lounge` is the main rivalry control surface.
-- `/settings` manages nickname, letter avatar, language preference, and weekly rhythm.
+- `/settings` manages nickname, letter avatar, language preference, default language level, and weekly rhythm.
 - `/scopes` shows current and past scopes, grouped by language.
 - `/rivalry/[id]` shows rivalry history and stats.
 - `/rivalry/[id]/new-round` creates a round.

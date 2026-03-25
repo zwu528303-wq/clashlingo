@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import type { Syllabus } from "@/lib/domain-types";
+import type { Rivalry, Round, Syllabus } from "@/lib/domain-types";
+import {
+  DEFAULT_LANGUAGE_LEVEL,
+  normalizeLanguageLevel,
+  resolveRoundLanguageLevel,
+} from "@/lib/language-level";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -20,21 +25,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const difficultyLevel = difficulty || "beginner";
+    const { data: roundData, error: roundError } = await supabase
+      .from("rounds")
+      .select("rivalry_id, topic, target_lang")
+      .eq("id", roundId)
+      .single<Pick<Round, "rivalry_id" | "topic" | "target_lang">>();
+
+    if (roundError || !roundData) {
+      return NextResponse.json({ error: "Round not found" }, { status: 404 });
+    }
+
+    const { data: rivalryData } = await supabase
+      .from("rivalries")
+      .select(
+        "player_a_lang, player_b_lang, player_a_difficulty, player_b_difficulty"
+      )
+      .eq("id", roundData.rivalry_id)
+      .maybeSingle<
+        Pick<
+          Rivalry,
+          | "player_a_lang"
+          | "player_b_lang"
+          | "player_a_difficulty"
+          | "player_b_difficulty"
+        >
+      >();
+
+    const resolvedTopic = roundData.topic || topic;
+    const resolvedTargetLang = roundData.target_lang || targetLang;
+    const difficultyLevel = rivalryData
+      ? resolveRoundLanguageLevel(rivalryData, resolvedTargetLang)
+      : normalizeLanguageLevel(difficulty || DEFAULT_LANGUAGE_LEVEL);
 
     const prompt = `You are a language learning curriculum designer for ClashLingo, a competitive language learning app.
 
 Generate an exam scope / syllabus for the following:
-- Topic: "${topic}"
-- Target Language: ${targetLang}
-- Difficulty: ${difficultyLevel}
+- Topic: "${resolvedTopic}"
+- Target Language: ${resolvedTargetLang}
+- Learner Level: ${difficultyLevel}
 
 The syllabus is NOT a textbook. It only tells the student WHAT will be tested, not HOW to learn it. The student will study on their own using external tools.
 
 Return a JSON object with exactly this structure:
 {
-  "topic": "${topic}",
-  "target_lang": "${targetLang}",
+  "topic": "${resolvedTopic}",
+  "target_lang": "${resolvedTargetLang}",
   "can_do": [
     // 3-5 ability objectives in English, e.g. "Order a drink and pastry in French"
   ],
@@ -63,15 +98,26 @@ Return a JSON object with exactly this structure:
   ]
 }
 
-For beginner difficulty:
+Level guidance:
+- Beginner:
 - Use only basic, common vocabulary
 - Simple sentence structures
 - All content must be strictly within the topic scope — no surprises
 
-For intermediate/advanced:
+- Elementary:
+- Use practical everyday vocabulary with light variation
+- Short connected phrases are fine, but keep grammar straightforward
+- Stay tightly aligned to the topic with only gentle extensions
+
+- Intermediate:
 - Allow topic-adjacent vocabulary
-- More complex grammar patterns
-- Some challenging expressions
+- Include mixed sentence patterns and more flexible grammar
+- Add some challenging expressions while staying within the tested scope
+
+- Advanced:
+- Use nuanced, natural phrasing and richer topic-adjacent vocabulary
+- Include denser grammar patterns and more realistic listening phrasing
+- Keep everything grounded in the declared topic and syllabus shape
 
 IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
 

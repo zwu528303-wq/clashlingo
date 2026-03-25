@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { Rivalry, Round } from "@/lib/domain-types";
+import { resolveRoundLanguageLevel } from "@/lib/language-level";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -259,6 +260,11 @@ export default function RoundPage() {
 
   if (!round || !rivalry) return null;
 
+  const roundLanguageLevel = resolveRoundLanguageLevel(
+    rivalry,
+    round.target_lang
+  );
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
@@ -301,6 +307,10 @@ export default function RoundPage() {
                 <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Default Window</span>
                 <span className="text-on-surface font-bold text-lg">{round.study_days} days</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Level</span>
+                <span className="text-on-surface font-bold text-lg">{roundLanguageLevel}</span>
+              </div>
               {round.prize_text && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Prize</span>
@@ -323,7 +333,6 @@ export default function RoundPage() {
                     roundId: round.id,
                     topic: round.topic,
                     targetLang: round.target_lang,
-                    difficulty: "beginner",
                   }),
                 });
                 const data = await res.json();
@@ -451,6 +460,10 @@ export default function RoundPage() {
               <div className="text-center">
                 <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Default Window</div>
                 <div className="font-bold text-on-surface">{round.study_days}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Level</div>
+                <div className="font-bold text-on-surface">{roundLanguageLevel}</div>
               </div>
               {round.prize_text && (
                 <div className="text-center">

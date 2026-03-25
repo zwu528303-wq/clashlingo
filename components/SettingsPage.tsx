@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import { supabase } from "@/lib/supabase";
+import { LANGUAGE_LEVELS } from "@/lib/language-level";
 import {
   AVATAR_THEMES,
+  DEFAULT_LANGUAGE_LEVEL,
   DEFAULT_WEEKLY_MATCH_TIME,
   SUPPORTED_LANGUAGES,
   type EditableProfile,
@@ -92,6 +94,8 @@ export default function SettingsPage() {
       ...profile,
       displayName,
       avatarLetter,
+      defaultLanguageLevel:
+        profile.defaultLanguageLevel || DEFAULT_LANGUAGE_LEVEL,
       weeklyMatchTime: profile.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME,
     };
 
@@ -101,6 +105,7 @@ export default function SettingsPage() {
         avatar_letter: nextProfile.avatarLetter,
         avatar_color: nextProfile.avatarColor,
         preferred_language: nextProfile.preferredLanguage,
+        default_language_level: nextProfile.defaultLanguageLevel,
         weekly_match_time: nextProfile.weeklyMatchTime,
       },
     });
@@ -324,6 +329,39 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                Default Language Level
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {LANGUAGE_LEVELS.map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() =>
+                      setProfile((current) =>
+                        current
+                          ? { ...current, defaultLanguageLevel: level }
+                          : current
+                      )
+                    }
+                    className={`py-3 px-4 rounded-xl font-bold text-sm transition-all ${
+                      profile.defaultLanguageLevel === level
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "bg-surface-container-low text-on-surface hover:bg-surface-container"
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-on-surface-variant mt-3">
+                New rivalries start with this level. If both players study the
+                same language, ClashLingo uses the lower level when generating
+                the shared scope and exam.
+              </p>
             </div>
 
             <div>

@@ -16,6 +16,11 @@ Date: 2026-03-24
 - Added `app/api/profile/route.ts` to sync public nickname data server-side.
 - Extended public profile sync so shared lounge / rivalry surfaces can render letter-avatar identity from the `users` table.
 - Updated the auth screen so sign-up collects `Display Nickname` immediately instead of waiting for settings.
+- Added `Default Language Level` as a real product setting.
+  - Settings now supports `Beginner / Elementary / Intermediate / Advanced`.
+  - New and joined rivalries now persist each player's level in `player_a_difficulty` / `player_b_difficulty`.
+  - AI syllabus and exam generation now resolve level server-side from rivalry data and `round.target_lang`.
+  - Same-language rivalries now generate to the lower saved level.
 - Fixed the `users` sync bug by matching the real table shape.
   - `users` has `id`, `display_name`, `avatar_url`, and `created_at`
   - it does not have an `email` column

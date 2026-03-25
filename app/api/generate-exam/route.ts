@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import type { Exam, Round } from "@/lib/domain-types";
+import type { Exam, Rivalry, Round } from "@/lib/domain-types";
+import { resolveRoundLanguageLevel } from "@/lib/language-level";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -37,6 +38,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No syllabus found" }, { status: 400 });
     }
 
+    const { data: rivalryData } = await supabase
+      .from("rivalries")
+      .select(
+        "player_a_lang, player_b_lang, player_a_difficulty, player_b_difficulty"
+      )
+      .eq("id", round.rivalry_id)
+      .maybeSingle<
+        Pick<
+          Rivalry,
+          | "player_a_lang"
+          | "player_b_lang"
+          | "player_a_difficulty"
+          | "player_b_difficulty"
+        >
+      >();
+
     // Idempotency: if exam already exists, skip Claude and just ensure status is exam_ready
     const { data: existingExam } = await supabase
       .from("exams")
@@ -53,10 +70,17 @@ export async function POST(req: NextRequest) {
     }
 
     const syllabus = round.syllabus;
+    const difficultyLevel = resolveRoundLanguageLevel(
+      rivalryData,
+      round.target_lang
+    );
 
     const prompt = `You are an exam generator for ClashLingo, a competitive language learning app.
 
 Based on the following syllabus, generate a 24-question exam with scoring rubric.
+
+TARGET LEVEL:
+${difficultyLevel}
 
 SYLLABUS:
 ${JSON.stringify(syllabus, null, 2)}
@@ -69,12 +93,18 @@ EXAM STRUCTURE (strictly follow this):
 
 RULES:
 - All questions must be based ONLY on the syllabus content
-- For beginner level: NEVER go beyond the syllabus scope
+- Difficulty must match ${difficultyLevel}
 - MCQ: 4 options each, exactly one correct
 - FITB: One blank per question, the blank should be a word from the vocabulary or a grammar structure
 - Translation Q21-23: Translate from English to target language
 - Translation Q24: Translate from target language to English
 - Questions should test vocabulary, grammar, and expressions from the syllabus
+
+LEVEL GUIDANCE:
+- Beginner: keep wording direct, highly scaffolded, and strictly inside the explicit syllabus scope
+- Elementary: allow small phrasing variations, but keep sentence frames practical and predictable
+- Intermediate: use broader sentence patterns and a bit more transfer across vocabulary, grammar, and expressions
+- Advanced: use the most natural phrasing, denser grammar choices, and less obvious recall, while still staying inside the syllabus
 
 Return a JSON object with exactly this structure:
 {

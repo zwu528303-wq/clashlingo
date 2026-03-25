@@ -33,6 +33,7 @@ When product behavior is ambiguous:
   - display nickname
   - avatar
   - learning language preferences
+  - default language level
   - weekly matching time
 - For MVP, avatar should be a letter avatar, not an uploaded image.
 - Avatar rules:
@@ -52,6 +53,20 @@ When product behavior is ambiguous:
 - Each rivalry should then keep its own shared weekly countdown pulse for both players.
 - If both players click start, the match can begin immediately even if the weekly countdown has not completed.
 - The product should feel like "weekly rhythm with optional early mutual start", not "locked until the clock ends".
+
+### 3B. Language Level Rules
+
+- Settings should include a `Default Language Level`.
+- The allowed level list should be exactly:
+  - Beginner
+  - Elementary
+  - Intermediate
+  - Advanced
+- This setting acts as the user's default level for newly created or joined rivalries.
+- Rivalries should store each player's level separately in `player_a_difficulty` / `player_b_difficulty`.
+- AI syllabus and exam generation should choose the level based on the round's `target_lang`.
+- If both players are studying the same target language and their saved levels differ, the AI should use the lower level for that round.
+- Language level should not affect matchmaking, scoring rules, or countdown eligibility in the current MVP.
 
 ### 4. Lounge Is The Main Match Control Surface
 
@@ -130,9 +145,12 @@ As of the latest reviewed state, the following product changes are already in th
 - lounge and rivalries now share a first-pass fused visual language that follows the approved AI Studio reference direction without changing product logic
 - scopes now classify current and past scope cards by target language
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
+- settings page now includes `Default Language Level`
 - settings save syncs shared nickname and public avatar identity through a server route
 - lounge now reads profile preferences and uses the new supported language list
 - lounge enforces a 2-rivalry limit in the UI
+- new rivalries now inherit the creator's default language level, and joined rivalries store the joiner's default language level
+- syllabus and exam generation now choose level server-side from rivalry difficulty plus round target language
 - rivalry dashboard shows cumulative rivalry stats and round outcome context
 - scopes page exists
 - scopes now read from `rounds.syllabus`, so they can appear before exam creation

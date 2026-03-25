@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { Mail, Lock, ArrowRight, Loader2, UserRound } from "lucide-react";
+import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
 import {
   getEditableProfileFromUser,
   resolveDisplayName,
@@ -64,6 +65,7 @@ export default function Login() {
         options: {
           data: {
             display_name: resolveDisplayName(trimmedDisplayName),
+            default_language_level: DEFAULT_LANGUAGE_LEVEL,
           },
         },
       });

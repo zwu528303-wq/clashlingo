@@ -35,6 +35,7 @@ The app currently stores these profile preferences in Supabase Auth `user_metada
 - `avatar_letter`
 - `avatar_color`
 - `preferred_language`
+- `default_language_level`
 - `weekly_match_time`
 
 Important note:
@@ -86,6 +87,7 @@ Current app usage:
 - Tracks who is matched with whom.
 - Stores invite-code join flow.
 - Stores per-player learning language.
+- Stores per-player default learning level for that rivalry in `player_a_difficulty` / `player_b_difficulty`.
 - Stores the latest round number.
 - Stores long-term outcome history in `cumulative_ledger`.
 - Stores the rivalry-shared weekly countdown pulse in `cumulative_ledger.shared_weekly_time`.
