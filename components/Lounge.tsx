@@ -17,13 +17,17 @@ import {
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import type { Rivalry, Round } from "@/lib/domain-types";
+import { getSharedWeeklyMatchTime, setSharedWeeklyMatchTime } from "@/lib/rivalry-ledger";
 import {
+  DEFAULT_WEEKLY_MATCH_TIME,
   SUPPORTED_LANGUAGES,
   type EditableProfile,
+  getAvatarTheme,
   type SupportedLanguage,
   getDisplayInitial,
   getEditableProfileFromUser,
   normalizeAvatarLetter,
+  parsePublicAvatarValue,
   resolveDisplayName,
 } from "@/lib/profile";
 
@@ -41,6 +45,12 @@ type ActiveRound = Pick<
   | "player_a_exam_ready"
   | "player_b_exam_ready"
 >;
+
+interface RivalPublicProfile {
+  displayName: string;
+  avatarLetter: string;
+  avatarColor: string;
+}
 
 function parseWeeklyTime(value: string) {
   const [hoursText = "19", minutesText = "00"] = value.split(":");
@@ -134,6 +144,9 @@ export default function Lounge() {
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [rivalNames, setRivalNames] = useState<Record<string, string>>({});
+  const [rivalProfiles, setRivalProfiles] = useState<
+    Record<string, RivalPublicProfile>
+  >({});
   const [activeRounds, setActiveRounds] = useState<Record<string, ActiveRound>>(
     {}
   );
@@ -177,9 +190,13 @@ export default function Lounge() {
     setProfile(resolvedProfile);
     setMyLang(resolvedProfile.preferredLanguage);
     setJoinLang(resolvedProfile.preferredLanguage);
+    return resolvedProfile;
   }
 
-  async function fetchRivalries(uid: string) {
+  async function fetchRivalries(
+    uid: string,
+    defaultWeeklyTime = DEFAULT_WEEKLY_MATCH_TIME
+  ) {
     const { data, error } = await supabase
       .from("rivalries")
       .select("*")
@@ -187,17 +204,53 @@ export default function Lounge() {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setRivalries(data);
+      const rivalryRows = data as Rivalry[];
+      const rivalriesNeedingSharedTime = rivalryRows.filter((rivalry) => {
+        const sharedWeeklyTime = getSharedWeeklyMatchTime(
+          rivalry.cumulative_ledger,
+          defaultWeeklyTime
+        );
 
-      if (data.length === 0) {
+        return rivalry.cumulative_ledger?.shared_weekly_time !== sharedWeeklyTime;
+      });
+
+      if (rivalriesNeedingSharedTime.length > 0) {
+        await Promise.allSettled(
+          rivalriesNeedingSharedTime.map((rivalry) =>
+            supabase
+              .from("rivalries")
+              .update({
+                cumulative_ledger: setSharedWeeklyMatchTime(
+                  rivalry.cumulative_ledger,
+                  defaultWeeklyTime
+                ),
+              })
+              .eq("id", rivalry.id)
+          )
+        );
+      }
+
+      const normalizedRivalries = rivalryRows.map((rivalry) => ({
+        ...rivalry,
+        cumulative_ledger: setSharedWeeklyMatchTime(
+          rivalry.cumulative_ledger,
+          getSharedWeeklyMatchTime(rivalry.cumulative_ledger, defaultWeeklyTime)
+        ),
+      }));
+
+      setRivalries(normalizedRivalries);
+
+      if (normalizedRivalries.length === 0) {
         setRivalNames({});
+        setRivalProfiles({});
         setActiveRounds({});
         return;
       }
 
-      const rivalryIds = data.map((rivalry) => rivalry.id);
+      const rivalryIds = normalizedRivalries.map((rivalry) => rivalry.id);
       const rivalryNameMap: Record<string, string> = {};
-      const rivalIdPairs = data
+      const rivalryProfileMap: Record<string, RivalPublicProfile> = {};
+      const rivalIdPairs = normalizedRivalries
         .map((rivalry) => ({
           rivalryId: rivalry.id,
           rivalId:
@@ -216,22 +269,37 @@ export default function Lounge() {
       if (uniqueRivalIds.length > 0) {
         const { data: profiles } = await supabase
           .from("users")
-          .select("id, display_name")
+          .select("id, display_name, avatar_url")
           .in("id", uniqueRivalIds);
 
         const profileMap = new Map(
           (profiles ?? []).map((item) => [
             item.id,
-            resolveDisplayName(item.display_name, "Rival"),
+            (() => {
+              const displayName = resolveDisplayName(item.display_name, "Rival");
+              return {
+                displayName,
+                ...parsePublicAvatarValue(item.avatar_url, displayName),
+              };
+            })(),
           ])
         );
 
         rivalIdPairs.forEach(({ rivalryId, rivalId }) => {
-          rivalryNameMap[rivalryId] = profileMap.get(rivalId) ?? "Rival";
+          const publicProfile = profileMap.get(rivalId);
+          const displayName = publicProfile?.displayName ?? "Rival";
+
+          rivalryNameMap[rivalryId] = displayName;
+          rivalryProfileMap[rivalryId] = publicProfile ?? {
+            displayName,
+            avatarLetter: getDisplayInitial(displayName, "R"),
+            avatarColor: "rose",
+          };
         });
       }
 
       setRivalNames(rivalryNameMap);
+      setRivalProfiles(rivalryProfileMap);
 
       const { data: rounds } = await supabase
         .from("rounds")
@@ -263,9 +331,9 @@ export default function Lounge() {
         router.push("/login");
         return;
       }
-      await loadCurrentProfile(user);
+      const resolvedProfile = await loadCurrentProfile(user);
       setUserId(user.id);
-      await fetchRivalries(user.id);
+      await fetchRivalries(user.id, resolvedProfile.weeklyMatchTime);
       setLoading(false);
     };
     init();
@@ -315,6 +383,10 @@ export default function Lounge() {
       invite_code: code,
       player_a_lang: myLang,
       player_a_difficulty: "beginner",
+      cumulative_ledger: setSharedWeeklyMatchTime(
+        null,
+        profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
+      ),
     });
 
     if (error) {
@@ -325,6 +397,10 @@ export default function Lounge() {
         invite_code: retryCode,
         player_a_lang: myLang,
         player_a_difficulty: "beginner",
+        cumulative_ledger: setSharedWeeklyMatchTime(
+          null,
+          profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
+        ),
       });
       if (retryError) {
         setCreateError("Failed to create rivalry. Please try again.");
@@ -337,7 +413,10 @@ export default function Lounge() {
     }
 
     setCreating(false);
-    await fetchRivalries(userId);
+    await fetchRivalries(
+      userId,
+      profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
+    );
   };
 
   const handleJoin = async () => {
@@ -396,7 +475,10 @@ export default function Lounge() {
     setJoining(false);
     setShowJoin(false);
     setJoinCode("");
-    await fetchRivalries(userId);
+    await fetchRivalries(
+      userId,
+      profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
+    );
   };
 
   const handleCopy = async () => {
@@ -423,6 +505,7 @@ export default function Lounge() {
     profile.avatarLetter,
     profile.displayName
   );
+  const profileTheme = getAvatarTheme(profile.avatarColor);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -502,8 +585,13 @@ export default function Lounge() {
               {rivalries.map((r) => {
                 const isPlayerA = r.player_a_id === userId;
                 const isPaired = Boolean(r.player_b_id);
-                const weeklyMatchTime = profile?.weeklyMatchTime || "19:00";
-                const rivalName = rivalNames[r.id] || "Rival";
+                const sharedWeeklyMatchTime = getSharedWeeklyMatchTime(
+                  r.cumulative_ledger,
+                  profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
+                );
+                const rivalProfile = rivalProfiles[r.id];
+                const rivalName = rivalProfile?.displayName || rivalNames[r.id] || "Rival";
+                const rivalTheme = getAvatarTheme(rivalProfile?.avatarColor);
                 const activeRound = activeRounds[r.id] ?? null;
                 const targetLang =
                   activeRound?.target_lang ||
@@ -512,7 +600,7 @@ export default function Lounge() {
                 const weeklyRhythmTarget = isPaired
                   ? getNextWeeklyRhythmTarget(
                       r.created_at,
-                      weeklyMatchTime,
+                      sharedWeeklyMatchTime,
                       countdownNow
                     )
                   : null;
@@ -545,9 +633,9 @@ export default function Lounge() {
                   ? weeklyRhythmText
                   : r.invite_code;
                 let panelHint = isPaired
-                  ? `Default rhythm based on your ${formatWeeklyTime(
-                      weeklyMatchTime
-                    )} preference. If both players want to play, start early.`
+                  ? `Shared weekly pulse lands at ${formatWeeklyTime(
+                      sharedWeeklyMatchTime
+                    )}. If both players want to play, start early.`
                   : "Share this code so your rival can join.";
                 let actionLabel = isPaired ? "Start Round" : "Copy Code";
                 let cardBorderClassName =
@@ -673,7 +761,9 @@ export default function Lounge() {
                           <div className="flex items-center justify-center gap-4 md:gap-6">
                             <div className="relative">
                               <div className="absolute inset-0 rounded-full bg-primary-container/35 blur-xl" />
-                              <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-[1.75rem] border-[5px] border-white bg-primary-container text-primary flex items-center justify-center text-3xl font-black shadow-[0_18px_35px_rgba(149,63,77,0.18)]">
+                              <div
+                                className={`relative w-20 h-20 md:w-24 md:h-24 rounded-[1.75rem] border-[5px] border-white flex items-center justify-center text-3xl font-black shadow-[0_18px_35px_rgba(149,63,77,0.18)] ${profileTheme.avatarClassName}`}
+                              >
                                 {profileLetter}
                               </div>
                             </div>
@@ -689,11 +779,14 @@ export default function Lounge() {
                               <div
                                 className={`relative w-20 h-20 md:w-24 md:h-24 rounded-[1.75rem] border-[5px] border-white flex items-center justify-center text-3xl font-black shadow-[0_18px_35px_rgba(12,105,61,0.14)] ${
                                   isPaired
-                                    ? "bg-secondary-container text-secondary"
+                                    ? rivalTheme.avatarClassName
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {isPaired ? getDisplayInitial(rivalName, "R") : "?"}
+                                {isPaired
+                                  ? rivalProfile?.avatarLetter ??
+                                    getDisplayInitial(rivalName, "R")
+                                  : "?"}
                               </div>
                             </div>
                           </div>
@@ -806,7 +899,8 @@ export default function Lounge() {
                                 {weeklyRhythmText}
                               </div>
                               <p className="text-xs text-on-surface-variant leading-relaxed">
-                                Default pulse based on your {formatWeeklyTime(weeklyMatchTime)} preference. It is a guide, not a lock.
+                                Shared pulse for this rivalry lands at{" "}
+                                {formatWeeklyTime(sharedWeeklyMatchTime)}. It is a guide, not a lock.
                               </p>
                             </div>
                           )}

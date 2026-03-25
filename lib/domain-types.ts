@@ -28,6 +28,7 @@ export interface RivalryLedgerRound {
 export interface RivalryLedger {
   wins?: Record<string, number>;
   rounds?: RivalryLedgerRound[];
+  shared_weekly_time?: string;
 }
 
 export interface Rivalry {

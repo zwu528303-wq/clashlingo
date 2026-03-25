@@ -29,9 +29,19 @@ import type {
 } from "@/lib/domain-types";
 import {
   type EditableProfile,
+  getAvatarTheme,
+  getDisplayInitial,
   getEditableProfileFromUser,
+  normalizeAvatarLetter,
+  parsePublicAvatarValue,
   resolveDisplayName,
 } from "@/lib/profile";
+
+interface RivalPublicProfile {
+  displayName: string;
+  avatarLetter: string;
+  avatarColor: string;
+}
 
 function buildRivalryHref(rivalryId: string) {
   return `/rivalries?rivalry=${rivalryId}`;
@@ -58,6 +68,9 @@ export default function RivalryDashboard() {
     {}
   );
   const [rivalNames, setRivalNames] = useState<Record<string, string>>({});
+  const [rivalProfiles, setRivalProfiles] = useState<
+    Record<string, RivalPublicProfile>
+  >({});
   const [loading, setLoading] = useState(true);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
@@ -86,6 +99,7 @@ export default function RivalryDashboard() {
       setRivalries([]);
       setRoundsByRivalry({});
       setRivalNames({});
+      setRivalProfiles({});
       return;
     }
 
@@ -94,6 +108,7 @@ export default function RivalryDashboard() {
     if (rivalryRows.length === 0) {
       setRoundsByRivalry({});
       setRivalNames({});
+      setRivalProfiles({});
       return;
     }
 
@@ -115,26 +130,42 @@ export default function RivalryDashboard() {
 
     const uniqueRivalIds = [...new Set(rivalIdPairs.map((pair) => pair.rivalId))];
     const rivalryNameMap: Record<string, string> = {};
+    const rivalryProfileMap: Record<string, RivalPublicProfile> = {};
 
     if (uniqueRivalIds.length > 0) {
       const { data: profiles } = await supabase
         .from("users")
-        .select("id, display_name")
+        .select("id, display_name, avatar_url")
         .in("id", uniqueRivalIds);
 
       const profileMap = new Map(
         (profiles ?? []).map((item) => [
           item.id,
-          resolveDisplayName(item.display_name, "Rival"),
+          (() => {
+            const displayName = resolveDisplayName(item.display_name, "Rival");
+            return {
+              displayName,
+              ...parsePublicAvatarValue(item.avatar_url, displayName),
+            };
+          })(),
         ])
       );
 
       rivalIdPairs.forEach(({ rivalryId, rivalId }) => {
-        rivalryNameMap[rivalryId] = profileMap.get(rivalId) ?? "Rival";
+        const publicProfile = profileMap.get(rivalId);
+        const displayName = publicProfile?.displayName ?? "Rival";
+
+        rivalryNameMap[rivalryId] = displayName;
+        rivalryProfileMap[rivalryId] = publicProfile ?? {
+          displayName,
+          avatarLetter: getDisplayInitial(displayName, "R"),
+          avatarColor: "rose",
+        };
       });
     }
 
     setRivalNames(rivalryNameMap);
+    setRivalProfiles(rivalryProfileMap);
 
     const { data: roundRows } = await supabase
       .from("rounds")
@@ -204,6 +235,9 @@ export default function RivalryDashboard() {
     ? selectedRivalry?.player_b_id
     : selectedRivalry?.player_a_id;
   const rivalName = selectedRivalry ? rivalNames[selectedRivalry.id] ?? "Rival" : "Rival";
+  const selectedRivalProfile = selectedRivalry
+    ? rivalProfiles[selectedRivalry.id]
+    : undefined;
   const currentLanguage = selectedRivalry
     ? isPlayerA
       ? selectedRivalry.player_a_lang
@@ -251,6 +285,14 @@ export default function RivalryDashboard() {
     );
   }
 
+  const profileLetter = normalizeAvatarLetter(
+    profile.avatarLetter,
+    profile.displayName
+  );
+  const profileTheme = getAvatarTheme(profile.avatarColor);
+  const rivalLetter =
+    selectedRivalProfile?.avatarLetter ?? getDisplayInitial(rivalName, "R");
+  const rivalTheme = getAvatarTheme(selectedRivalProfile?.avatarColor);
   const rivalryProgress = Math.min(
     100,
     Math.max(10, completedRounds.length * 20)
@@ -314,7 +356,9 @@ export default function RivalryDashboard() {
                   const selected = selectedRivalry?.id === rivalry.id;
                   const rivalryIsPlayerA = rivalry.player_a_id === userId;
                   const paired = Boolean(rivalry.player_b_id);
-                  const name = rivalNames[rivalry.id] ?? "Rival";
+                  const publicProfile = rivalProfiles[rivalry.id];
+                  const name = publicProfile?.displayName ?? rivalNames[rivalry.id] ?? "Rival";
+                  const selectorTheme = getAvatarTheme(publicProfile?.avatarColor);
                   const rivalryRounds = roundsByRivalry[rivalry.id] ?? [];
                   const rivalryActiveRound = rivalryRounds.find(
                     (round) => round.status !== "completed"
@@ -343,11 +387,14 @@ export default function RivalryDashboard() {
                           <div
                             className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center text-xl font-black shadow-sm shrink-0 ${
                               paired
-                                ? "bg-primary-container text-primary"
+                                ? selectorTheme.avatarClassName
                                 : "bg-surface-container text-on-surface-variant"
                             }`}
                           >
-                            {paired ? name.charAt(0).toUpperCase() : "?"}
+                            {paired
+                              ? publicProfile?.avatarLetter ??
+                                getDisplayInitial(name, "R")
+                              : "?"}
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
@@ -386,10 +433,14 @@ export default function RivalryDashboard() {
                     <div className="relative grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                       <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-5">
                         <div className="relative">
-                          <div className="w-36 h-36 md:w-52 md:h-52 rounded-[2.35rem] bg-primary-container flex items-center justify-center text-primary text-7xl md:text-8xl font-black shadow-2xl -rotate-3">
-                            {profile.displayName.charAt(0).toUpperCase()}
+                          <div
+                            className={`w-36 h-36 md:w-52 md:h-52 rounded-[2.35rem] flex items-center justify-center text-7xl md:text-8xl font-black shadow-2xl -rotate-3 ${profileTheme.avatarClassName}`}
+                          >
+                            {profileLetter}
                           </div>
-                          <div className="absolute -top-4 -right-4 bg-primary text-on-primary px-5 py-2.5 rounded-full font-black text-lg shadow-lg">
+                          <div
+                            className={`absolute -top-4 -right-4 px-5 py-2.5 rounded-full font-black text-lg shadow-lg ${profileTheme.avatarClassName}`}
+                          >
                             {myWins} Wins
                           </div>
                         </div>
@@ -407,10 +458,14 @@ export default function RivalryDashboard() {
                         {selectedRivalry.player_b_id ? (
                           <>
                             <div className="relative">
-                              <div className="w-36 h-36 md:w-52 md:h-52 rounded-[2.35rem] bg-secondary-container flex items-center justify-center text-secondary text-7xl md:text-8xl font-black shadow-2xl rotate-3">
-                                {rivalName.charAt(0).toUpperCase()}
+                              <div
+                                className={`w-36 h-36 md:w-52 md:h-52 rounded-[2.35rem] flex items-center justify-center text-7xl md:text-8xl font-black shadow-2xl rotate-3 ${rivalTheme.avatarClassName}`}
+                              >
+                                {rivalLetter}
                               </div>
-                              <div className="absolute -top-4 -left-4 bg-secondary text-on-secondary px-5 py-2.5 rounded-full font-black text-lg shadow-lg">
+                              <div
+                                className={`absolute -top-4 -left-4 px-5 py-2.5 rounded-full font-black text-lg shadow-lg ${rivalTheme.avatarClassName}`}
+                              >
                                 {rivalWins} Wins
                               </div>
                             </div>

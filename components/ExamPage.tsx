@@ -243,7 +243,13 @@ export default function ExamPage() {
 
         await supabase
           .from("rivalries")
-          .update({ cumulative_ledger: { wins, rounds: roundHistory } })
+          .update({
+            cumulative_ledger: {
+              ...prev,
+              wins,
+              rounds: roundHistory,
+            },
+          })
           .eq("id", roundInfo.rivalry_id);
       }
     }

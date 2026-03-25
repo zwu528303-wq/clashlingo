@@ -130,6 +130,8 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           displayName: nextProfile.displayName,
+          avatarLetter: nextProfile.avatarLetter,
+          avatarColor: nextProfile.avatarColor,
         }),
       });
 
@@ -139,7 +141,7 @@ export default function SettingsPage() {
           | null;
 
         publicUserErrorMessage =
-          payload?.error || "Failed to sync nickname for shared views.";
+          payload?.error || "Failed to sync shared profile details.";
       }
     }
 
@@ -149,7 +151,7 @@ export default function SettingsPage() {
     if (publicUserErrorMessage) {
       setMessage({
         type: "error",
-        text: "Saved your personal settings, but nickname sync for shared views failed.",
+        text: "Saved your personal settings, but shared profile sync failed.",
       });
       return;
     }
@@ -328,7 +330,7 @@ export default function SettingsPage() {
                 className="w-full max-w-xs bg-surface-container-lowest text-on-surface rounded-2xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container"
               />
               <p className="text-sm text-on-surface-variant mt-3">
-                This sets the countdown rhythm shown on lounge cards. It does not lock a round, and both players can still start early together.
+                This is your default rhythm for new rivalries. Each rivalry keeps its own shared countdown pulse, and both players can still start early together.
               </p>
             </div>
           </div>

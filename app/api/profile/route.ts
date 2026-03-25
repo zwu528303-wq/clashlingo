@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  normalizeAvatarLetter,
+  normalizeAvatarThemeId,
+  serializePublicAvatarValue,
+} from "@/lib/profile";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -42,6 +47,8 @@ export async function POST(req: NextRequest) {
 
     const payload = (await req.json()) as {
       displayName?: string;
+      avatarLetter?: string;
+      avatarColor?: string;
     };
 
     const displayName =
@@ -50,11 +57,21 @@ export async function POST(req: NextRequest) {
         ? user.user_metadata.display_name.trim()
         : "") ||
       buildFallbackName();
+    const avatarLetter = normalizeAvatarLetter(
+      payload.avatarLetter,
+      displayName
+    );
+    const avatarColor = normalizeAvatarThemeId(payload.avatarColor);
 
     const { error: upsertError } = await adminClient.from("users").upsert(
       {
         id: user.id,
         display_name: displayName,
+        avatar_url: serializePublicAvatarValue(
+          avatarLetter,
+          avatarColor,
+          displayName
+        ),
       },
       { onConflict: "id" }
     );

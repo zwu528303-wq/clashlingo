@@ -49,7 +49,7 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
   - moves round status to `exam_ready`
 - `/api/profile`
   - validates the signed-in user on the server
-  - syncs `users.display_name` for shared surfaces such as lounge, rivalry, and scopes
+  - syncs `users.display_name` plus public avatar identity for shared surfaces such as lounge and rivalry
 
 ## Expected Environment Variables
 
@@ -106,8 +106,11 @@ Observed status values:
   - Lounge uses a more featured duel-card layout and stronger countdown/action panels.
   - Rivalries uses a more explicit VS hero, rivalry selector cards, richer history rows, and a clearer action/stats column.
 - Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
-- Settings save now syncs public nickname server-side through `/api/profile`
+- Settings save now syncs public nickname + letter avatar + avatar color server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
+- Lounge and rivalry surfaces now read shared avatar letter/color from the public identity layer instead of inventing rival avatars locally
+- Weekly time in settings now acts as the default for new rivalries, while each rivalry keeps its own shared weekly countdown pulse
+- Lounge countdown cards now use rivalry-shared weekly rhythm data instead of per-viewer-only timing
 - Rivalry dashboard and round list
 - New round flow with topic, default study window, and optional prize/stake
 - AI syllabus generation and confirmation flow
@@ -138,6 +141,7 @@ Ran on 2026-03-24:
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
+- Shared avatar sync and rivalry-shared weekly rhythm are now shipped; if a later session touches them, preserve the public-identity/public-ledger split instead of moving those values back into viewer-local rendering.
 - If you continue the UI pass, keep pushing the current `Lounge` vs `Rivalries` split instead of blending those two responsibilities together again.
 - Any follow-up lounge / rivalries edits should be visual polish only unless the product rules change again.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.

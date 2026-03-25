@@ -19,6 +19,12 @@ export interface AvatarTheme {
   softClassName: string;
 }
 
+export interface PublicIdentityProfile {
+  displayName: string;
+  avatarLetter: string;
+  avatarColor: string;
+}
+
 export const AVATAR_THEMES: AvatarTheme[] = [
   {
     id: "rose",
@@ -53,6 +59,7 @@ export const AVATAR_THEMES: AvatarTheme[] = [
 export const DEFAULT_WEEKLY_MATCH_TIME = "19:00";
 export const DEFAULT_AVATAR_THEME_ID = AVATAR_THEMES[0].id;
 export const DEFAULT_LANGUAGE: SupportedLanguage = SUPPORTED_LANGUAGES[0];
+const PUBLIC_AVATAR_PREFIX = "clashlingo-avatar:";
 
 export interface EditableProfile {
   displayName: string;
@@ -139,6 +146,37 @@ export function getAvatarTheme(themeId?: string) {
   return (
     AVATAR_THEMES.find((theme) => theme.id === themeId) ?? AVATAR_THEMES[0]
   );
+}
+
+export function serializePublicAvatarValue(
+  avatarLetter: unknown,
+  avatarColor: unknown,
+  displayName: string
+) {
+  const normalizedLetter = normalizeAvatarLetter(avatarLetter, displayName);
+  const normalizedColor = normalizeAvatarThemeId(avatarColor);
+
+  return `${PUBLIC_AVATAR_PREFIX}${normalizedColor}:${normalizedLetter}`;
+}
+
+export function parsePublicAvatarValue(
+  value: unknown,
+  displayName: string
+) {
+  if (typeof value === "string" && value.startsWith(PUBLIC_AVATAR_PREFIX)) {
+    const payload = value.slice(PUBLIC_AVATAR_PREFIX.length);
+    const [themeId, letter] = payload.split(":");
+
+    return {
+      avatarLetter: normalizeAvatarLetter(letter, displayName),
+      avatarColor: normalizeAvatarThemeId(themeId),
+    };
+  }
+
+  return {
+    avatarLetter: getDisplayInitial(displayName, "L"),
+    avatarColor: DEFAULT_AVATAR_THEME_ID,
+  };
 }
 
 export function getStableAvatarTheme(seed?: string | null) {

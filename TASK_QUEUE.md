@@ -11,6 +11,9 @@ Last updated: 2026-03-24
 - Fixed nickname sync for shared views.
   - `app/api/profile/route.ts` now syncs `users.display_name` server-side.
   - This matches the real `users` table shape (`id`, `display_name`, `avatar_url`, `created_at`).
+- Extended shared profile sync to public avatars.
+  - `app/api/profile/route.ts` now also syncs letter-avatar identity into the public `users` row.
+  - Lounge and rivalry surfaces now render rival avatar letter/color from shared profile data instead of local fallback styling.
 - Removed email-style public identity fallback.
   - Lounge, rivalry, and scopes now avoid showing email-derived display names.
 - Removed rivalry exit from current MVP rules.
@@ -24,6 +27,10 @@ Last updated: 2026-03-24
 - Added always-visible weekly rhythm countdowns to paired lounge cards.
   - Rivalry cards now keep a weekly countdown visible before a round enters the actual `countdown` state.
   - Rivalry cards now make the soft-countdown rhythm visible from the lounge.
+- Shifted weekly rhythm from viewer-local preference to rivalry-shared data.
+  - New rivalries now inherit the creator's default weekly rhythm.
+  - Each rivalry now keeps its own shared countdown pulse instead of recomputing from whichever player is viewing.
+  - Exam completion now preserves that shared pulse when cumulative rivalry stats are updated.
 - Shipped the behavioral side of soft-countdown.
   - During the `countdown` phase, both players can now tap ready and start the exam early.
   - `exam_ready` still works as the synchronized fallback when the timer expires first.

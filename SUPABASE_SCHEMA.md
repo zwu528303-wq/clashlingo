@@ -57,7 +57,8 @@ Current app usage:
 
 - Stores shared display identity for lounge, rivalry, and scopes.
 - `display_name` is synced server-side by [app/api/profile/route.ts](./app/api/profile/route.ts).
-- `avatar_url` exists in the table but is not actively used in the current MVP UI.
+- `avatar_url` now carries a serialized public avatar token for the MVP's letter-avatar system.
+  - It stores enough information for shared lounge / rivalry surfaces to render the user's public avatar letter and color theme.
 
 Important constraint:
 
@@ -87,6 +88,7 @@ Current app usage:
 - Stores per-player learning language.
 - Stores the latest round number.
 - Stores long-term outcome history in `cumulative_ledger`.
+- Stores the rivalry-shared weekly countdown pulse in `cumulative_ledger.shared_weekly_time`.
 
 Notes:
 
@@ -182,7 +184,7 @@ Current app usage:
 ### [app/api/profile/route.ts](./app/api/profile/route.ts)
 
 - Validates the current user from a bearer token.
-- Upserts `users.id` and `users.display_name`.
+- Upserts `users.id`, `users.display_name`, and the public avatar token stored in `users.avatar_url`.
 - Uses the service role key so client-side settings save does not depend on public-table write permissions.
 
 ### [app/api/generate-syllabus/route.ts](./app/api/generate-syllabus/route.ts)

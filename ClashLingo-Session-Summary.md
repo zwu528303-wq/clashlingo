@@ -14,10 +14,15 @@ Date: 2026-03-24
 - Fixed `app/round/[id]/exam/page.tsx` so the exam route now renders `components/ExamPage.tsx`.
 - Added a first-pass `Settings` flow for nickname, letter avatar, avatar color, default language, and weekly match time.
 - Added `app/api/profile/route.ts` to sync public nickname data server-side.
+- Extended public profile sync so shared lounge / rivalry surfaces can render letter-avatar identity from the `users` table.
 - Fixed the `users` sync bug by matching the real table shape.
   - `users` has `id`, `display_name`, `avatar_url`, and `created_at`
   - it does not have an `email` column
 - Removed email-style public identity fallback from lounge / rivalry / scopes.
+- Shifted weekly rhythm from a viewer-local preference to rivalry-shared data.
+  - New rivalries now inherit the creator's default weekly rhythm.
+  - Rivalries now persist their own shared countdown pulse in `cumulative_ledger.shared_weekly_time`.
+  - Lounge cards now use that shared pulse, and exam completion preserves it when updating rivalry outcomes.
 - Updated product rules to remove rivalry exit from the current MVP scope.
 - Cleaned lint issues across the active pages and supporting routes.
   - `Lounge`, `RivalryDashboard`, `Scopes`, `Settings`, `RoundPage`, `ExamPage`, `ResultsPage`

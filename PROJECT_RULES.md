@@ -41,12 +41,15 @@ When product behavior is ambiguous:
   - users may choose from a small fixed set of avatar color themes
   - custom image upload is not supported in this phase
 - Nickname and avatar should be shown in the lounge and rivalry surfaces where identity matters.
+- Shared lounge / rivalry identity should come from the public profile layer, not from viewer-local fallbacks.
 
 ### 3. Match Timing And Start Rules
 
 - Matches operate on a weekly cadence.
 - Weekly matching time is no longer a hard gate for starting a match.
 - Weekly matching time is used only for countdown / reminder / anticipation UX.
+- Settings define the default weekly rhythm for newly created rivalries.
+- Each rivalry should then keep its own shared weekly countdown pulse for both players.
 - If both players click start, the match can begin immediately even if the weekly countdown has not completed.
 - The product should feel like "weekly rhythm with optional early mutual start", not "locked until the clock ends".
 
@@ -127,13 +130,15 @@ As of the latest reviewed state, the following product changes are already in th
 - lounge and rivalries now share a first-pass fused visual language that follows the approved AI Studio reference direction without changing product logic
 - scopes now classify current and past scope cards by target language
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
-- settings save syncs shared nickname data through a server route
+- settings save syncs shared nickname and public avatar identity through a server route
 - lounge now reads profile preferences and uses the new supported language list
 - lounge enforces a 2-rivalry limit in the UI
 - rivalry dashboard shows cumulative rivalry stats and round outcome context
 - scopes page exists
 - scopes now read from `rounds.syllabus`, so they can appear before exam creation
 - shared views no longer fall back to email-style public display names
+- lounge and rivalry surfaces now read rival avatar letter/color from shared public identity data
+- weekly rhythm is now stored per rivalry as a shared countdown pulse, seeded from the creator's default settings value
 
 ## Approved But Not Yet Shipped
 
