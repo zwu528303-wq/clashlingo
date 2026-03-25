@@ -40,6 +40,12 @@ Date: 2026-03-24
   - In-exam opponent progress was explicitly de-scoped from the current MVP docs.
 - Moved `Scopes` and `Settings` into the shared sidebar shell.
   - Lounge, scopes, and settings now use the same left-side navigation and profile block.
+- Replaced the last in-code `alert()` with inline page feedback.
+  - `app/rivalry/[id]/new-round/page.tsx` now renders an embedded error banner when round creation fails.
+- Added repo setup and data-model docs.
+  - `README.md` now documents the real product instead of the create-next-app boilerplate.
+  - `.env.example` now lists the required local environment variables.
+  - `SUPABASE_SCHEMA.md` now documents the current Supabase tables, relationships, and auth metadata fields.
 
 ## What Was Verified
 
@@ -56,12 +62,12 @@ Date: 2026-03-24
   - `SUPABASE_SERVICE_ROLE_KEY`
 - The `users` table does not contain an `email` column, so shared identity code must not assume one exists.
 - No sensitive API key values were found in tracked files, git history, client HTML, or client build output during this session.
-- `README.md` is still boilerplate and should not be treated as accurate project documentation.
+- Supabase schema notes are now checked in, but they still describe the live database shape rather than checked-in SQL migrations.
 
 ## Recommended Next Task
 
 1. Deepen the results sharing experience when you want the next user-facing feature.
-2. Consider shared domain types or README/schema docs for cleanup and handoff quality.
+2. Consider shared domain types or a minimal test strategy for cleanup.
 3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order

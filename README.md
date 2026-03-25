@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClashLingo
 
-## Getting Started
+ClashLingo is a playful 1v1 language-learning MVP built with Next.js, React, Supabase, and Anthropic.
 
-First, run the development server:
+Two players create a rivalry, pick a topic, get an AI-generated syllabus, study on their own, start early together if they want, take an exam, and compare results.
+
+## Stack
+
+- Next.js 16.2.1 App Router
+- React 19.2.4
+- TypeScript
+- Tailwind CSS 4
+- Supabase Auth + Postgres + Realtime
+- Anthropic API for syllabus and exam generation
+
+## Core Flow
+
+1. Sign in with email/password.
+2. Create or join a rivalry from `/lounge`.
+3. Start a new round with a topic and default study window.
+4. Generate a syllabus with `/api/generate-syllabus`.
+5. Both players confirm the scope.
+6. Follow the weekly countdown rhythm or start early together.
+7. Generate/take the exam.
+8. Compare results and review the tested scope.
+
+## Main Routes
+
+- `/` redirects to `/login` or `/lounge` based on auth.
+- `/login` handles auth.
+- `/lounge` is the main rivalry control surface.
+- `/settings` manages nickname, letter avatar, language preference, and weekly rhythm.
+- `/scopes` shows current and past scopes, grouped by language.
+- `/rivalry/[id]` shows rivalry history and stats.
+- `/rivalry/[id]/new-round` creates a round.
+- `/round/[id]` runs the round lifecycle.
+- `/round/[id]/exam` is the exam experience.
+- `/round/[id]/results` is the results review screen.
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in real values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required keys:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `ANTHROPIC_API_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Notes:
 
-## Learn More
+- `NEXT_PUBLIC_*` variables are intentionally exposed to the browser.
+- `ANTHROPIC_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` must stay server-only.
+- `.env.local` is ignored by git and should never be committed.
 
-To learn more about Next.js, take a look at the following resources:
+## Local Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `npm run dev` starts the local dev server.
+- `npm run lint` runs ESLint.
+- `npm run build` builds the production app.
+- `npm run start` runs the built app.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Data Model
+
+Supabase is the source of truth for auth and gameplay data.
+
+- Auth identity lives in Supabase Auth.
+- Public/shared display identity is mirrored into the public `users` table.
+- Gameplay data lives in `rivalries`, `rounds`, `exams`, and `submissions`.
+
+See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relationship notes.
+
+## Repo Guide
+
+- [PROJECT_RULES.md](./PROJECT_RULES.md): approved product behavior
+- [PROJECT_STATUS.md](./PROJECT_STATUS.md): current implementation reality
+- [TASK_QUEUE.md](./TASK_QUEUE.md): prioritized next work
+- [ClashLingo-Session-Summary.md](./ClashLingo-Session-Summary.md): latest handoff summary
+
+## Current Caveats
+
+- There are no checked-in Supabase SQL migrations yet.
+- `SUPABASE_SCHEMA.md` documents the live table shape used by the app today.
+- Results realtime exists, but in-exam opponent progress is intentionally out of MVP scope.
+- `components/ExamPage.tsx` still has a mock-exam fallback for demo resilience; that is useful, but it can hide backend issues if left unmonitored.
+
+## Manual Smoke Test
+
+1. Sign in.
+2. Create or join a rivalry.
+3. Start a round and pick a topic.
+4. Generate the syllabus and confirm from both sides.
+5. Check the lounge countdown behavior.
+6. Start early together or wait for exam readiness.
+7. Submit both exams.
+8. Verify results, scope review, and share behavior.

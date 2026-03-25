@@ -57,6 +57,11 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 - `ANTHROPIC_API_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+Checked-in setup docs now exist in:
+- [README.md](./README.md)
+- [.env.example](./.env.example)
+- [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md)
+
 ## Expected Supabase Tables
 
 Observed from the app code:
@@ -106,6 +111,8 @@ Observed status values:
 - Scopes now group current and past scope cards by target language
 - `npm run lint` currently passes
 - Production build currently passes
+- The repo now includes a real README, an `.env.example`, and Supabase schema notes
+- `app/rivalry/[id]/new-round/page.tsx` now uses inline error feedback instead of `alert()`
 
 ## Current Health Check
 
@@ -116,13 +123,12 @@ Ran on 2026-03-24:
 ## Known Issues And Risks
 
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
-- `README.md` is still the default create-next-app boilerplate and is not the source of truth.
-- There is no committed `.env.example`.
-- There are no checked-in Supabase migrations or schema notes, so local setup still depends on external context.
+- There are still no checked-in Supabase SQL migrations; `SUPABASE_SCHEMA.md` documents the live shape, but it is not a migration source of truth yet.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
+
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize results-sharing polish next if you want another user-facing feature, or move into shared types / README / schema docs for cleanup.
+- Prioritize results-sharing polish next if you want another user-facing feature, or move into shared domain types / test strategy for cleanup.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
-- If you change infra assumptions, document the Supabase schema and add an `.env.example`.
+- If you change infra assumptions, update `README.md`, `.env.example`, and `SUPABASE_SCHEMA.md` in the same batch.

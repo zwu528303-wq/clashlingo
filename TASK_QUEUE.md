@@ -37,6 +37,12 @@ Last updated: 2026-03-24
 - Moved `Scopes` and `Settings` into a shared sidebar shell.
   - Lounge, scopes, and settings now share the same left-side navigation and profile block.
   - The old top-row `Scopes / Settings / Log out` navigation on lounge has been folded into the sidebar.
+- Replaced the remaining `alert()`-based round-creation error with inline page feedback.
+  - `app/rivalry/[id]/new-round/page.tsx` now shows an embedded error banner instead of a blocking browser alert.
+- Added repo setup and data-model docs.
+  - `README.md` now describes the real product, routes, setup flow, and caveats.
+  - `.env.example` now documents the required environment variables.
+  - `SUPABASE_SCHEMA.md` now documents the current Supabase tables, relationships, and auth metadata usage.
 
 ## Highest Priority
 
@@ -55,19 +61,12 @@ Last updated: 2026-03-24
    - Move `Round`, `Rivalry`, `Exam`, `Submission`, and syllabus shapes into a shared typed module.
    - Reuse those types across client components and API routes.
 
-4. Document local setup and data model.
-   - Add `.env.example`.
-   - Add Supabase schema or migration notes for `users`, `rivalries`, `rounds`, `exams`, and `submissions`.
-   - Replace the boilerplate `README.md`.
-
 ## Nice To Have
 
-6. Replace `alert()`-based errors with inline UI states or toasts.
-
-7. Add a minimal regression test strategy.
+4. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-8. Review AI prompt robustness.
+5. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

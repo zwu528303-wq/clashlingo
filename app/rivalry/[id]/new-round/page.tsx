@@ -23,6 +23,10 @@ export default function NewRoundPage() {
   const [rivalry, setRivalry] = useState<Rivalry | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "error";
+    text: string;
+  } | null>(null);
 
   // Form
   const [topic, setTopic] = useState("");
@@ -65,6 +69,7 @@ export default function NewRoundPage() {
   const handleCreate = async () => {
     if (!userId || !rivalry || !topic.trim()) return;
     setCreating(true);
+    setMessage(null);
 
     const newRoundNumber = rivalry.current_round_num + 1;
 
@@ -84,7 +89,10 @@ export default function NewRoundPage() {
       .single();
 
     if (error) {
-      alert("Failed to create round: " + error.message);
+      setMessage({
+        type: "error",
+        text: error.message || "Failed to create round.",
+      });
       setCreating(false);
       return;
     }
@@ -201,6 +209,13 @@ export default function NewRoundPage() {
             className="w-full bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container text-lg"
           />
         </section>
+
+        {message && (
+          <div className="rounded-[1.75rem] border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+            <div className="font-bold">Could not create this round yet.</div>
+            <div className="mt-1 text-sm font-medium">{message.text}</div>
+          </div>
+        )}
 
         {/* Submit */}
         <button
