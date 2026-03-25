@@ -4,7 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { Rivalry, Round } from "@/lib/domain-types";
+import {
+  getDictionary,
+  getLocalizedLanguageLevelLabel,
+  getLocalizedLearningLanguageLabel,
+  resolveClientWebsiteLanguage,
+} from "@/lib/i18n";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
+import { getEditableProfileFromUser } from "@/lib/profile";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -14,6 +21,47 @@ import {
   Trophy,
   Loader2,
 } from "lucide-react";
+
+interface ApiErrorPayload {
+  error?: string;
+  code?: string;
+}
+
+function mapSyllabusErrorCode(
+  code: string | undefined,
+  fallback: string | undefined,
+  dictionary: ReturnType<typeof getDictionary>
+) {
+  switch (code) {
+    case "MISSING_FIELDS":
+    case "ROUND_NOT_FOUND":
+    case "AI_NO_TEXT":
+    case "SYLLABUS_PARSE_FAILED":
+    case "ROUND_UPDATE_FAILED":
+    case "INTERNAL_ERROR":
+      return dictionary.round.errors.generateScopeFailed;
+    default:
+      return fallback || dictionary.round.errors.generateScopeFailed;
+  }
+}
+
+function mapExamErrorCode(
+  code: string | undefined,
+  fallback: string | undefined,
+  dictionary: ReturnType<typeof getDictionary>
+) {
+  switch (code) {
+    case "MISSING_ROUND_ID":
+    case "ROUND_NOT_FOUND":
+    case "MISSING_SYLLABUS":
+    case "AI_NO_TEXT":
+    case "EXAM_PARSE_FAILED":
+    case "INTERNAL_ERROR":
+      return dictionary.round.errors.unlockExamFailed;
+    default:
+      return fallback || dictionary.round.errors.unlockExamFailed;
+  }
+}
 
 export default function RoundPage() {
   const router = useRouter();
@@ -27,12 +75,16 @@ export default function RoundPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [syllabusError, setSyllabusError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [websiteLanguage, setWebsiteLanguage] = useState(
+    resolveClientWebsiteLanguage()
+  );
   const examGenerationTriggered = useRef(false);
 
   // Countdown
   const [timeLeft, setTimeLeft] = useState("");
 
   const isPlayerA = rivalry?.player_a_id === userId;
+  const dictionary = getDictionary(websiteLanguage);
 
   const loadRound = useCallback(async () => {
     const { data: roundData } = await supabase
@@ -61,6 +113,7 @@ export default function RoundPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUserId(user.id);
+      setWebsiteLanguage(getEditableProfileFromUser(user).websiteLanguage);
       await loadRound();
       setLoading(false);
     };
@@ -104,8 +157,10 @@ export default function RoundPage() {
             body: JSON.stringify({ roundId }),
           }).then(async (res) => {
             if (!res.ok) {
-              const data = await res.json();
-              console.error("Exam generation failed:", data.error);
+              const data = (await res.json().catch(() => null)) as
+                | ApiErrorPayload
+                | null;
+              console.error("Exam generation failed:", data?.error);
             }
             await loadRound();
             setActionLoading(false);
@@ -186,7 +241,7 @@ export default function RoundPage() {
       .eq("id", round.id);
 
     if (readyError) {
-      setActionError(readyError.message || "Failed to save your ready state.");
+      setActionError(dictionary.round.errors.saveReadyFailed);
       setActionLoading(false);
       return;
     }
@@ -202,7 +257,7 @@ export default function RoundPage() {
       }>();
 
     if (updatedError || !updated) {
-      setActionError("Failed to refresh the latest ready state.");
+      setActionError(dictionary.round.errors.refreshReadyFailed);
       await loadRound();
       setActionLoading(false);
       return;
@@ -221,9 +276,11 @@ export default function RoundPage() {
 
         if (!examResponse.ok) {
           const payload = (await examResponse.json().catch(() => null)) as
-            | { error?: string }
+            | ApiErrorPayload
             | null;
-          setActionError(payload?.error || "Failed to unlock the exam early.");
+          setActionError(
+            mapExamErrorCode(payload?.code, payload?.error, dictionary)
+          );
           await loadRound();
           setActionLoading(false);
           return;
@@ -239,7 +296,7 @@ export default function RoundPage() {
         .eq("id", round.id);
 
       if (liveError) {
-        setActionError(liveError.message || "Failed to start the exam.");
+        setActionError(dictionary.round.errors.startExamFailed);
         await loadRound();
         setActionLoading(false);
         return;
@@ -253,7 +310,9 @@ export default function RoundPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="text-on-surface-variant font-medium">Loading...</div>
+        <div className="text-on-surface-variant font-medium">
+          {dictionary.common.loading}
+        </div>
       </div>
     );
   }
@@ -264,6 +323,15 @@ export default function RoundPage() {
     rivalry,
     round.target_lang
   );
+  const localizedTargetLanguage = getLocalizedLearningLanguageLabel(
+    round.target_lang,
+    websiteLanguage
+  );
+  const localizedRoundLevel = getLocalizedLanguageLevelLabel(
+    roundLanguageLevel,
+    websiteLanguage
+  );
+  const studyDaysValue = dictionary.round.daysValue(round.study_days || 0);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -274,10 +342,10 @@ export default function RoundPage() {
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
         >
           <ArrowLeft size={20} />
-          Back
+          {dictionary.round.back}
         </button>
         <div className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">
-          Round {round.round_number}
+          {dictionary.round.roundLabel(round.round_number)}
         </div>
       </header>
 
@@ -287,40 +355,56 @@ export default function RoundPage() {
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <div>
               <h1 className="text-4xl font-black text-on-surface tracking-tighter mb-2">
-                Round {round.round_number}
+                {dictionary.round.topicSelectionTitle(round.round_number)}
               </h1>
               <p className="text-on-surface-variant text-lg">
-                Generate the scope for this round, then set the default study rhythm in motion.
+                {dictionary.round.topicSelectionDescription}
               </p>
             </div>
 
             <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Topic</span>
+                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">
+                  {dictionary.round.labels.topic}
+                </span>
                 <span className="text-on-surface font-bold text-lg">{round.topic}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Language</span>
-                <span className="text-on-surface font-bold text-lg">{round.target_lang}</span>
+                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">
+                  {dictionary.round.labels.language}
+                </span>
+                <span className="text-on-surface font-bold text-lg">
+                  {localizedTargetLanguage}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Default Window</span>
-                <span className="text-on-surface font-bold text-lg">{round.study_days} days</span>
+                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">
+                  {dictionary.round.labels.defaultWindow}
+                </span>
+                <span className="text-on-surface font-bold text-lg">
+                  {studyDaysValue}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Level</span>
-                <span className="text-on-surface font-bold text-lg">{roundLanguageLevel}</span>
+                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">
+                  {dictionary.round.labels.level}
+                </span>
+                <span className="text-on-surface font-bold text-lg">
+                  {localizedRoundLevel}
+                </span>
               </div>
               {round.prize_text && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Prize</span>
+                  <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">
+                    {dictionary.round.labels.prize}
+                  </span>
                   <span className="text-on-surface font-bold text-lg italic">{round.prize_text}</span>
                 </div>
               )}
             </div>
 
             <p className="text-on-surface-variant">
-              Once the scope is ready, both players confirm it and the default study countdown begins. You can still start early later if you both want to.
+              {dictionary.round.scopeReadyHint}
             </p>
 
             <button
@@ -335,9 +419,13 @@ export default function RoundPage() {
                     targetLang: round.target_lang,
                   }),
                 });
-                const data = await res.json();
+                const data = (await res.json().catch(() => null)) as
+                  | ApiErrorPayload
+                  | null;
                 if (!res.ok) {
-                  setSyllabusError(data.error || "Failed to generate syllabus. Please try again.");
+                  setSyllabusError(
+                    mapSyllabusErrorCode(data?.code, data?.error, dictionary)
+                  );
                 } else {
                   setSyllabusError("");
                 }
@@ -348,9 +436,12 @@ export default function RoundPage() {
               className="bg-primary text-on-primary px-8 py-4 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {actionLoading ? (
-                <><Loader2 size={20} className="animate-spin" /> Generating...</>
+                <>
+                  <Loader2 size={20} className="animate-spin" />{" "}
+                  {dictionary.round.generatingScope}
+                </>
               ) : (
-                "Generate Scope"
+                dictionary.round.generateScope
               )}
             </button>
             {syllabusError && (
@@ -366,10 +457,10 @@ export default function RoundPage() {
           <div className="space-y-8 max-w-2xl mx-auto">
             <div className="text-center">
               <h1 className="text-4xl font-black text-on-surface tracking-tighter mb-2">
-                Review & Confirm
+                {dictionary.round.reviewConfirmTitle}
               </h1>
               <p className="text-on-surface-variant text-lg">
-                Both players confirm the scope first, then the default study countdown begins.
+                {dictionary.round.reviewConfirmDescription}
               </p>
             </div>
 
@@ -378,12 +469,16 @@ export default function RoundPage() {
               <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen size={20} className="text-primary" />
-                  <h2 className="text-xl font-black text-on-surface">Exam Scope</h2>
+                  <h2 className="text-xl font-black text-on-surface">
+                    {dictionary.round.examScope}
+                  </h2>
                 </div>
 
                 {/* Can Do */}
                 <div>
-                  <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">🎯 Can Do Objectives</h3>
+                  <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+                    {dictionary.round.canDoObjectives}
+                  </h3>
                   <ul className="space-y-2">
                     {(syllabus.can_do || []).map((item, i) => (
                       <li key={i} className="flex items-start gap-3 text-on-surface">
@@ -397,7 +492,9 @@ export default function RoundPage() {
                 {/* Vocabulary */}
                 {syllabus.vocabulary && (
                   <div>
-                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-3">📖 Vocabulary</h3>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                      {dictionary.scopes.sections.vocabulary}
+                    </h3>
                     <div className="space-y-4">
                       {Object.entries(syllabus.vocabulary).map(([group, words]) => (
                         <div key={group}>
@@ -416,7 +513,9 @@ export default function RoundPage() {
                 {/* Grammar */}
                 {syllabus.grammar && (
                   <div>
-                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">📝 Grammar</h3>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+                      {dictionary.scopes.sections.grammar}
+                    </h3>
                     <div className="space-y-2">
                       {syllabus.grammar.map((g, i) => (
                         <div key={i} className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-on-surface text-sm">{g}</div>
@@ -428,7 +527,9 @@ export default function RoundPage() {
                 {/* Expressions */}
                 {syllabus.expressions && (
                   <div>
-                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">💬 Expressions</h3>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+                      {dictionary.scopes.sections.expressions}
+                    </h3>
                     <div className="divide-y divide-surface-container">
                       {syllabus.expressions.map((e, i) => (
                         <div key={i} className="py-2 text-on-surface text-sm">{e}</div>
@@ -440,7 +541,9 @@ export default function RoundPage() {
                 {/* Listening */}
                 {syllabus.listening && (
                   <div>
-                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">👂 You Might Hear</h3>
+                    <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+                      {dictionary.scopes.sections.listening}
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       {syllabus.listening.map((l, i) => (
                         <span key={i} className="px-3 py-1.5 bg-white border border-surface-container rounded-xl text-on-surface text-sm">{l}</span>
@@ -454,20 +557,28 @@ export default function RoundPage() {
             {/* Round Info */}
             <div className="bg-surface-container-low rounded-2xl p-6 flex flex-wrap gap-6 justify-center">
               <div className="text-center">
-                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Topic</div>
+                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                  {dictionary.round.labels.topic}
+                </div>
                 <div className="font-bold text-on-surface">{round.topic}</div>
               </div>
               <div className="text-center">
-                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Default Window</div>
-                <div className="font-bold text-on-surface">{round.study_days}</div>
+                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                  {dictionary.round.labels.defaultWindow}
+                </div>
+                <div className="font-bold text-on-surface">{studyDaysValue}</div>
               </div>
               <div className="text-center">
-                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Level</div>
-                <div className="font-bold text-on-surface">{roundLanguageLevel}</div>
+                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                  {dictionary.round.labels.level}
+                </div>
+                <div className="font-bold text-on-surface">{localizedRoundLevel}</div>
               </div>
               {round.prize_text && (
                 <div className="text-center">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Prize</div>
+                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+                    {dictionary.round.labels.prize}
+                  </div>
                   <div className="font-bold text-on-surface italic">{round.prize_text}</div>
                 </div>
               )}
@@ -476,7 +587,7 @@ export default function RoundPage() {
             {/* Confirmation Status */}
             <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
               <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6 text-center">
-                Confirmation Status
+                {dictionary.round.confirmationStatus}
               </h3>
               <div className="flex justify-center gap-12">
                 <div className="flex flex-col items-center gap-3">
@@ -485,9 +596,11 @@ export default function RoundPage() {
                   ) : (
                     <Circle size={48} className="text-on-surface-variant/30" />
                   )}
-                  <span className="font-bold text-on-surface">You</span>
+                  <span className="font-bold text-on-surface">
+                    {dictionary.round.you}
+                  </span>
                   <span className="text-xs font-bold text-on-surface-variant uppercase">
-                    {myConfirmed ? "Ready" : "Pending"}
+                    {myConfirmed ? dictionary.round.ready : dictionary.round.pending}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-3">
@@ -496,9 +609,11 @@ export default function RoundPage() {
                   ) : (
                     <Circle size={48} className="text-on-surface-variant/30" />
                   )}
-                  <span className="font-bold text-on-surface">Rival</span>
+                  <span className="font-bold text-on-surface">
+                    {dictionary.round.rival}
+                  </span>
                   <span className="text-xs font-bold text-on-surface-variant uppercase">
-                    {rivalConfirmed ? "Ready" : "Pending"}
+                    {rivalConfirmed ? dictionary.round.ready : dictionary.round.pending}
                   </span>
                 </div>
               </div>
@@ -515,14 +630,14 @@ export default function RoundPage() {
                   <Loader2 size={24} className="animate-spin" />
                 ) : (
                   <>
-                    <Swords size={24} /> Confirm Scope
+                    <Swords size={24} /> {dictionary.round.confirmScope}
                   </>
                 )}
               </button>
             ) : (
               <div className="text-center py-4">
                 <p className="text-on-surface-variant font-bold text-lg">
-                  ✅ You&apos;re locked in. Waiting for your rival to confirm the scope...
+                  {dictionary.round.lockedInWaiting}
                 </p>
               </div>
             )}
@@ -534,19 +649,19 @@ export default function RoundPage() {
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <div>
               <div className="inline-block px-6 py-2 bg-tertiary-container text-on-tertiary-container rounded-full font-bold text-xs uppercase tracking-[0.2em] mb-6">
-                Default Study Window
+                {dictionary.round.defaultStudyWindowBadge}
               </div>
               <h1 className="text-6xl md:text-8xl font-black text-on-surface tracking-tighter leading-none mb-4">
                 <span className="text-primary">{timeLeft || "..."}</span>
               </h1>
               <p className="text-on-surface-variant text-lg">
-                This is your default study rhythm. If both players are ready, you can start the exam early.
+                {dictionary.round.countdownDescription}
               </p>
             </div>
             {actionLoading && (
               <div className="flex items-center gap-2 text-on-surface-variant font-medium">
                 <Loader2 size={20} className="animate-spin text-primary" />
-                Syncing the exam start...
+                {dictionary.round.syncingExamStart}
               </div>
             )}
 
@@ -554,23 +669,28 @@ export default function RoundPage() {
             <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
               <div className="flex items-center gap-2 justify-center mb-4">
                 <BookOpen size={20} className="text-primary" />
-                <h2 className="text-xl font-black text-on-surface">Your Study Material</h2>
+                <h2 className="text-xl font-black text-on-surface">
+                  {dictionary.round.studyMaterialTitle}
+                </h2>
               </div>
               <p className="text-on-surface-variant mb-6">
-                Topic: <strong>{round.topic}</strong> • {round.target_lang}
+                {dictionary.round.studyMaterialDescription(
+                  round.topic || dictionary.results.noTopic,
+                  localizedTargetLanguage
+                )}
               </p>
               <p className="text-sm text-on-surface-variant">
-                Study using your preferred tools and methods. The syllabus tells you what to learn — how you learn is up to you.
+                {dictionary.round.studyMaterialHint}
               </p>
             </div>
 
             <div className="bg-surface-container-low rounded-[2rem] p-8 shadow-sm space-y-6">
               <div>
                 <h2 className="text-xl font-black text-on-surface mb-2">
-                  Start Early If You Both Want In
+                  {dictionary.round.earlyStartTitle}
                 </h2>
                 <p className="text-on-surface-variant">
-                  Weekly timing is just the default rhythm. Tap ready here if you want to jump into the exam before the countdown ends.
+                  {dictionary.round.earlyStartDescription}
                 </p>
               </div>
 
@@ -581,9 +701,13 @@ export default function RoundPage() {
                   ) : (
                     <Circle size={48} className="text-on-surface-variant/30" />
                   )}
-                  <span className="font-bold text-on-surface">You</span>
+                  <span className="font-bold text-on-surface">
+                    {dictionary.round.you}
+                  </span>
                   <span className="text-xs font-bold text-on-surface-variant uppercase">
-                    {myExamReady ? "Ready Now" : "Still Studying"}
+                    {myExamReady
+                      ? dictionary.round.readyNow
+                      : dictionary.round.stillStudying}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-3">
@@ -592,9 +716,13 @@ export default function RoundPage() {
                   ) : (
                     <Circle size={48} className="text-on-surface-variant/30" />
                   )}
-                  <span className="font-bold text-on-surface">Rival</span>
+                  <span className="font-bold text-on-surface">
+                    {dictionary.round.rival}
+                  </span>
                   <span className="text-xs font-bold text-on-surface-variant uppercase">
-                    {rivalExamReady ? "Ready Now" : "Still Studying"}
+                    {rivalExamReady
+                      ? dictionary.round.readyNow
+                      : dictionary.round.stillStudying}
                   </span>
                 </div>
               </div>
@@ -605,10 +733,10 @@ export default function RoundPage() {
                 className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {actionLoading
-                  ? "Starting..."
+                  ? dictionary.round.starting
                   : myExamReady
-                    ? "Waiting for rival..."
-                    : "Ready to Start Early"}
+                    ? dictionary.round.waitingForRival
+                    : dictionary.round.readyToStartEarly}
               </button>
             </div>
 
@@ -622,7 +750,8 @@ export default function RoundPage() {
             {round.prize_text && (
               <div className="bg-tertiary-container/30 border-2 border-dashed border-tertiary/30 rounded-2xl py-6 px-10 inline-flex flex-col items-center">
                 <span className="text-on-surface-variant text-xs uppercase tracking-widest mb-1 font-bold">
-                  <Trophy size={14} className="inline mr-1" /> Stake
+                  <Trophy size={14} className="inline mr-1" />{" "}
+                  {dictionary.round.stake}
                 </span>
                 <span className="text-xl font-bold text-on-surface italic">
                   &ldquo;{round.prize_text}&rdquo;
@@ -636,10 +765,10 @@ export default function RoundPage() {
         {round.status === "exam_ready" && (
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <h1 className="text-4xl font-black text-on-surface tracking-tighter">
-              Exam is Ready
+              {dictionary.round.examReadyTitle}
             </h1>
             <p className="text-on-surface-variant text-lg">
-              The exam is unlocked. As soon as both players are ready, it goes live.
+              {dictionary.round.examReadyDescription}
             </p>
 
             <div className="flex justify-center gap-12">
@@ -649,7 +778,7 @@ export default function RoundPage() {
                 ) : (
                   <Circle size={64} className="text-on-surface-variant/30" />
                 )}
-                <span className="font-bold">You</span>
+                <span className="font-bold">{dictionary.round.you}</span>
               </div>
               <div className="flex flex-col items-center gap-3">
                 {(isPlayerA ? round.player_b_exam_ready : round.player_a_exam_ready) ? (
@@ -657,7 +786,7 @@ export default function RoundPage() {
                 ) : (
                   <Circle size={64} className="text-on-surface-variant/30" />
                 )}
-                <span className="font-bold">Rival</span>
+                <span className="font-bold">{dictionary.round.rival}</span>
               </div>
             </div>
 
@@ -669,9 +798,9 @@ export default function RoundPage() {
               {actionLoading ? (
                 <Loader2 size={24} className="animate-spin" />
               ) : myExamReady ? (
-                "Waiting for rival..."
+                dictionary.round.waitingForRival
               ) : (
-                "Ready to Enter Exam"
+                dictionary.round.readyToEnterExam
               )}
             </button>
 
@@ -687,16 +816,16 @@ export default function RoundPage() {
         {round.status === "exam_live" && (
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <h1 className="text-4xl font-black text-on-surface tracking-tighter">
-              Exam is Live! 🔥
+              {dictionary.round.examLiveTitle}
             </h1>
             <p className="text-on-surface-variant text-lg">
-              Head to the exam page and give it your best shot!
+              {dictionary.round.examLiveDescription}
             </p>
             <button
               onClick={() => router.push(`/round/${round.id}/exam`)}
               className="bg-primary text-on-primary py-5 px-12 rounded-full font-black text-xl shadow-xl hover:scale-105 active:scale-95 transition-all"
             >
-              Go to Exam
+              {dictionary.round.goToExam}
             </button>
           </div>
         )}
@@ -705,13 +834,13 @@ export default function RoundPage() {
         {round.status === "completed" && (
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <h1 className="text-4xl font-black text-on-surface tracking-tighter">
-              Round Complete! 🎉
+              {dictionary.round.roundCompleteTitle}
             </h1>
             <button
               onClick={() => router.push(`/round/${round.id}/results`)}
               className="bg-primary text-on-primary py-5 px-12 rounded-full font-black text-xl shadow-xl hover:scale-105 active:scale-95 transition-all"
             >
-              View Results
+              {dictionary.round.viewResults}
             </button>
           </div>
         )}

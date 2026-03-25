@@ -10,6 +10,8 @@ import type {
   RivalryLedger,
   RivalryLedgerRound,
 } from "@/lib/domain-types";
+import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getEditableProfileFromUser } from "@/lib/profile";
 import {
   Clock,
   ChevronLeft,
@@ -26,6 +28,9 @@ export default function ExamPage() {
   const roundId = params.id as string;
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [websiteLanguage, setWebsiteLanguage] = useState(
+    resolveClientWebsiteLanguage()
+  );
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [ready, setReady] = useState(false); // Only true when exam + questions are loaded
@@ -39,12 +44,14 @@ export default function ExamPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const hasSubmitted = useRef(false);
+  const dictionary = getDictionary(websiteLanguage);
 
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUserId(user.id);
+      setWebsiteLanguage(getEditableProfileFromUser(user).websiteLanguage);
 
       // Get round
       const { data: roundData } = await supabase
@@ -196,7 +203,7 @@ export default function ExamPage() {
       console.error("Submit error:", error);
       hasSubmitted.current = false;
       setSubmitting(false);
-      setSubmitError("Failed to submit: " + error.message);
+      setSubmitError(dictionary.exam.errors.submitFailed);
       return;
     }
 
@@ -265,7 +272,9 @@ export default function ExamPage() {
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="flex flex-col items-center gap-4">
           <Loader2 size={32} className="animate-spin text-primary" />
-          <div className="text-on-surface-variant font-medium">Loading exam...</div>
+          <div className="text-on-surface-variant font-medium">
+            {dictionary.exam.loading}
+          </div>
         </div>
       </div>
     );
@@ -282,7 +291,7 @@ export default function ExamPage() {
       <header className="sticky top-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-surface-container px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="text-sm font-bold text-on-surface-variant">
-            {answeredCount}/{questions.length} answered
+            {dictionary.exam.answeredCount(answeredCount, questions.length)}
           </div>
 
           <div
@@ -299,7 +308,7 @@ export default function ExamPage() {
             disabled={submitting}
             className="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-1 hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            <Send size={14} /> Submit
+            <Send size={14} /> {dictionary.exam.submit}
           </button>
         </div>
       </header>
@@ -333,10 +342,14 @@ export default function ExamPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <span className="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-                {q.type === "mcq" ? "Multiple Choice" : q.type === "fitb" ? "Fill in the Blank" : "Translation"}
+                {q.type === "mcq"
+                  ? dictionary.exam.questionTypes.mcq
+                  : q.type === "fitb"
+                    ? dictionary.exam.questionTypes.fitb
+                    : dictionary.exam.questionTypes.translation}
               </span>
               <span className="text-sm text-on-surface-variant font-medium">
-                Q{q.id} of {questions.length}
+                {dictionary.exam.questionCounter(q.id, questions.length)}
               </span>
             </div>
             <button
@@ -346,7 +359,7 @@ export default function ExamPage() {
               }`}
             >
               <Flag size={14} className={flagged[q.id] ? "fill-current" : ""} />
-              {flagged[q.id] ? "Flagged" : "Flag"}
+              {flagged[q.id] ? dictionary.exam.flagged : dictionary.exam.flag}
             </button>
           </div>
 
@@ -380,7 +393,7 @@ export default function ExamPage() {
               type="text"
               value={answers[q.id] || ""}
               onChange={(e) => handleAnswer(q.id, e.target.value)}
-              placeholder="Type your answer..."
+              placeholder={dictionary.exam.fitbPlaceholder}
               className="w-full bg-surface-container-lowest border-2 border-surface-container text-on-surface rounded-2xl py-4 px-6 text-lg outline-none focus:border-primary transition-all"
             />
           )}
@@ -389,7 +402,7 @@ export default function ExamPage() {
             <textarea
               value={answers[q.id] || ""}
               onChange={(e) => handleAnswer(q.id, e.target.value)}
-              placeholder="Write your translation..."
+              placeholder={dictionary.exam.translationPlaceholder}
               rows={3}
               className="w-full bg-surface-container-lowest border-2 border-surface-container text-on-surface rounded-2xl py-4 px-6 text-lg outline-none focus:border-primary transition-all resize-none"
             />
@@ -405,14 +418,14 @@ export default function ExamPage() {
             disabled={currentQ === 0}
             className="flex items-center gap-2 text-on-surface-variant font-bold hover:text-primary transition-colors disabled:opacity-30"
           >
-            <ChevronLeft size={20} /> Previous
+            <ChevronLeft size={20} /> {dictionary.exam.previous}
           </button>
           <button
             onClick={() => setCurrentQ(Math.min(questions.length - 1, currentQ + 1))}
             disabled={currentQ === questions.length - 1}
             className="flex items-center gap-2 text-on-surface-variant font-bold hover:text-primary transition-colors disabled:opacity-30"
           >
-            Next <ChevronRight size={20} />
+            {dictionary.exam.next} <ChevronRight size={20} />
           </button>
         </div>
       </footer>
@@ -423,14 +436,19 @@ export default function ExamPage() {
           <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle size={24} className="text-primary" />
-              <h3 className="text-xl font-black text-on-surface">Submit Exam?</h3>
+              <h3 className="text-xl font-black text-on-surface">
+                {dictionary.exam.submitConfirmTitle}
+              </h3>
             </div>
             <p className="text-on-surface-variant mb-2">
-              You&apos;ve answered <strong>{answeredCount} of {questions.length}</strong> questions.
+              {dictionary.exam.submitProgress(answeredCount, questions.length)}
             </p>
             {answeredCount < questions.length && (
               <p className="text-sm text-red-600 font-medium mb-2">
-                ⚠️ {questions.length - answeredCount} questions are unanswered.
+                {"⚠️ "}
+                {dictionary.exam.unansweredWarning(
+                  questions.length - answeredCount
+                )}
               </p>
             )}
             {submitError && (
@@ -440,14 +458,23 @@ export default function ExamPage() {
             )}
             <div className="flex gap-4 mt-6">
               <button onClick={() => setShowConfirm(false)} className="flex-1 bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold hover:bg-surface-container transition-colors">
-                Go Back
+                {dictionary.exam.goBack}
               </button>
               <button
                 onClick={() => { setShowConfirm(false); handleSubmit(); }}
                 disabled={submitting}
                 className="flex-1 bg-primary text-on-primary py-4 rounded-2xl font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {submitting ? <Loader2 size={20} className="animate-spin" /> : <><Send size={18} /> Submit</>}
+                {submitting ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    {dictionary.exam.submitting}
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} /> {dictionary.exam.submitExam}
+                  </>
+                )}
               </button>
             </div>
           </div>

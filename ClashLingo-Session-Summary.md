@@ -91,6 +91,9 @@ Date: 2026-03-25
   - Results now shows a stronger hero for win / tie / loss states plus richer score, accuracy, delta, and perfect-answer stats.
   - Results now supports a richer share card preview, copy-caption, and SVG download actions.
   - `ResultsPage` is now included in the bilingual website-language batch.
+- Finished the second website-language batch for the live round flow.
+  - `RoundPage`, `ExamPage`, and `app/rivalry/[id]/new-round/page.tsx` now render in both `English` and `简体中文`.
+  - User-facing API feedback in create-round / generate-syllabus / generate-exam flows now maps through localized page copy instead of surfacing raw English errors.
 
 ## What Was Verified
 
@@ -111,8 +114,8 @@ Date: 2026-03-25
 
 ## Recommended Next Task
 
-1. Continue the second website-language batch with `Round`, `Exam`, `new-round`, and API-returned system messages.
-2. Decide whether the new results battle-report screen needs one final visual polish pass.
+1. Decide whether the new results battle-report screen needs one final visual polish pass.
+2. Decide whether the bilingual rollout needs one final wording pass.
 3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order

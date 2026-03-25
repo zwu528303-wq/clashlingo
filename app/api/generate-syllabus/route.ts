@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
     const { roundId, topic, targetLang, difficulty } = await req.json();
 
     if (!roundId || !topic || !targetLang) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing fields", code: "MISSING_FIELDS" },
+        { status: 400 }
+      );
     }
 
     const { data: roundData, error: roundError } = await supabase
@@ -32,7 +35,10 @@ export async function POST(req: NextRequest) {
       .single<Pick<Round, "rivalry_id" | "topic" | "target_lang">>();
 
     if (roundError || !roundData) {
-      return NextResponse.json({ error: "Round not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Round not found", code: "ROUND_NOT_FOUND" },
+        { status: 404 }
+      );
     }
 
     const { data: rivalryData } = await supabase
@@ -130,7 +136,10 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
     // Extract text content
     const textBlock = message.content.find((block) => block.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json({ error: "No text response from AI" }, { status: 500 });
+      return NextResponse.json(
+        { error: "No text response from AI", code: "AI_NO_TEXT" },
+        { status: 500 }
+      );
     }
 
     // Parse JSON
@@ -144,7 +153,11 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
         syllabus = JSON.parse(jsonMatch[0]);
       } else {
         return NextResponse.json(
-          { error: "Failed to parse syllabus JSON", raw: textBlock.text },
+          {
+            error: "Failed to parse syllabus JSON",
+            code: "SYLLABUS_PARSE_FAILED",
+            raw: textBlock.text,
+          },
           { status: 500 }
         );
       }
@@ -160,7 +173,10 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
       .eq("id", roundId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: error.message, code: "ROUND_UPDATE_FAILED" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, syllabus });
@@ -169,7 +185,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
     const message =
       error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: message },
+      { error: message, code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }

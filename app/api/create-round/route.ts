@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (!accessToken) {
       return NextResponse.json(
-        { error: "Missing access token" },
+        { error: "Missing access token", code: "MISSING_ACCESS_TOKEN" },
         { status: 401 }
       );
     }
@@ -41,7 +41,10 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: authError?.message || "Unauthorized" },
+        {
+          error: authError?.message || "Unauthorized",
+          code: "UNAUTHORIZED",
+        },
         { status: 401 }
       );
     }
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     if (!rivalryId || !topic || !studyDays) {
       return NextResponse.json(
-        { error: "Missing round creation fields" },
+        { error: "Missing round creation fields", code: "MISSING_FIELDS" },
         { status: 400 }
       );
     }
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     if (rivalryError || !rivalryData) {
       return NextResponse.json(
-        { error: "Rivalry not found" },
+        { error: "Rivalry not found", code: "RIVALRY_NOT_FOUND" },
         { status: 404 }
       );
     }
@@ -91,21 +94,27 @@ export async function POST(req: NextRequest) {
       rivalryData.player_b_id !== user.id
     ) {
       return NextResponse.json(
-        { error: "You are not part of this rivalry" },
+        { error: "You are not part of this rivalry", code: "NOT_PART_OF_RIVALRY" },
         { status: 403 }
       );
     }
 
     if (!rivalryData.player_b_id) {
       return NextResponse.json(
-        { error: "This rivalry is still waiting for a rival to join." },
+        {
+          error: "This rivalry is still waiting for a rival to join.",
+          code: "WAITING_FOR_RIVAL",
+        },
         { status: 409 }
       );
     }
 
     if (isRivalryInactive(rivalryData.cumulative_ledger)) {
       return NextResponse.json(
-        { error: "This rivalry has ended and cannot start new rounds." },
+        {
+          error: "This rivalry has ended and cannot start new rounds.",
+          code: "RIVALRY_INACTIVE",
+        },
         { status: 409 }
       );
     }
@@ -118,14 +127,17 @@ export async function POST(req: NextRequest) {
 
     if (activeRoundError) {
       return NextResponse.json(
-        { error: activeRoundError.message },
+        { error: activeRoundError.message, code: "ACTIVE_ROUND_CHECK_FAILED" },
         { status: 500 }
       );
     }
 
     if ((activeRoundCount ?? 0) > 0) {
       return NextResponse.json(
-        { error: "Finish the active round before starting a new one." },
+        {
+          error: "Finish the active round before starting a new one.",
+          code: "ACTIVE_ROUND_EXISTS",
+        },
         { status: 409 }
       );
     }
@@ -140,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     if (latestRoundError) {
       return NextResponse.json(
-        { error: latestRoundError.message },
+        { error: latestRoundError.message, code: "LATEST_ROUND_LOOKUP_FAILED" },
         { status: 500 }
       );
     }
@@ -181,7 +193,10 @@ export async function POST(req: NextRequest) {
 
     if (roundError || !round) {
       return NextResponse.json(
-        { error: roundError?.message || "Failed to create round." },
+        {
+          error: roundError?.message || "Failed to create round.",
+          code: "ROUND_CREATE_FAILED",
+        },
         { status: 500 }
       );
     }
@@ -195,7 +210,7 @@ export async function POST(req: NextRequest) {
       await adminClient.from("rounds").delete().eq("id", round.id);
 
       return NextResponse.json(
-        { error: updateRivalryError.message },
+        { error: updateRivalryError.message, code: "RIVALRY_UPDATE_FAILED" },
         { status: 500 }
       );
     }
@@ -205,6 +220,9 @@ export async function POST(req: NextRequest) {
     const message =
       error instanceof Error ? error.message : "Internal server error";
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: message, code: "INTERNAL_ERROR" },
+      { status: 500 }
+    );
   }
 }

@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
     const { roundId } = await req.json();
 
     if (!roundId) {
-      return NextResponse.json({ error: "Missing roundId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing roundId", code: "MISSING_ROUND_ID" },
+        { status: 400 }
+      );
     }
 
     // Get round + syllabus
@@ -29,13 +32,19 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (roundError || !roundData) {
-      return NextResponse.json({ error: "Round not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Round not found", code: "ROUND_NOT_FOUND" },
+        { status: 404 }
+      );
     }
 
     const round = roundData as Round;
 
     if (!round.syllabus) {
-      return NextResponse.json({ error: "No syllabus found" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No syllabus found", code: "MISSING_SYLLABUS" },
+        { status: 400 }
+      );
     }
 
     const { data: rivalryData } = await supabase
@@ -153,7 +162,10 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
 
     const textBlock = message.content.find((block) => block.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json({ error: "No text response" }, { status: 500 });
+      return NextResponse.json(
+        { error: "No text response", code: "AI_NO_TEXT" },
+        { status: 500 }
+      );
     }
 
     let examData: Pick<Exam, "questions" | "rubric">;
@@ -165,7 +177,11 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
         examData = JSON.parse(jsonMatch[0]);
       } else {
         return NextResponse.json(
-          { error: "Failed to parse exam JSON", raw: textBlock.text },
+          {
+            error: "Failed to parse exam JSON",
+            code: "EXAM_PARSE_FAILED",
+            raw: textBlock.text,
+          },
           { status: 500 }
         );
       }
@@ -210,7 +226,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
     const message =
       error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: message },
+      { error: message, code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }

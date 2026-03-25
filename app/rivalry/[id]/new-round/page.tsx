@@ -4,12 +4,40 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import type { Rivalry } from "@/lib/domain-types";
-import { formatWebsiteDateTime, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import {
+  formatWebsiteDateTime,
+  getDictionary,
+  getLocalizedLanguageLevelLabel,
+  getLocalizedLearningLanguageLabel,
+  resolveClientWebsiteLanguage,
+} from "@/lib/i18n";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
 import { getEditableProfileFromUser } from "@/lib/profile";
 import { getRoundCreationLockState } from "@/lib/round-creation";
 import { isRivalryInactive } from "@/lib/rivalry-ledger";
 import { ArrowLeft, Sparkles, Clock, Trophy, ArrowRight, Loader2 } from "lucide-react";
+
+function mapCreateRoundError(
+  code: string | undefined,
+  dictionary: ReturnType<typeof getDictionary>,
+  nextRoundAvailableText: string | null
+) {
+  switch (code) {
+    case "ROUND_CREATION_COOLDOWN":
+      return nextRoundAvailableText
+        ? dictionary.newRound.errors.cooldownWithTime(nextRoundAvailableText)
+        : dictionary.newRound.errors.cooldownNoTime;
+    case "RIVALRY_INACTIVE":
+      return dictionary.newRound.errors.rivalryEnded;
+    case "MISSING_ACCESS_TOKEN":
+    case "UNAUTHORIZED":
+      return dictionary.newRound.errors.sessionExpired;
+    case "ACTIVE_ROUND_EXISTS":
+      return dictionary.newRound.errors.activeRoundExists;
+    default:
+      return dictionary.newRound.errors.createFailed;
+  }
+}
 
 export default function NewRoundPage() {
   const router = useRouter();
@@ -36,16 +64,8 @@ export default function NewRoundPage() {
   const [studyDays, setStudyDays] = useState(7);
   const [prize, setPrize] = useState("");
 
-  const topicSuggestions = [
-    "At the Café",
-    "Ordering Food",
-    "Travel & Directions",
-    "Shopping & Prices",
-    "Greetings & Introductions",
-    "At the Hotel",
-    "Weather & Seasons",
-    "Family & Relationships",
-  ];
+  const dictionary = getDictionary(websiteLanguage);
+  const topicSuggestions = dictionary.newRound.topicSuggestions;
 
   useEffect(() => {
     const init = async () => {
@@ -92,8 +112,8 @@ export default function NewRoundPage() {
       setMessage({
         type: "error",
         text: nextRoundAvailableText
-          ? `This rivalry can start the next round after ${nextRoundAvailableText}.`
-          : "This rivalry already started a round in the last 24 hours.",
+          ? dictionary.newRound.errors.cooldownWithTime(nextRoundAvailableText)
+          : dictionary.newRound.errors.cooldownNoTime,
       });
       return;
     }
@@ -104,7 +124,7 @@ export default function NewRoundPage() {
     if (isRivalryInactive(rivalry.cumulative_ledger)) {
       setMessage({
         type: "error",
-        text: "This rivalry has ended and cannot start new rounds.",
+        text: dictionary.newRound.errors.rivalryEnded,
       });
       setCreating(false);
       return;
@@ -117,7 +137,7 @@ export default function NewRoundPage() {
     if (!session?.access_token) {
       setMessage({
         type: "error",
-        text: "Your session expired. Please sign in again.",
+        text: dictionary.newRound.errors.sessionExpired,
       });
       setCreating(false);
       return;
@@ -154,13 +174,13 @@ export default function NewRoundPage() {
 
       setMessage({
         type: "error",
-        text:
+        text: mapCreateRoundError(
+          payload?.code,
+          dictionary,
           payload?.code === "ROUND_CREATION_COOLDOWN" && payload.nextAvailableAt
-            ? `This rivalry can start the next round after ${formatWebsiteDateTime(
-                payload.nextAvailableAt,
-                websiteLanguage
-              )}.`
-            : payload?.error || "Failed to create round.",
+            ? formatWebsiteDateTime(payload.nextAvailableAt, websiteLanguage)
+            : nextRoundAvailableText
+        ),
       });
       setCreating(false);
       return;
@@ -173,7 +193,9 @@ export default function NewRoundPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="text-on-surface-variant font-medium">Loading...</div>
+        <div className="text-on-surface-variant font-medium">
+          {dictionary.newRound.loading}
+        </div>
       </div>
     );
   }
@@ -185,6 +207,14 @@ export default function NewRoundPage() {
       : rivalry.player_b_lang || rivalry.player_a_lang
     : null;
   const targetLevel = resolveRoundLanguageLevel(rivalry, targetLanguage);
+  const localizedTargetLanguage = getLocalizedLearningLanguageLabel(
+    targetLanguage,
+    websiteLanguage
+  );
+  const localizedTargetLevel = getLocalizedLanguageLevelLabel(
+    targetLevel,
+    websiteLanguage
+  );
 
   return (
     <div className="min-h-screen bg-surface">
@@ -194,32 +224,33 @@ export default function NewRoundPage() {
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
         >
           <ArrowLeft size={20} />
-          Back
+          {dictionary.newRound.back}
         </button>
       </header>
 
       <div className="max-w-3xl mx-auto px-6 pb-12 space-y-10">
         <div>
           <h1 className="text-4xl font-black text-on-surface tracking-tighter mb-2">
-            New Round
+            {dictionary.newRound.title}
           </h1>
           <p className="text-on-surface-variant text-lg">
-            Pick a topic, choose the default study window, and challenge your rival.
+            {dictionary.newRound.description}
           </p>
           {targetLanguage && (
             <p className="text-sm text-on-surface-variant font-medium mt-3">
-              This round will target {targetLanguage} at{" "}
-              <span className="text-on-surface font-bold">{targetLevel}</span>{" "}
-              level.
+              {dictionary.newRound.targetLevelDescription(
+                localizedTargetLanguage,
+                localizedTargetLevel
+              )}
             </p>
           )}
         </div>
 
         {roundCreationLock.isLocked && nextRoundAvailableText && (
           <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
-            <div className="font-bold">One round per rivalry every 24 hours.</div>
+            <div className="font-bold">{dictionary.newRound.cooldownTitle}</div>
             <div className="mt-1 text-sm font-medium">
-              You can open the next round after {nextRoundAvailableText}.
+              {dictionary.newRound.cooldownDescription(nextRoundAvailableText)}
             </div>
           </div>
         )}
@@ -227,14 +258,14 @@ export default function NewRoundPage() {
         {/* Topic Selection */}
         <section className="space-y-4">
           <label className="flex items-center gap-2 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
-            <Sparkles size={16} /> Topic
+            <Sparkles size={16} /> {dictionary.newRound.topicLabel}
           </label>
 
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g. At the Café, Ordering Food..."
+            placeholder={dictionary.newRound.topicPlaceholder}
             className="w-full bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container text-lg"
           />
 
@@ -258,7 +289,7 @@ export default function NewRoundPage() {
         {/* Default Study Window */}
         <section className="space-y-4">
           <label className="flex items-center gap-2 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
-            <Clock size={16} /> Default Study Window
+            <Clock size={16} /> {dictionary.newRound.defaultWindowLabel}
           </label>
 
           <div className="flex gap-3">
@@ -277,29 +308,31 @@ export default function NewRoundPage() {
             ))}
           </div>
           <p className="text-sm text-on-surface-variant font-medium ml-1">
-            By default, the exam unlocks after {studyDays} days. If you both want in sooner, you can still start early from the round.
+            {dictionary.newRound.defaultWindowHint(studyDays)}
           </p>
         </section>
 
         {/* Prize / Stake */}
         <section className="space-y-4">
           <label className="flex items-center gap-2 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
-            <Trophy size={16} /> Prize / Stake
-            <span className="text-on-surface-variant/50 normal-case tracking-normal font-medium">(optional)</span>
+            <Trophy size={16} /> {dictionary.newRound.prizeLabel}
+            <span className="text-on-surface-variant/50 normal-case tracking-normal font-medium">
+              {dictionary.newRound.optional}
+            </span>
           </label>
 
           <input
             type="text"
             value={prize}
             onChange={(e) => setPrize(e.target.value)}
-            placeholder="e.g. Loser buys boba 🧋"
+            placeholder={dictionary.newRound.prizePlaceholder}
             className="w-full bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 px-6 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container text-lg"
           />
         </section>
 
         {message && (
           <div className="rounded-[1.75rem] border border-red-200 bg-red-50 px-5 py-4 text-red-700">
-            <div className="font-bold">Could not create this round yet.</div>
+            <div className="font-bold">{dictionary.newRound.errorTitle}</div>
             <div className="mt-1 text-sm font-medium">{message.text}</div>
           </div>
         )}
@@ -311,10 +344,13 @@ export default function NewRoundPage() {
           className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
         >
           {creating ? (
-            <Loader2 size={24} className="animate-spin" />
+            <>
+              <Loader2 size={24} className="animate-spin" />
+              {dictionary.newRound.creatingRound}
+            </>
           ) : (
             <>
-              Create Round <ArrowRight size={24} />
+              {dictionary.newRound.createRound} <ArrowRight size={24} />
             </>
           )}
         </button>

@@ -173,6 +173,8 @@ As of the latest reviewed state, the following product changes are already in th
 - results page includes a stronger battle-report layout with a richer share card
 - results page now supports share, copy-caption, and download-card actions
 - results page is now part of the bilingual website-language batch
+- round, exam, and new-round are now part of the bilingual website-language batch
+- create-round / generate-syllabus / generate-exam user-facing errors now map through localized page copy
 - results page includes syllabus / study material review
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point
@@ -190,7 +192,7 @@ As of the latest reviewed state, the following product changes are already in th
 - settings page now includes `Website Language`
 - settings page now includes `Default Language Level`
 - login now includes an unsigned-user website-language toggle
-- the first website-language batch is now localized across Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, and the shared sidebar shell
+- the website-language rollout now covers Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, the shared sidebar shell, Round, new-round, Exam, and Results
 - settings save syncs shared nickname and public avatar identity through a server route
 - lounge now reads profile preferences and uses the new supported language list
 - lounge enforces a 2-rivalry limit in the UI

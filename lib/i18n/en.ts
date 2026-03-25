@@ -351,6 +351,144 @@ export const en = {
       listening: "Listening",
     },
   },
+  newRound: {
+    loading: "Loading...",
+    back: "Back",
+    title: "New Round",
+    description:
+      "Pick a topic, choose the default study window, and challenge your rival.",
+    targetLevelDescription: (language: string, level: string) =>
+      `This round will target ${language} at ${level} level.`,
+    cooldownTitle: "One round per rivalry every 24 hours.",
+    cooldownDescription: (time: string) =>
+      `You can open the next round after ${time}.`,
+    topicLabel: "Topic",
+    topicPlaceholder: "e.g. At the Café, Ordering Food...",
+    topicSuggestions: [
+      "At the Café",
+      "Ordering Food",
+      "Travel & Directions",
+      "Shopping & Prices",
+      "Greetings & Introductions",
+      "At the Hotel",
+      "Weather & Seasons",
+      "Family & Relationships",
+    ],
+    defaultWindowLabel: "Default Study Window",
+    defaultWindowHint: (days: number) =>
+      `By default, the exam unlocks after ${days} days. If you both want in sooner, you can still start early from the round.`,
+    prizeLabel: "Prize / Stake",
+    optional: "(optional)",
+    prizePlaceholder: "e.g. Loser buys boba",
+    errorTitle: "Could not create this round yet.",
+    createRound: "Create Round",
+    creatingRound: "Creating...",
+    errors: {
+      cooldownWithTime: (time: string) =>
+        `This rivalry can start the next round after ${time}.`,
+      cooldownNoTime: "This rivalry already started a round in the last 24 hours.",
+      rivalryEnded: "This rivalry has ended and cannot start new rounds.",
+      sessionExpired: "Your session expired. Please sign in again.",
+      activeRoundExists: "Finish the active round before starting a new one.",
+      createFailed: "Failed to create round.",
+    },
+  },
+  round: {
+    back: "Back",
+    roundLabel: (roundNumber: number) => `Round ${roundNumber}`,
+    topicSelectionTitle: (roundNumber: number) => `Round ${roundNumber}`,
+    topicSelectionDescription:
+      "Generate the scope for this round, then set the default study rhythm in motion.",
+    labels: {
+      topic: "Topic",
+      language: "Language",
+      defaultWindow: "Default Window",
+      level: "Level",
+      prize: "Prize",
+    },
+    daysValue: (days: number) => `${days} days`,
+    scopeReadyHint:
+      "Once the scope is ready, both players confirm it and the default study countdown begins. You can still start early later if you both want to.",
+    generateScope: "Generate Scope",
+    generatingScope: "Generating...",
+    reviewConfirmTitle: "Review & Confirm",
+    reviewConfirmDescription:
+      "Both players confirm the scope first, then the default study countdown begins.",
+    examScope: "Exam Scope",
+    canDoObjectives: "Can-Do Objectives",
+    confirmationStatus: "Confirmation Status",
+    you: "You",
+    rival: "Rival",
+    ready: "Ready",
+    pending: "Pending",
+    confirmScope: "Confirm Scope",
+    lockedInWaiting:
+      "You're locked in. Waiting for your rival to confirm the scope...",
+    defaultStudyWindowBadge: "Default Study Window",
+    countdownDescription:
+      "This is your default study rhythm. If both players are ready, you can start the exam early.",
+    syncingExamStart: "Syncing the exam start...",
+    studyMaterialTitle: "Your Study Material",
+    studyMaterialDescription: (topic: string, language: string) =>
+      `Topic: ${topic} • ${language}`,
+    studyMaterialHint:
+      "Study using your preferred tools and methods. The syllabus tells you what to learn — how you learn is up to you.",
+    earlyStartTitle: "Start Early If You Both Want In",
+    earlyStartDescription:
+      "Weekly timing is just the default rhythm. Tap ready here if you want to jump into the exam before the countdown ends.",
+    readyNow: "Ready Now",
+    stillStudying: "Still Studying",
+    starting: "Starting...",
+    waitingForRival: "Waiting for rival...",
+    readyToStartEarly: "Ready to Start Early",
+    stake: "Stake",
+    examReadyTitle: "Exam is Ready",
+    examReadyDescription:
+      "The exam is unlocked. As soon as both players are ready, it goes live.",
+    readyToEnterExam: "Ready to Enter Exam",
+    examLiveTitle: "Exam is Live!",
+    examLiveDescription: "Head to the exam page and give it your best shot!",
+    goToExam: "Go to Exam",
+    roundCompleteTitle: "Round Complete!",
+    viewResults: "View Results",
+    errors: {
+      generateScopeFailed: "Failed to generate the scope. Please try again.",
+      saveReadyFailed: "Failed to save your ready state.",
+      refreshReadyFailed: "Failed to refresh the latest ready state.",
+      unlockExamFailed: "Failed to unlock the exam early.",
+      startExamFailed: "Failed to start the exam.",
+    },
+  },
+  exam: {
+    loading: "Loading exam...",
+    answeredCount: (count: number, total: number) =>
+      `${count}/${total} answered`,
+    submit: "Submit",
+    questionCounter: (current: number, total: number) =>
+      `Q${current} of ${total}`,
+    questionTypes: {
+      mcq: "Multiple Choice",
+      fitb: "Fill in the Blank",
+      translation: "Translation",
+    },
+    flagged: "Flagged",
+    flag: "Flag",
+    fitbPlaceholder: "Type your answer...",
+    translationPlaceholder: "Write your translation...",
+    previous: "Previous",
+    next: "Next",
+    submitConfirmTitle: "Submit Exam?",
+    submitProgress: (answered: number, total: number) =>
+      `You've answered ${answered} of ${total} questions.`,
+    unansweredWarning: (count: number) =>
+      `${count} questions are unanswered.`,
+    goBack: "Go Back",
+    submitExam: "Submit",
+    submitting: "Submitting...",
+    errors: {
+      submitFailed: "Failed to submit your exam. Please try again.",
+    },
+  },
   guide: {
     loginEyebrow: "How It Works",
     loginTitle: "Learn by dueling",

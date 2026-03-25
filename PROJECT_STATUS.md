@@ -113,7 +113,7 @@ Observed status values:
 - Website UI now supports `English` and `简体中文`
 - Login now includes a first-visit website-language toggle before sign-in
 - Settings now persists `Website Language` through auth metadata
-- The first translated UI batch is now live across:
+- The translated website-language shell is now live across:
   - Login
   - Reset Password
   - Lounge
@@ -122,6 +122,11 @@ Observed status values:
   - Settings
   - How It Works
   - AppSidebar
+- The second translated batch is now live across:
+  - RoundPage
+  - ExamPage
+  - `app/rivalry/[id]/new-round/page.tsx`
+  - page-level API system feedback for create-round, generate-syllabus, and generate-exam flows
 - Lounge UI for creating a rivalry and joining by invite code
 - Login and empty-lounge states now use a loop-based onboarding guide with the same wording as the full manual
 - The app now ships a `/how-it-works` guide page, and the sidebar links to it directly
@@ -177,18 +182,12 @@ Ran on 2026-03-25:
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
 - There are still no checked-in Supabase SQL migrations; `SUPABASE_SCHEMA.md` documents the live shape, but it is not a migration source of truth yet.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
-- Website language still needs a second translation pass for:
-  - `RoundPage`
-  - `ExamPage`
-  - `app/rivalry/[id]/new-round/page.tsx`
-  - some API-returned status/error strings
-- `ResultsPage` is now translated and ships a richer battle-report/share surface, so the main remaining bilingual gap is the live round flow plus a few system messages.
-- The 24-hour new-round limit currently shows a localized frontend hint in `Rivalries`, but `app/rivalry/[id]/new-round/page.tsx` itself is still part of the untranslated second batch.
+- The main user-facing routes are now bilingual, but a few low-level raw server fallback strings may still appear in English if a completely unmapped backend failure surfaces.
 
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize the second website-language batch next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
+- Prioritize either final results polish or test strategy / AI output hardening next.
 - Shared avatar sync and rivalry-shared weekly rhythm are now shipped; if a later session touches them, preserve the public-identity/public-ledger split instead of moving those values back into viewer-local rendering.
 - Leave-rivalry is now shipped through `cumulative_ledger.inactive`.
   - Preserve history.

@@ -4,6 +4,9 @@ Last updated: 2026-03-25
 
 ## Recently Completed
 
+- Finished the second website-language batch for the live round flow.
+  - `RoundPage`, `ExamPage`, and `app/rivalry/[id]/new-round/page.tsx` are now localized in `English` and `简体中文`.
+  - User-facing API feedback in create-round / generate-syllabus / generate-exam flows now maps through localized page copy instead of leaking raw English strings.
 - Upgraded the results page into a richer battle report.
   - `components/ResultsPage.tsx` now has a stronger win/tie/loss hero, richer score comparison, and a more polished review layout.
   - Results now supports share, copy-caption, and download-card actions.
@@ -95,18 +98,18 @@ Last updated: 2026-03-25
 
 ## Highest Priority
 
-1. Decide whether to continue the second website-language batch with `Round` and `Exam`.
-   - `ResultsPage` is now translated and upgraded into a richer battle-report screen.
-   - The biggest remaining language gap is the live round/exam flow, `new-round`, and some API-returned system messages.
+1. Decide whether the new results battle-report screen needs one more visual polish round.
+   - The core report / share / review structure is now in place.
+   - Any follow-up should stay visual-only and preserve the current page behavior.
 
 2. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
-3. Decide whether the new results battle-report screen needs one more visual polish round.
-   - The core report / share / review structure is now in place.
-   - Any follow-up should stay visual-only and preserve the current page behavior.
+3. Decide whether the bilingual rollout now needs one final wording pass.
+   - Core user-facing routes are translated.
+   - Any follow-up should focus on phrasing polish, not a new i18n architecture.
 
 ## Engineering Follow-Up
 
