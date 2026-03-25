@@ -1,10 +1,5 @@
 import {
   ArrowDown,
-  ArrowDownLeft,
-  ArrowDownRight,
-  ArrowLeft,
-  ArrowUp,
-  ArrowUpRight,
   Sparkles,
 } from "lucide-react";
 import { FIRST_TIME_SETUP, WEEKLY_LOOP_STEPS } from "@/lib/onboarding";
@@ -20,33 +15,6 @@ const DESKTOP_POSITIONS = [
   "left-0 top-[22%]",
 ];
 
-const DESKTOP_ARROWS = [
-  {
-    icon: ArrowDownRight,
-    className: "right-[22%] top-[11%]",
-  },
-  {
-    icon: ArrowDown,
-    className: "right-[7%] top-[43%]",
-  },
-  {
-    icon: ArrowDownLeft,
-    className: "right-[22%] bottom-[11%]",
-  },
-  {
-    icon: ArrowLeft,
-    className: "left-1/2 bottom-[7%] -translate-x-1/2",
-  },
-  {
-    icon: ArrowUp,
-    className: "left-[7%] top-[43%]",
-  },
-  {
-    icon: ArrowUpRight,
-    className: "left-[22%] top-[11%]",
-  },
-];
-
 const COMPACT_DESKTOP_POSITIONS = [
   "left-1/2 top-0 -translate-x-1/2",
   "right-0 top-[18%]",
@@ -54,33 +22,6 @@ const COMPACT_DESKTOP_POSITIONS = [
   "left-1/2 bottom-0 -translate-x-1/2",
   "left-2 bottom-[15%]",
   "left-0 top-[18%]",
-];
-
-const COMPACT_DESKTOP_ARROWS = [
-  {
-    icon: ArrowDownRight,
-    className: "right-[22%] top-[9%]",
-  },
-  {
-    icon: ArrowDown,
-    className: "right-[7%] top-[42%]",
-  },
-  {
-    icon: ArrowDownLeft,
-    className: "right-[22%] bottom-[9%]",
-  },
-  {
-    icon: ArrowLeft,
-    className: "left-1/2 bottom-[6%] -translate-x-1/2",
-  },
-  {
-    icon: ArrowUp,
-    className: "left-[7%] top-[42%]",
-  },
-  {
-    icon: ArrowUpRight,
-    className: "left-[22%] top-[9%]",
-  },
 ];
 
 function getStepTone(index: number) {
@@ -214,18 +155,6 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
               </p>
             </div>
 
-            {COMPACT_DESKTOP_ARROWS.map((arrow, index) => {
-              const Icon = arrow.icon;
-              return (
-                <div
-                  key={`compact-arrow-${index}`}
-                  className={`absolute text-on-surface-variant/65 ${arrow.className}`}
-                >
-                  <Icon size={18} />
-                </div>
-              );
-            })}
-
             {WEEKLY_LOOP_STEPS.map((step, index) => (
               <div
                 key={step.key}
@@ -257,18 +186,6 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
               The same cycle keeps repeating after each round ends.
             </p>
           </div>
-
-          {DESKTOP_ARROWS.map((arrow, index) => {
-            const Icon = arrow.icon;
-            return (
-              <div
-                key={`arrow-${index}`}
-                className={`absolute text-on-surface-variant/65 ${arrow.className}`}
-              >
-                <Icon size={20} />
-              </div>
-            );
-          })}
 
           {WEEKLY_LOOP_STEPS.map((step, index) => (
             <div
