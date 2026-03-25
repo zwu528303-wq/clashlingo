@@ -261,27 +261,24 @@ export default function SettingsPage() {
                         current ? { ...current, avatarColor: theme.id } : current
                       )
                     }
-                    className={`rounded-2xl border px-4 py-4 text-left transition-all ${
+                    className={`rounded-2xl border px-4 py-4 min-h-[8.5rem] transition-all ${
                       profile.avatarColor === theme.id
                         ? "border-primary bg-surface-container-lowest shadow-sm"
                         : "border-surface-container bg-surface-container-low hover:border-primary/40"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
                       <div
-                        className={`w-10 h-10 shrink-0 rounded-full ${theme.avatarClassName} flex items-center justify-center font-black`}
+                        className={`w-16 h-16 shrink-0 rounded-[1.4rem] ${theme.avatarClassName} flex items-center justify-center text-3xl font-black shadow-sm`}
                       >
                         {normalizeAvatarLetter(
                           profile.avatarLetter,
                           profile.displayName
                         )}
                       </div>
-                      <div>
-                        <p className="font-bold text-on-surface">{theme.label}</p>
-                        <div
-                          className={`w-6 h-6 shrink-0 rounded-full mt-1 ${theme.swatchClassName}`}
-                        />
-                      </div>
+                      <p className="font-bold text-on-surface text-lg leading-none">
+                        {theme.label}
+                      </p>
                     </div>
                   </button>
                 ))}
