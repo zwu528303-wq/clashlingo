@@ -3,16 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
+import type { Rivalry } from "@/lib/domain-types";
 import { ArrowLeft, Sparkles, Clock, Trophy, ArrowRight, Loader2 } from "lucide-react";
-
-interface Rivalry {
-  id: string;
-  player_a_id: string;
-  player_b_id: string | null;
-  player_a_lang: string;
-  player_b_lang: string | null;
-  current_round_num: number;
-}
 
 export default function NewRoundPage() {
   const router = useRouter();

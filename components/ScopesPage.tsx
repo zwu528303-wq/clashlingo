@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import type { Round, Syllabus } from "@/lib/domain-types";
 import {
   BookOpen,
   ChevronDown,
@@ -18,24 +19,13 @@ import {
   resolveDisplayName,
 } from "@/lib/profile";
 
-interface ScopeSyllabus {
-  can_do?: string[];
-  vocabulary?: Record<string, string[]>;
-  grammar?: string[];
-  expressions?: string[];
-  listening?: string[];
-}
-
-interface ScopeRound {
-  id: string;
-  round_number: number;
-  status: string;
-  topic: string | null;
-  target_lang: string | null;
-  rivalry_id: string;
+type ScopeRound = Pick<
+  Round,
+  "id" | "round_number" | "status" | "topic" | "target_lang" | "rivalry_id" | "syllabus"
+> & {
   rivalName: string;
-  syllabus: ScopeSyllabus | null;
-}
+  syllabus: Syllabus | null;
+};
 
 const STATUS_LABEL: Record<string, string> = {
   topic_selection: "Topic Selection",
@@ -164,7 +154,7 @@ export default function ScopesPage() {
       target_lang: r.target_lang,
       rivalry_id: r.rivalry_id,
       rivalName: nameMap[rivalIdMap[r.rivalry_id]] || "Rival",
-      syllabus: r.syllabus as ScopeSyllabus | null,
+      syllabus: r.syllabus as Syllabus | null,
     }));
 
     setScopes(built);
@@ -197,7 +187,7 @@ export default function ScopesPage() {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  const renderSyllabus = (syllabus: ScopeSyllabus | null) => {
+  const renderSyllabus = (syllabus: Syllabus | null) => {
     if (!syllabus) return <p className="text-sm text-gray-400 italic">No syllabus available yet.</p>;
 
     const sections = [
@@ -211,7 +201,7 @@ export default function ScopesPage() {
     return (
       <div className="space-y-3 mt-3">
         {sections.map(({ key, label }) => {
-          const val = syllabus[key as keyof ScopeSyllabus];
+          const val = syllabus[key as keyof Syllabus];
           if (!val) return null;
 
           if (key === "vocabulary" && typeof val === "object" && val !== null) {

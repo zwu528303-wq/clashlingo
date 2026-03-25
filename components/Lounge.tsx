@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
+import type { Rivalry, Round } from "@/lib/domain-types";
 import {
   SUPPORTED_LANGUAGES,
   type EditableProfile,
@@ -23,30 +24,20 @@ import {
   resolveDisplayName,
 } from "@/lib/profile";
 
-interface Rivalry {
-  id: string;
-  player_a_id: string;
-  player_b_id: string | null;
-  invite_code: string;
-  player_a_lang: string;
-  player_b_lang: string | null;
-  current_round_num: number;
-  created_at: string;
-}
-
-interface ActiveRound {
-  id: string;
-  rivalry_id: string;
-  round_number: number;
-  status: string;
-  topic: string | null;
-  target_lang: string | null;
-  exam_at: string | null;
-  player_a_confirmed: boolean;
-  player_b_confirmed: boolean;
-  player_a_exam_ready: boolean;
-  player_b_exam_ready: boolean;
-}
+type ActiveRound = Pick<
+  Round,
+  | "id"
+  | "rivalry_id"
+  | "round_number"
+  | "status"
+  | "topic"
+  | "target_lang"
+  | "exam_at"
+  | "player_a_confirmed"
+  | "player_b_confirmed"
+  | "player_a_exam_ready"
+  | "player_b_exam_ready"
+>;
 
 function parseWeeklyTime(value: string) {
   const [hoursText = "19", minutesText = "00"] = value.split(":");

@@ -112,6 +112,7 @@ Observed status values:
 - `npm run lint` currently passes
 - Production build currently passes
 - The repo now includes a real README, an `.env.example`, and Supabase schema notes
+- Shared domain types now live in `lib/domain-types.ts` and are reused across the main pages and AI routes
 - `app/rivalry/[id]/new-round/page.tsx` now uses inline error feedback instead of `alert()`
 
 ## Current Health Check
@@ -129,6 +130,6 @@ Ran on 2026-03-24:
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize results-sharing polish next if you want another user-facing feature, or move into shared domain types / test strategy for cleanup.
+- Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, update `README.md`, `.env.example`, and `SUPABASE_SCHEMA.md` in the same batch.

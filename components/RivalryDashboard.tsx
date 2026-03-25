@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import type {
+  Rivalry,
+  RivalryLedger,
+  RivalryLedgerRound,
+  Round,
+} from "@/lib/domain-types";
 import {
   ArrowLeft,
   Swords,
@@ -14,31 +20,6 @@ import {
   Settings,
 } from "lucide-react";
 import { resolveDisplayName } from "@/lib/profile";
-
-interface Rivalry {
-  id: string;
-  player_a_id: string;
-  player_b_id: string | null;
-  invite_code: string;
-  player_a_lang: string;
-  player_b_lang: string | null;
-  player_a_difficulty: string;
-  player_b_difficulty: string | null;
-  current_round_num: number;
-  cumulative_ledger: Record<string, unknown>;
-  created_at: string;
-}
-
-interface Round {
-  id: string;
-  rivalry_id: string;
-  round_number: number;
-  status: string;
-  topic: string | null;
-  target_lang: string | null;
-  prize: string | null;
-  created_at: string;
-}
 
 interface UserProfile {
   id: string;
@@ -147,9 +128,7 @@ export default function RivalryDashboard() {
   const completedRounds = rounds.filter((r) => r.status === "completed");
 
   // Ledger stats
-  type LedgerRound = { round_id: string; winner_id: string | null; scores: Record<string, number> };
-  type Ledger = { wins?: Record<string, number>; rounds?: LedgerRound[] };
-  const ledger = ((rivalry?.cumulative_ledger ?? {}) as Ledger);
+  const ledger = ((rivalry?.cumulative_ledger ?? {}) as RivalryLedger);
   const rivalId = isPlayerA ? rivalry?.player_b_id : rivalry?.player_a_id;
   const myWins = (userId && ledger.wins?.[userId]) || 0;
   const rivalWins = (rivalId && ledger.wins?.[rivalId]) || 0;
@@ -162,7 +141,8 @@ export default function RivalryDashboard() {
     }
     return streak;
   })();
-  const getRoundResult = (roundId: string) => ledger.rounds?.find(r => r.round_id === roundId);
+  const getRoundResult = (roundId: string) =>
+    ledger.rounds?.find((r: RivalryLedgerRound) => r.round_id === roundId);
 
   if (loading) {
     return (

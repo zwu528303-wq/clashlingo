@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import type { Syllabus } from "@/lib/domain-types";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -87,7 +88,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
     }
 
     // Parse JSON
-    let syllabus;
+    let syllabus: Syllabus;
     try {
       syllabus = JSON.parse(textBlock.text);
     } catch {

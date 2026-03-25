@@ -46,6 +46,8 @@ Date: 2026-03-24
   - `README.md` now documents the real product instead of the create-next-app boilerplate.
   - `.env.example` now lists the required local environment variables.
   - `SUPABASE_SCHEMA.md` now documents the current Supabase tables, relationships, and auth metadata fields.
+- Centralized shared domain types in `lib/domain-types.ts`.
+  - Shared `Rivalry`, `Round`, `Exam`, `Submission`, `Syllabus`, and related exam/ledger types now back the main pages and AI routes.
 
 ## What Was Verified
 
@@ -67,7 +69,7 @@ Date: 2026-03-24
 ## Recommended Next Task
 
 1. Deepen the results sharing experience when you want the next user-facing feature.
-2. Consider shared domain types or a minimal test strategy for cleanup.
+2. Consider a minimal test strategy or stricter AI-output validation for cleanup.
 3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order

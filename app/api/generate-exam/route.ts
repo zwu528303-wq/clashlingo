@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import type { Exam, Round } from "@/lib/domain-types";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -20,15 +21,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Get round + syllabus
-    const { data: round, error: roundError } = await supabase
+    const { data: roundData, error: roundError } = await supabase
       .from("rounds")
       .select("*")
       .eq("id", roundId)
       .single();
 
-    if (roundError || !round) {
+    if (roundError || !roundData) {
       return NextResponse.json({ error: "Round not found" }, { status: 404 });
     }
+
+    const round = roundData as Round;
 
     if (!round.syllabus) {
       return NextResponse.json({ error: "No syllabus found" }, { status: 400 });
@@ -123,7 +126,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
       return NextResponse.json({ error: "No text response" }, { status: 500 });
     }
 
-    let examData;
+    let examData: Pick<Exam, "questions" | "rubric">;
     try {
       examData = JSON.parse(textBlock.text);
     } catch {

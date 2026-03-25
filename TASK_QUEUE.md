@@ -43,6 +43,9 @@ Last updated: 2026-03-24
   - `README.md` now describes the real product, routes, setup flow, and caveats.
   - `.env.example` now documents the required environment variables.
   - `SUPABASE_SCHEMA.md` now documents the current Supabase tables, relationships, and auth metadata usage.
+- Centralized shared domain types.
+  - `lib/domain-types.ts` now defines shared `Rivalry`, `Round`, `Exam`, `Submission`, `Syllabus`, and related exam/ledger types.
+  - Lounge, rivalry, round, exam, results, scopes, new-round, and both AI routes now import those types instead of redefining them locally.
 
 ## Highest Priority
 
@@ -57,16 +60,10 @@ Last updated: 2026-03-24
 
 ## Engineering Follow-Up
 
-3. Create shared domain types.
-   - Move `Round`, `Rivalry`, `Exam`, `Submission`, and syllabus shapes into a shared typed module.
-   - Reuse those types across client components and API routes.
-
-## Nice To Have
-
-4. Add a minimal regression test strategy.
+3. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-5. Review AI prompt robustness.
+4. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import type { Exam, Round, Submission } from "@/lib/domain-types";
 import {
   Home,
   ArrowRight,
@@ -17,62 +18,14 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-interface Submission {
-  id: string;
-  exam_id: string;
-  user_id: string;
-  answers: Record<number, string>;
-  scores: Record<number, number>;
-  total_score: number;
-  feedback_difficulty: string | null;
-  feedback_tags: string[] | null;
-}
-
-interface Syllabus {
-  can_do?: string[];
-  vocabulary?: Record<string, string[]>;
-  grammar?: string[];
-  expressions?: string[];
-}
-
-interface RoundResult {
-  id: string;
-  rivalry_id: string;
-  round_number: number;
-  topic: string | null;
-  target_lang: string | null;
-  prize_text: string | null;
-  syllabus: Syllabus | null;
-}
-
-interface ExamQuestion {
-  id: number;
-  type: "mcq" | "fitb" | "translation";
-  prompt: string;
-  options?: string[];
-}
-
-interface RubricItem {
-  id: number;
-  answer: string;
-  points: number;
-  keywords?: string[];
-}
-
-interface ExamRecord {
-  id: string;
-  questions: ExamQuestion[];
-  rubric: RubricItem[];
-}
-
 export default function ResultsPage() {
   const router = useRouter();
   const params = useParams();
   const roundId = params.id as string;
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [round, setRound] = useState<RoundResult | null>(null);
-  const [exam, setExam] = useState<ExamRecord | null>(null);
+  const [round, setRound] = useState<Round | null>(null);
+  const [exam, setExam] = useState<Exam | null>(null);
   const [mySub, setMySub] = useState<Submission | null>(null);
   const [rivalSub, setRivalSub] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,14 +47,14 @@ export default function ResultsPage() {
       .eq("id", roundId)
       .single();
     if (!roundData) { router.push("/lounge"); return; }
-    setRound(roundData as RoundResult);
+    setRound(roundData as Round);
 
     const { data: examData } = await supabase
       .from("exams")
       .select("*")
       .eq("round_id", roundId)
       .single();
-    if (examData) setExam(examData as ExamRecord);
+    if (examData) setExam(examData as Exam);
 
     if (examData) {
       const { data: subs } = await supabase

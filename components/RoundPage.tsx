@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import type { Rivalry, Round } from "@/lib/domain-types";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -12,41 +13,6 @@ import {
   Trophy,
   Loader2,
 } from "lucide-react";
-
-interface Round {
-  id: string;
-  rivalry_id: string;
-  round_number: number;
-  target_lang: string;
-  topic: string | null;
-  study_days: number | null;
-  prize_text: string | null;
-  status: string;
-  player_a_confirmed: boolean;
-  player_b_confirmed: boolean;
-  player_a_exam_ready: boolean;
-  player_b_exam_ready: boolean;
-  countdown_start: string | null;
-  exam_at: string | null;
-  exam_started_at: string | null;
-  syllabus: Syllabus | null;
-  created_at: string;
-}
-
-interface Rivalry {
-  id: string;
-  player_a_id: string;
-  player_b_id: string;
-  player_a_lang: string;
-}
-
-interface Syllabus {
-  can_do?: string[];
-  vocabulary?: Record<string, string[]>;
-  grammar?: string[];
-  expressions?: string[];
-  listening?: string[];
-}
 
 export default function RoundPage() {
   const router = useRouter();

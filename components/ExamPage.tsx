@@ -3,6 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import type {
+  Exam,
+  ExamQuestion,
+  ExamRubricItem,
+  RivalryLedger,
+  RivalryLedgerRound,
+} from "@/lib/domain-types";
 import {
   Clock,
   ChevronLeft,
@@ -13,34 +20,14 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-interface Question {
-  id: number;
-  type: "mcq" | "fitb" | "translation";
-  prompt: string;
-  options?: string[];
-}
-
-interface RubricItem {
-  id: number;
-  answer: string;
-  points: number;
-  keywords?: string[];
-}
-
-interface ExamRecord {
-  id: string;
-  questions: Question[];
-  rubric: RubricItem[];
-}
-
 export default function ExamPage() {
   const router = useRouter();
   const params = useParams();
   const roundId = params.id as string;
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [exam, setExam] = useState<ExamRecord | null>(null);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [exam, setExam] = useState<Exam | null>(null);
+  const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [ready, setReady] = useState(false); // Only true when exam + questions are loaded
 
   // Exam state
@@ -124,7 +111,7 @@ export default function ExamPage() {
         Array.isArray(examData.questions) &&
         examData.questions.length > 0
       ) {
-        const typedExamData = examData as ExamRecord;
+        const typedExamData = examData as Exam;
         setExam(typedExamData);
         setQuestions(typedExamData.questions);
         setReady(true);
@@ -245,11 +232,9 @@ export default function ExamPage() {
           .eq("id", roundInfo.rivalry_id)
           .single();
 
-        type LedgerRound = { round_id: string; winner_id: string | null; scores: Record<string, number> };
-        type Ledger = { wins?: Record<string, number>; rounds?: LedgerRound[] };
-        const prev = ((rivalryData?.cumulative_ledger ?? {}) as Ledger);
+        const prev = ((rivalryData?.cumulative_ledger ?? {}) as RivalryLedger);
         const wins: Record<string, number> = { ...(prev.wins ?? {}) };
-        const roundHistory: LedgerRound[] = [...(prev.rounds ?? [])];
+        const roundHistory: RivalryLedgerRound[] = [...(prev.rounds ?? [])];
 
         if (winnerId) wins[winnerId] = (wins[winnerId] ?? 0) + 1;
         const roundScores: Record<string, number> = {};
@@ -467,8 +452,8 @@ export default function ExamPage() {
 }
 
 // ========== Mock generators (fallback if AI exam not found) ==========
-function generateMockQuestions(topic: string, lang: string): Question[] {
-  const questions: Question[] = [];
+function generateMockQuestions(topic: string, lang: string): ExamQuestion[] {
+  const questions: ExamQuestion[] = [];
   const mcq = [
     { prompt: `What is "hello" in ${lang}?`, options: ["Bonjour", "Merci", "Au revoir", "Salut"] },
     { prompt: `What is "thank you" in ${lang}?`, options: ["Bonjour", "Merci", "Pardon", "S'il vous plaît"] },
@@ -517,5 +502,5 @@ function generateMockRubric() {
     { id: 22, answer: "C'est combien un croissant", points: 10, keywords: ["combien", "croissant"] },
     { id: 23, answer: "L'addition s'il vous plaît merci", points: 10, keywords: ["addition", "plaît", "merci"] },
     { id: 24, answer: "I would like a tea without sugar please", points: 10, keywords: ["would", "like", "tea", "without", "sugar"] },
-  ];
+  ] satisfies ExamRubricItem[];
 }
