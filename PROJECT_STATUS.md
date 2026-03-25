@@ -156,7 +156,9 @@ Observed status values:
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
-- Results UI exists in `components/ResultsPage.tsx`
+- Results UI now includes a stronger battle-report layout in `components/ResultsPage.tsx`
+- Results now includes a richer share card preview, a copy-caption action, and SVG card download
+- Results is now part of the translated website-language batch
 - Scopes now group current and past scope cards by target language
 - `npm run lint` currently passes
 - Production build currently passes
@@ -166,7 +168,7 @@ Observed status values:
 
 ## Current Health Check
 
-Ran on 2026-03-24:
+Ran on 2026-03-25:
 - `npm run build` - passes
 - `npm run lint` - passes
 
@@ -175,18 +177,18 @@ Ran on 2026-03-24:
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
 - There are still no checked-in Supabase SQL migrations; `SUPABASE_SCHEMA.md` documents the live shape, but it is not a migration source of truth yet.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
-- Website language is only translated for the first-batch shell/pages right now.
+- Website language still needs a second translation pass for:
   - `RoundPage`
   - `ExamPage`
-  - `ResultsPage`
+  - `app/rivalry/[id]/new-round/page.tsx`
   - some API-returned status/error strings
-  still need a second translation pass if full bilingual coverage becomes a priority.
+- `ResultsPage` is now translated and ships a richer battle-report/share surface, so the main remaining bilingual gap is the live round flow plus a few system messages.
 - The 24-hour new-round limit currently shows a localized frontend hint in `Rivalries`, but `app/rivalry/[id]/new-round/page.tsx` itself is still part of the untranslated second batch.
 
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
+- Prioritize the second website-language batch next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
 - Shared avatar sync and rivalry-shared weekly rhythm are now shipped; if a later session touches them, preserve the public-identity/public-ledger split instead of moving those values back into viewer-local rendering.
 - Leave-rivalry is now shipped through `cumulative_ledger.inactive`.
   - Preserve history.

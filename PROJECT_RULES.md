@@ -170,7 +170,9 @@ As of the latest reviewed state, the following product changes are already in th
 - `/round/[id]/exam` now correctly renders the real exam page
 - countdown now auto-triggers exam generation instead of depending on a visible dev shortcut
 - exam generation endpoint is idempotent when an exam already exists
-- results page includes a share action
+- results page includes a stronger battle-report layout with a richer share card
+- results page now supports share, copy-caption, and download-card actions
+- results page is now part of the bilingual website-language batch
 - results page includes syllabus / study material review
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point

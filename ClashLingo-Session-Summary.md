@@ -87,6 +87,10 @@ Date: 2026-03-25
   - `Lounge` now uses stronger featured duel cards and more designed countdown/action panels.
   - `RivalryDashboard` now uses a more explicit VS hero, richer match-history cards, and a stronger action/stats rail.
   - `AppSidebar` now visually matches the same product language more closely.
+- Upgraded `ResultsPage` into a richer battle-report surface.
+  - Results now shows a stronger hero for win / tie / loss states plus richer score, accuracy, delta, and perfect-answer stats.
+  - Results now supports a richer share card preview, copy-caption, and SVG download actions.
+  - `ResultsPage` is now included in the bilingual website-language batch.
 
 ## What Was Verified
 
@@ -107,10 +111,9 @@ Date: 2026-03-25
 
 ## Recommended Next Task
 
-1. Deepen the results sharing experience when you want the next user-facing feature.
-2. Decide whether to finish the second website-language translation batch for `Round`, `Exam`, `Results`, and API-returned system messages.
-3. Decide whether the new lounge / rivalries UI needs a final visual polish pass.
-4. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
+1. Continue the second website-language batch with `Round`, `Exam`, `new-round`, and API-returned system messages.
+2. Decide whether the new results battle-report screen needs one final visual polish pass.
+3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order
 

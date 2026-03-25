@@ -4,6 +4,10 @@ Last updated: 2026-03-25
 
 ## Recently Completed
 
+- Upgraded the results page into a richer battle report.
+  - `components/ResultsPage.tsx` now has a stronger win/tie/loss hero, richer score comparison, and a more polished review layout.
+  - Results now supports share, copy-caption, and download-card actions.
+  - `ResultsPage` is now part of the bilingual website-language batch.
 - Added website-language support for the first UI batch.
   - Website UI now supports `English` and `简体中文`.
   - Login now includes a first-visit language toggle for unsigned users.
@@ -91,29 +95,25 @@ Last updated: 2026-03-25
 
 ## Highest Priority
 
-1. Deepen the results sharing experience.
-   - A share action exists already.
-   - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
+1. Decide whether to continue the second website-language batch with `Round` and `Exam`.
+   - `ResultsPage` is now translated and upgraded into a richer battle-report screen.
+   - The biggest remaining language gap is the live round/exam flow, `new-round`, and some API-returned system messages.
 
-2. Decide whether to finish the second website-language translation batch.
-   - First-batch bilingual UI is live.
-   - Remaining major pages are `Round`, `Exam`, and `Results`, plus a few API-returned system messages.
-
-3. Keep the lint baseline clean while touching product work.
+2. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
-4. Decide whether the new lounge / rivalries visual pass needs one more polish round.
-   - The first UI fusion pass is shipped.
-   - Any follow-up should stay visual-only and preserve the current lounge-vs-hub responsibility split.
+3. Decide whether the new results battle-report screen needs one more visual polish round.
+   - The core report / share / review structure is now in place.
+   - Any follow-up should stay visual-only and preserve the current page behavior.
 
 ## Engineering Follow-Up
 
-5. Add a minimal regression test strategy.
+4. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-6. Review AI prompt robustness.
+5. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

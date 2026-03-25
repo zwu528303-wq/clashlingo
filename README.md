@@ -6,6 +6,7 @@ Two players create a rivalry, pick a topic, get an AI-generated syllabus tuned t
 
 The app now supports a first bilingual website shell in `English` and `简体中文`.
 This UI-language setting is separate from the learning language and does not change AI syllabus/exam generation behavior.
+`ResultsPage` now includes a richer battle-report layout plus share, copy-caption, and download-card actions.
 
 ## Stack
 
@@ -106,7 +107,7 @@ See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relati
 - `SUPABASE_SCHEMA.md` documents the live table shape used by the app today.
 - Results realtime exists, but in-exam opponent progress is intentionally out of MVP scope.
 - `components/ExamPage.tsx` still has a mock-exam fallback for demo resilience; that is useful, but it can hide backend issues if left unmonitored.
-- The current bilingual rollout covers Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, and the shared sidebar shell. `Round`, `Exam`, `Results`, and some API-returned strings still need a second translation pass for full coverage.
+- The current bilingual rollout covers Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, the shared sidebar shell, and `ResultsPage`. `Round`, `Exam`, `new-round`, and some API-returned strings still need a second translation pass for full coverage.
 
 ## Manual Smoke Test
 
