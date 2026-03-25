@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
   Clock3,
+  Mail,
   Palette,
   Save,
   Sparkles,
@@ -189,6 +190,19 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-6">
+            <div>
+              <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                <Mail size={16} />
+                Registered Email
+              </label>
+              <input
+                type="email"
+                value={profile.email}
+                readOnly
+                className="w-full bg-surface-container text-on-surface-variant rounded-2xl py-4 px-5 outline-none border border-surface-container cursor-default"
+              />
+            </div>
+
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <UserRound size={16} />
