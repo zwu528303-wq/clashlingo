@@ -110,7 +110,7 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
       </div>
 
       <div className="lg:hidden space-y-3">
-        <div className="rounded-[1.9rem] border border-white/80 bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low px-5 py-4 shadow-[0_20px_45px_rgba(149,63,77,0.08)]">
+        <div className="mx-auto max-w-[22rem] rounded-[1.9rem] border border-white/80 bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low px-5 py-4 shadow-[0_20px_45px_rgba(149,63,77,0.08)]">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-[1rem] bg-primary-container text-primary flex items-center justify-center">
               <Sparkles size={18} />
@@ -128,7 +128,9 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
 
         {WEEKLY_LOOP_STEPS.map((step, index) => (
           <div key={step.key} className="space-y-2">
-            <StepCard index={index} step={step} compact={compact} />
+            <div className="flex justify-center">
+              <StepCard index={index} step={step} compact={compact} />
+            </div>
             {index < WEEKLY_LOOP_STEPS.length - 1 && (
               <div className="flex justify-center text-on-surface-variant/65">
                 <ArrowDown size={18} />
