@@ -4,6 +4,9 @@ ClashLingo is a playful 1v1 language-learning MVP built with Next.js, React, Sup
 
 Two players create a rivalry, pick a topic, get an AI-generated syllabus tuned to the target learner's level, study on their own, start early together if they want, take an exam, and compare results.
 
+The app now supports a first bilingual website shell in `English` and `简体中文`.
+This UI-language setting is separate from the learning language and does not change AI syllabus/exam generation behavior.
+
 ## Stack
 
 - Next.js 16.2.1 App Router
@@ -28,10 +31,11 @@ Two players create a rivalry, pick a topic, get an AI-generated syllabus tuned t
 
 - `/` redirects to `/login` or `/lounge` based on auth.
 - `/login` handles auth, onboarding guidance, resend confirmation, and password-reset entry.
+- `/rivalries` is the rivalry hub with selection, W/L, streak, and match history.
 - `/reset-password` lets a user set a new password from a recovery email.
 - `/how-it-works` explains the product loop, page roles, rhythm rules, level rules, and FAQs.
 - `/lounge` is the main rivalry control surface.
-- `/settings` manages nickname, letter avatar, language preference, default language level, and weekly rhythm.
+- `/settings` manages nickname, letter avatar, website language, language preference, default language level, and weekly rhythm.
 - `/scopes` shows current and past scopes, grouped by language.
 - `/rivalry/[id]` shows rivalry history and stats.
 - `/rivalry/[id]/new-round` creates a round.
@@ -83,6 +87,7 @@ Supabase is the source of truth for auth and gameplay data.
 - Auth identity lives in Supabase Auth.
 - Public/shared display identity is mirrored into the public `users` table.
 - Gameplay data lives in `rivalries`, `rounds`, `exams`, and `submissions`.
+- UI language is currently saved in Supabase Auth metadata as `website_language`.
 
 See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relationship notes.
 
@@ -99,6 +104,7 @@ See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relati
 - `SUPABASE_SCHEMA.md` documents the live table shape used by the app today.
 - Results realtime exists, but in-exam opponent progress is intentionally out of MVP scope.
 - `components/ExamPage.tsx` still has a mock-exam fallback for demo resilience; that is useful, but it can hide backend issues if left unmonitored.
+- The current bilingual rollout covers Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, and the shared sidebar shell. `Round`, `Exam`, `Results`, and some API-returned strings still need a second translation pass for full coverage.
 
 ## Manual Smoke Test
 

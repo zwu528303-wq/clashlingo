@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Lock } from "lucide-react";
+import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const [websiteLanguage] = useState(resolveClientWebsiteLanguage());
   const [ready, setReady] = useState(false);
   const [loadingSession, setLoadingSession] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -16,6 +18,7 @@ export default function ResetPasswordPage() {
     type: "success" | "error" | "info";
     text: string;
   } | null>(null);
+  const dictionary = getDictionary(websiteLanguage);
 
   useEffect(() => {
     let mounted = true;
@@ -56,7 +59,7 @@ export default function ResetPasswordPage() {
     if (password.length < 6) {
       setMessage({
         type: "error",
-        text: "Your new password needs at least 6 characters.",
+        text: dictionary.resetPassword.minLengthError,
       });
       return;
     }
@@ -64,7 +67,7 @@ export default function ResetPasswordPage() {
     if (password !== confirmPassword) {
       setMessage({
         type: "error",
-        text: "The two password fields do not match yet.",
+        text: dictionary.resetPassword.mismatchError,
       });
       return;
     }
@@ -78,7 +81,7 @@ export default function ResetPasswordPage() {
     if (error) {
       setMessage({
         type: "error",
-        text: error.message || "Could not update your password.",
+        text: error.message || dictionary.resetPassword.updateFailed,
       });
       setSaving(false);
       return;
@@ -86,7 +89,7 @@ export default function ResetPasswordPage() {
 
     setMessage({
       type: "success",
-      text: "Password updated. You can head back to sign in now.",
+      text: dictionary.resetPassword.updateSuccess,
     });
     setSaving(false);
   };
@@ -95,7 +98,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-on-surface-variant font-medium">
-          Loading reset link...
+          {dictionary.common.loadingResetLink}
         </div>
       </div>
     );
@@ -112,19 +115,19 @@ export default function ResetPasswordPage() {
           className="mb-5 inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
         >
           <ArrowLeft size={18} />
-          Back to login
+          {dictionary.common.backToLogin}
         </button>
 
         <section className="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-white/80 space-y-6">
           <div className="space-y-2">
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
-              Password Recovery
+              {dictionary.resetPassword.eyebrow}
             </p>
             <h1 className="text-4xl font-black text-on-surface tracking-[-0.05em]">
-              Choose a new password
+              {dictionary.resetPassword.title}
             </h1>
             <p className="text-on-surface-variant leading-relaxed">
-              Pick a fresh password so you can get back into your rivalry queue.
+              {dictionary.resetPassword.description}
             </p>
           </div>
 
@@ -134,10 +137,10 @@ export default function ResetPasswordPage() {
                 <KeyRound size={22} />
               </div>
               <h2 className="text-2xl font-black text-on-surface tracking-tight">
-                Open this page from your reset email
+                {dictionary.resetPassword.openFromEmailTitle}
               </h2>
               <p className="text-on-surface-variant leading-relaxed">
-                This page needs the secure recovery link from your inbox. If you arrived here another way, go back and request a new password reset email from login.
+                {dictionary.resetPassword.openFromEmailDescription}
               </p>
             </div>
           ) : (
@@ -145,7 +148,7 @@ export default function ResetPasswordPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
-                    New Password
+                    {dictionary.resetPassword.newPassword}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -164,7 +167,7 @@ export default function ResetPasswordPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
-                    Confirm Password
+                    {dictionary.resetPassword.confirmPassword}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -208,7 +211,7 @@ export default function ResetPasswordPage() {
                   {saving ? (
                     <Loader2 size={20} className="animate-spin" />
                   ) : (
-                    "Update Password"
+                    dictionary.resetPassword.updatePassword
                   )}
                 </button>
 
@@ -216,7 +219,7 @@ export default function ResetPasswordPage() {
                   onClick={() => router.push("/login")}
                   className="w-full bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold hover:bg-surface-container transition-all"
                 >
-                  Back to Sign In
+                  {dictionary.resetPassword.backToSignIn}
                 </button>
               </div>
             </>

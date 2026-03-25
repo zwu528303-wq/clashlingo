@@ -1,5 +1,10 @@
 import type { User } from "@supabase/supabase-js";
 import {
+  DEFAULT_WEBSITE_LANGUAGE,
+  normalizeWebsiteLanguage,
+  type WebsiteLanguage,
+} from "@/lib/i18n";
+import {
   DEFAULT_LANGUAGE_LEVEL,
   type LanguageLevel,
   normalizeLanguageLevel,
@@ -65,6 +70,7 @@ export const DEFAULT_WEEKLY_MATCH_TIME = "19:00";
 export const DEFAULT_AVATAR_THEME_ID = AVATAR_THEMES[0].id;
 export const DEFAULT_LANGUAGE: SupportedLanguage = SUPPORTED_LANGUAGES[0];
 const PUBLIC_AVATAR_PREFIX = "clashlingo-avatar:";
+export { DEFAULT_WEBSITE_LANGUAGE };
 
 export interface EditableProfile {
   displayName: string;
@@ -73,6 +79,7 @@ export interface EditableProfile {
   preferredLanguage: SupportedLanguage;
   defaultLanguageLevel: LanguageLevel;
   weeklyMatchTime: string;
+  websiteLanguage: WebsiteLanguage;
   email: string;
 }
 
@@ -215,6 +222,7 @@ export function getEditableProfileFromUser(user: User): EditableProfile {
       metadata.default_language_level
     ),
     weeklyMatchTime: normalizeWeeklyMatchTime(metadata.weekly_match_time),
+    websiteLanguage: normalizeWebsiteLanguage(metadata.website_language),
     email,
   };
 }

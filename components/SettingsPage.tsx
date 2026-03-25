@@ -12,6 +12,14 @@ import {
   UserRound,
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
+import {
+  getDictionary,
+  getLocalizedLanguageLevelLabel,
+  getLocalizedLearningLanguageLabel,
+  persistWebsiteLanguage,
+  resolveClientWebsiteLanguage,
+  WEBSITE_LANGUAGES,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { LANGUAGE_LEVELS } from "@/lib/language-level";
 import {
@@ -34,12 +42,16 @@ export default function SettingsPage() {
   const router = useRouter();
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const dictionary = getDictionary(
+    profile?.websiteLanguage ?? fallbackWebsiteLanguage
+  );
 
   useEffect(() => {
     const init = async () => {
@@ -72,6 +84,7 @@ export default function SettingsPage() {
           displayName
         ),
       });
+      persistWebsiteLanguage(authProfile.websiteLanguage);
       setLoading(false);
     };
 
@@ -107,6 +120,7 @@ export default function SettingsPage() {
         preferred_language: nextProfile.preferredLanguage,
         default_language_level: nextProfile.defaultLanguageLevel,
         weekly_match_time: nextProfile.weeklyMatchTime,
+        website_language: nextProfile.websiteLanguage,
       },
     });
 
@@ -114,7 +128,7 @@ export default function SettingsPage() {
       setSaving(false);
       setMessage({
         type: "error",
-        text: authError.message || "Failed to save your settings.",
+        text: authError.message || dictionary.settings.saveFailed,
       });
       return;
     }
@@ -152,27 +166,28 @@ export default function SettingsPage() {
     }
 
     setProfile(nextProfile);
+    persistWebsiteLanguage(nextProfile.websiteLanguage);
     setSaving(false);
 
     if (publicUserErrorMessage) {
       setMessage({
         type: "error",
-        text: "Saved your personal settings, but shared profile sync failed.",
+        text: dictionary.settings.saveSharedSyncFailed,
       });
       return;
     }
 
     setMessage({
       type: "success",
-      text: "Settings saved.",
+      text: dictionary.settings.saved,
     });
   };
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-on-surface-variant font-medium">
-          Loading settings...
+          {dictionary.common.loadingSettings}
         </div>
       </div>
     );
@@ -187,10 +202,10 @@ export default function SettingsPage() {
           <section className="max-w-4xl bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
-              Your Identity
+              {dictionary.settings.title}
             </h1>
             <p className="text-on-surface-variant text-lg">
-              Set how you show up in ClashLingo.
+              {dictionary.settings.description}
             </p>
           </div>
 
@@ -198,7 +213,7 @@ export default function SettingsPage() {
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <Mail size={16} />
-                Registered Email
+                {dictionary.common.registeredEmail}
               </label>
               <input
                 type="email"
@@ -211,7 +226,7 @@ export default function SettingsPage() {
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <UserRound size={16} />
-                Display Nickname
+                {dictionary.common.displayNickname}
               </label>
               <input
                 type="text"
@@ -231,7 +246,7 @@ export default function SettingsPage() {
                       : current
                   )
                 }
-                placeholder="Language Warrior"
+                placeholder={dictionary.login.displayNicknamePlaceholder}
                 className="w-full bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container"
               />
             </div>
@@ -239,7 +254,7 @@ export default function SettingsPage() {
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <Sparkles size={16} />
-                Avatar Letter
+                {dictionary.settings.avatarLetter}
               </label>
               <div className="flex gap-4 items-center">
                 <input
@@ -259,7 +274,7 @@ export default function SettingsPage() {
                   className="w-24 bg-surface-container-lowest text-on-surface rounded-2xl py-4 px-5 text-center text-2xl font-black outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container"
                 />
                 <p className="text-sm text-on-surface-variant max-w-md">
-                  Defaults to your nickname initial, but you can customize it.
+                  {dictionary.settings.avatarLetterHint}
                 </p>
               </div>
             </div>
@@ -267,7 +282,7 @@ export default function SettingsPage() {
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <Palette size={16} />
-                Avatar Color
+                {dictionary.settings.avatarColor}
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {AVATAR_THEMES.map((theme) => (
@@ -305,7 +320,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
-                Default Learning Language
+                {dictionary.settings.defaultLearningLanguage}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {SUPPORTED_LANGUAGES.map((language) => (
@@ -325,7 +340,10 @@ export default function SettingsPage() {
                         : "bg-surface-container-low text-on-surface hover:bg-surface-container"
                     }`}
                   >
-                    {language}
+                    {getLocalizedLearningLanguageLabel(
+                      language,
+                      profile.websiteLanguage
+                    )}
                   </button>
                 ))}
               </div>
@@ -333,7 +351,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
-                Default Language Level
+                {dictionary.settings.defaultLanguageLevel}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {LANGUAGE_LEVELS.map((level) => (
@@ -353,21 +371,53 @@ export default function SettingsPage() {
                         : "bg-surface-container-low text-on-surface hover:bg-surface-container"
                     }`}
                   >
-                    {level}
+                    {getLocalizedLanguageLevelLabel(
+                      level,
+                      profile.websiteLanguage
+                    )}
                   </button>
                 ))}
               </div>
               <p className="text-sm text-on-surface-variant mt-3">
-                New rivalries start with this level. If both players study the
-                same language, ClashLingo uses the lower level when generating
-                the shared scope and exam.
+                {dictionary.settings.defaultLanguageLevelHint}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                {dictionary.settings.websiteLanguage}
+              </label>
+              <div className="grid grid-cols-2 gap-3 max-w-md">
+                {WEBSITE_LANGUAGES.map((language) => (
+                  <button
+                    key={language}
+                    type="button"
+                    onClick={() =>
+                      setProfile((current) =>
+                        current
+                          ? { ...current, websiteLanguage: language }
+                          : current
+                      )
+                    }
+                    className={`py-3 px-4 rounded-xl font-bold text-sm transition-all ${
+                      profile.websiteLanguage === language
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "bg-surface-container-low text-on-surface hover:bg-surface-container"
+                    }`}
+                  >
+                    {dictionary.websiteLanguageLabels[language]}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-on-surface-variant mt-3">
+                {dictionary.settings.websiteLanguageHint}
               </p>
             </div>
 
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <Clock3 size={16} />
-                Weekly Lounge Rhythm
+                {dictionary.settings.weeklyLoungeRhythm}
               </label>
               <input
                 type="time"
@@ -382,7 +432,7 @@ export default function SettingsPage() {
                 className="w-full max-w-xs bg-surface-container-lowest text-on-surface rounded-2xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container"
               />
               <p className="text-sm text-on-surface-variant mt-3">
-                This is your default rhythm for new rivalries. Each rivalry keeps its own shared countdown pulse, and both players can still start early together.
+                {dictionary.settings.weeklyLoungeRhythmHint}
               </p>
             </div>
           </div>
@@ -405,11 +455,11 @@ export default function SettingsPage() {
             className="w-full sm:w-auto bg-primary text-on-primary px-8 py-4 rounded-2xl font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? (
-              "Saving..."
+              dictionary.common.saving
             ) : (
               <>
                 <Save size={18} />
-                Save Settings
+                {dictionary.common.saveSettings}
               </>
             )}
           </button>

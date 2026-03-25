@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   useParams,
@@ -21,6 +21,12 @@ import {
   Swords,
   Trophy,
 } from "lucide-react";
+import {
+  getDictionary,
+  getLocalizedLearningLanguageLabel,
+  getLocalizedRoundStatusLabel,
+  resolveClientWebsiteLanguage,
+} from "@/lib/i18n";
 import { supabase } from "../lib/supabase";
 import AppSidebar from "@/components/AppSidebar";
 import type {
@@ -51,11 +57,11 @@ function buildRivalryHref(rivalryId: string) {
 }
 
 function getRivalryLevel(completedMatches: number, streak: number) {
-  if (completedMatches >= 8 || streak >= 5) return "Legendary Nemesis";
-  if (completedMatches >= 5 || streak >= 3) return "Fierce Nemesis";
-  if (completedMatches >= 3) return "Serious Threat";
-  if (completedMatches >= 1) return "Fresh Challenger";
-  return "Warm-Up Duel";
+  if (completedMatches >= 8 || streak >= 5) return "legendary";
+  if (completedMatches >= 5 || streak >= 3) return "fierce";
+  if (completedMatches >= 3) return "serious";
+  if (completedMatches >= 1) return "fresh";
+  return "warmup";
 }
 
 export default function RivalryDashboard() {
@@ -66,6 +72,7 @@ export default function RivalryDashboard() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [roundsByRivalry, setRoundsByRivalry] = useState<Record<string, Round[]>>(
     {}
@@ -79,6 +86,8 @@ export default function RivalryDashboard() {
   const [leaveIntentId, setLeaveIntentId] = useState<string | null>(null);
   const [leaveError, setLeaveError] = useState("");
   const [leaving, setLeaving] = useState(false);
+  const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
+  const dictionary = getDictionary(websiteLanguage);
 
   async function loadCurrentProfile(user: User) {
     const authProfile = getEditableProfileFromUser(user);
@@ -154,7 +163,10 @@ export default function RivalryDashboard() {
         (profiles ?? []).map((item) => [
           item.id,
           (() => {
-            const displayName = resolveDisplayName(item.display_name, "Rival");
+            const displayName = resolveDisplayName(
+              item.display_name,
+              dictionary.common.rivalFallback
+            );
             return {
               displayName,
               ...parsePublicAvatarValue(item.avatar_url, displayName),
@@ -165,7 +177,8 @@ export default function RivalryDashboard() {
 
       rivalIdPairs.forEach(({ rivalryId, rivalId }) => {
         const publicProfile = profileMap.get(rivalId);
-        const displayName = publicProfile?.displayName ?? "Rival";
+        const displayName =
+          publicProfile?.displayName ?? dictionary.common.rivalFallback;
 
         rivalryNameMap[rivalryId] = displayName;
         rivalryProfileMap[rivalryId] = publicProfile ?? {
@@ -196,25 +209,25 @@ export default function RivalryDashboard() {
     setRoundsByRivalry(nextRoundsByRivalry);
   }
 
+  const initializeDashboard = useEffectEvent(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    setUserId(user.id);
+    await loadCurrentProfile(user);
+    await loadRivalries(user.id);
+    setLoading(false);
+  });
+
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      setUserId(user.id);
-      await loadCurrentProfile(user);
-      await loadRivalries(user.id);
-      setLoading(false);
-    };
-
-    init();
-  }, [router]);
+    initializeDashboard();
+  }, []);
 
   const deepLinkedRivalryId =
     typeof params.id === "string" ? params.id : undefined;
@@ -246,7 +259,9 @@ export default function RivalryDashboard() {
   const rivalId = isPlayerA
     ? selectedRivalry?.player_b_id
     : selectedRivalry?.player_a_id;
-  const rivalName = selectedRivalry ? rivalNames[selectedRivalry.id] ?? "Rival" : "Rival";
+  const rivalName = selectedRivalry
+    ? rivalNames[selectedRivalry.id] ?? dictionary.common.rivalFallback
+    : dictionary.common.rivalFallback;
   const selectedRivalProfile = selectedRivalry
     ? rivalProfiles[selectedRivalry.id]
     : undefined;
@@ -307,7 +322,7 @@ export default function RivalryDashboard() {
     } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
-      setLeaveError("Your session expired. Please sign in again.");
+      setLeaveError(dictionary.rivalries.leaveSessionExpired);
       setLeaving(false);
       return;
     }
@@ -326,7 +341,7 @@ export default function RivalryDashboard() {
       | null;
 
     if (!response.ok) {
-      setLeaveError(payload?.error || "Could not leave this rivalry.");
+      setLeaveError(payload?.error || dictionary.rivalries.leaveFailed);
       setLeaving(false);
       return;
     }
@@ -339,7 +354,9 @@ export default function RivalryDashboard() {
   if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="text-on-surface-variant font-medium">Loading...</div>
+        <div className="text-on-surface-variant font-medium">
+          {dictionary.common.loading}
+        </div>
       </div>
     );
   }
@@ -356,7 +373,8 @@ export default function RivalryDashboard() {
     100,
     Math.max(10, completedRounds.length * 20)
   );
-  const rivalryLevel = getRivalryLevel(completedRounds.length, myStreak);
+  const rivalryLevelKey = getRivalryLevel(completedRounds.length, myStreak);
+  const rivalryLevel = dictionary.rivalries.rivalryLevels[rivalryLevelKey];
 
   return (
     <div className="min-h-screen bg-surface">
@@ -366,13 +384,13 @@ export default function RivalryDashboard() {
         <main className="space-y-8 pb-12">
           <div className="space-y-3">
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
-              Long Game
+              {dictionary.rivalries.eyebrow}
             </p>
             <h1 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none">
-              Rivalry Hub
+              {dictionary.rivalries.title}
             </h1>
             <p className="text-on-surface-variant text-xl">
-              Wins, streaks, milestones, and every showdown live here.
+              {dictionary.rivalries.description}
             </p>
           </div>
 
@@ -383,17 +401,17 @@ export default function RivalryDashboard() {
               </div>
               <div className="space-y-2">
                 <h2 className="text-3xl font-black text-on-surface tracking-tight">
-                  No rivalries yet
+                  {dictionary.rivalries.noRivalriesTitle}
                 </h2>
                 <p className="text-on-surface-variant text-lg">
-                  Head to the lounge to create or join your first rivalry.
+                  {dictionary.rivalries.noRivalriesDescription}
                 </p>
               </div>
               <button
                 onClick={() => router.push("/lounge")}
                 className="mx-auto bg-primary text-on-primary px-7 py-3.5 rounded-full font-black text-base shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                Go to Lounge
+                {dictionary.common.goToLounge}
               </button>
             </section>
           ) : (
@@ -407,19 +425,27 @@ export default function RivalryDashboard() {
                     rivalry.cumulative_ledger
                   );
                   const publicProfile = rivalProfiles[rivalry.id];
-                  const name = publicProfile?.displayName ?? rivalNames[rivalry.id] ?? "Rival";
+                  const name =
+                    publicProfile?.displayName ??
+                    rivalNames[rivalry.id] ??
+                    dictionary.common.rivalFallback;
                   const selectorTheme = getAvatarTheme(publicProfile?.avatarColor);
                   const rivalryRounds = roundsByRivalry[rivalry.id] ?? [];
                   const rivalryActiveRound = rivalryRounds.find(
                     (round) => round.status !== "completed"
                   );
                   const nextLabel = rivalryInactive
-                    ? "Rivalry ended"
+                    ? dictionary.rivalries.rivalryEnded
                     : rivalryActiveRound
-                      ? rivalryActiveRound.status.replace(/_/g, " ")
+                      ? getLocalizedRoundStatusLabel(
+                          rivalryActiveRound.status,
+                          websiteLanguage
+                        )
                       : paired
-                        ? `Round ${rivalry.current_round_num + 1}`
-                        : "Waiting for rival";
+                        ? dictionary.rivalries.showdownLabel(
+                            rivalry.current_round_num + 1
+                          )
+                        : dictionary.rivalries.waitingForRival;
                   const labelLanguage = rivalryIsPlayerA
                     ? rivalry.player_a_lang
                     : rivalry.player_b_lang || rivalry.player_a_lang;
@@ -450,10 +476,17 @@ export default function RivalryDashboard() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                              {paired ? labelLanguage : "Invite ready"}
+                              {paired
+                                ? getLocalizedLearningLanguageLabel(
+                                    labelLanguage,
+                                    websiteLanguage
+                                  )
+                                : dictionary.rivalries.inviteReady}
                             </p>
                             <h2 className="text-2xl font-black text-on-surface tracking-tight mt-2 truncate">
-                              {paired ? `vs ${name}` : "Waiting for rival"}
+                              {paired
+                                ? `vs ${name}`
+                                : dictionary.rivalries.waitingForRival}
                             </h2>
                             <p className="text-sm text-on-surface-variant mt-1">
                               {nextLabel}
@@ -470,7 +503,11 @@ export default function RivalryDashboard() {
                               : "bg-surface-container text-on-surface-variant"
                           }`}
                         >
-                          {rivalryInactive ? "Ended" : selected ? "Open" : "View"}
+                          {rivalryInactive
+                            ? dictionary.rivalries.endedBadge
+                            : selected
+                              ? dictionary.rivalries.openBadge
+                              : dictionary.rivalries.viewBadge}
                         </span>
                       </div>
                     </button>
@@ -499,13 +536,17 @@ export default function RivalryDashboard() {
                           </div>
                         </div>
                         <div>
-                          <h2 className="text-5xl font-black text-primary tracking-[-0.06em]">
-                            You
-                          </h2>
-                          <p className="text-on-surface-variant font-medium text-lg">
-                            {currentLanguage} learner
-                          </p>
-                        </div>
+                              <h2 className="text-5xl font-black text-primary tracking-[-0.06em]">
+                            {dictionary.rivalries.you}
+                              </h2>
+                              <p className="text-on-surface-variant font-medium text-lg">
+                            {getLocalizedLearningLanguageLabel(
+                              currentLanguage,
+                              websiteLanguage
+                            )}{" "}
+                            {dictionary.common.learnerSuffix}
+                              </p>
+                            </div>
                       </div>
 
                       <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-5">
@@ -528,7 +569,11 @@ export default function RivalryDashboard() {
                                 {rivalName}
                               </h2>
                               <p className="text-on-surface-variant font-medium text-lg">
-                                {opponentLanguage} learner
+                                {getLocalizedLearningLanguageLabel(
+                                  opponentLanguage,
+                                  websiteLanguage
+                                )}{" "}
+                                {dictionary.common.learnerSuffix}
                               </p>
                             </div>
                           </>
@@ -539,10 +584,10 @@ export default function RivalryDashboard() {
                             </div>
                             <div>
                               <h2 className="text-4xl font-black text-on-surface-variant tracking-tight">
-                                Waiting for rival
+                                {dictionary.rivalries.waitingForRival}
                               </h2>
                               <p className="text-on-surface-variant font-medium">
-                                Share your invite code to start this duel.
+                                {dictionary.rivalries.inviteShareDescription}
                               </p>
                             </div>
                           </div>
@@ -567,12 +612,14 @@ export default function RivalryDashboard() {
                         </div>
                         <div>
                           <span className="text-on-surface-variant font-bold text-sm uppercase tracking-wider block mb-1">
-                            Rivalry Milestone
+                            {dictionary.rivalries.rivalryMilestone}
                           </span>
                           <span className="text-xl font-black text-on-tertiary-container tracking-tight">
                             {completedRounds.length > 0
-                              ? `You've played ${completedRounds.length} matches together.`
-                              : "Start your first showdown to build this rivalry."}
+                              ? dictionary.rivalries.playedMatchesMilestone(
+                                  completedRounds.length
+                                )
+                              : dictionary.rivalries.firstMilestone}
                           </span>
                         </div>
                       </div>
@@ -593,12 +640,14 @@ export default function RivalryDashboard() {
                         </div>
                         <div className="space-y-1">
                           <h3 className="text-xl font-black text-on-surface tracking-tight">
-                            Rivalry ended
+                            {dictionary.rivalries.rivalryEnded}
                           </h3>
                           <p className="text-on-surface-variant font-medium">
                             {leftByMe
-                              ? "You left this rivalry. History stays here, but this duel can no longer start new rounds."
-                              : `${rivalName} left this rivalry. History stays here, but this duel can no longer start new rounds.`}
+                              ? dictionary.rivalries.leaveUnavailableDescriptionSelf
+                              : dictionary.rivalries.leaveUnavailableDescriptionOther(
+                                  rivalName
+                                )}
                           </p>
                         </div>
                       </div>
@@ -611,15 +660,15 @@ export default function RivalryDashboard() {
                         <div className="flex items-center justify-between px-2">
                           <div>
                             <h3 className="text-3xl font-black tracking-[-0.05em]">
-                              Match History
+                              {dictionary.rivalries.historyTitle}
                             </h3>
                             <p className="text-sm text-on-surface-variant mt-1">
-                              Every showdown, topic, and winner lives here.
+                              {dictionary.rivalries.historyDescription}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-black uppercase tracking-[0.18em] text-on-surface-variant">
-                              Completed
+                              {dictionary.rivalries.completedLabel}
                             </p>
                             <p className="text-2xl font-black text-on-surface">
                               {completedRounds.length}
@@ -634,7 +683,7 @@ export default function RivalryDashboard() {
                               className="text-on-surface-variant/30 mx-auto mb-4"
                             />
                             <p className="text-on-surface-variant font-medium text-lg">
-                              No completed matches yet. Your rivalry history will fill this panel.
+                              {dictionary.rivalries.noCompletedMatches}
                             </p>
                           </div>
                         ) : (
@@ -682,10 +731,12 @@ export default function RivalryDashboard() {
                                     </div>
                                     <div className="min-w-0">
                                       <div className="font-bold text-xl md:text-2xl text-on-surface tracking-tight">
-                                        Week {round.round_number} Showdown
+                                        {dictionary.rivalries.showdownLabel(
+                                          round.round_number
+                                        )}
                                       </div>
                                       <div className="text-sm text-on-surface-variant font-medium mt-1 truncate">
-                                        {round.topic || "No topic selected"}
+                                        {round.topic || dictionary.rivalries.noTopicSelected}
                                         {myScore !== undefined &&
                                           rivalScore !== undefined && (
                                             <span className="font-bold text-on-surface-variant">
@@ -706,10 +757,16 @@ export default function RivalryDashboard() {
                                             : "text-secondary"
                                       }`}
                                     >
-                                      {tied ? "Tie" : "Winner"}
+                                      {tied
+                                        ? dictionary.rivalries.tie
+                                        : dictionary.rivalries.winner}
                                     </div>
                                     <div className="text-xs uppercase tracking-[0.18em] text-on-surface-variant font-black mt-1">
-                                      {tied ? "Nobody" : iWon ? "You" : rivalName}
+                                      {tied
+                                        ? dictionary.rivalries.nobody
+                                        : iWon
+                                          ? dictionary.rivalries.you
+                                          : rivalName}
                                     </div>
                                   </div>
                                 </div>
@@ -739,37 +796,45 @@ export default function RivalryDashboard() {
                             <>
                               <div className="space-y-2">
                                 <h4 className="text-3xl font-black tracking-[-0.05em]">
-                                  Rivalry closed
+                                  {dictionary.rivalries.leaveUnavailableTitle}
                                 </h4>
                                 <p className="text-on-surface-variant text-sm px-4 font-medium leading-relaxed">
-                                  This rivalry is now archived. You can still review the story here, but no new rounds can begin.
+                                  {dictionary.rivalries.leaveUnavailableDescriptionSelf}
                                 </p>
                               </div>
                               <button
                                 disabled
                                 className="w-full bg-surface-container text-on-surface-variant py-5 rounded-full font-black text-lg cursor-not-allowed"
                               >
-                                No New Rounds
+                                {dictionary.rivalries.rivalryEnded}
                               </button>
                             </>
                           ) : activeRound ? (
                             <>
                               <div className="space-y-2">
                                 <h4 className="text-3xl font-black tracking-[-0.05em]">
-                                  Round {activeRound.round_number} is live
+                                  {dictionary.rivalries.liveRoundTitle(
+                                    activeRound.round_number
+                                  )}
                                 </h4>
                                 {activeRound.target_lang && (
                                   <p className="text-on-surface-variant text-sm font-medium">
-                                    Language:{" "}
+                                    {dictionary.rivalries.languageLabel}:{" "}
                                     <span className="text-primary font-bold">
-                                      {activeRound.target_lang}
+                                      {getLocalizedLearningLanguageLabel(
+                                        activeRound.target_lang,
+                                        websiteLanguage
+                                      )}
                                     </span>
                                   </p>
                                 )}
                                 <p className="text-on-surface-variant text-sm font-medium">
-                                  Status:{" "}
+                                  {dictionary.rivalries.statusLabel}:{" "}
                                   <span className="text-primary font-bold">
-                                    {activeRound.status.replace(/_/g, " ")}
+                                    {getLocalizedRoundStatusLabel(
+                                      activeRound.status,
+                                      websiteLanguage
+                                    )}
                                   </span>
                                 </p>
                               </div>
@@ -779,7 +844,7 @@ export default function RivalryDashboard() {
                                 }
                                 className="w-full bg-primary text-on-primary py-5 rounded-full font-black text-lg shadow-[0_16px_32px_rgba(149,63,77,0.22)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                               >
-                                Continue Round
+                                {dictionary.rivalries.continueRound}
                                 <ArrowRight size={20} />
                               </button>
                             </>
@@ -787,10 +852,12 @@ export default function RivalryDashboard() {
                             <>
                               <div className="space-y-2">
                                 <h4 className="text-3xl font-black tracking-[-0.05em]">
-                                  Ready for Round {selectedRivalry.current_round_num + 1}?
+                                  {dictionary.rivalries.readyForRoundTitle(
+                                    selectedRivalry.current_round_num + 1
+                                  )}
                                 </h4>
                                 <p className="text-on-surface-variant text-sm px-4 font-medium leading-relaxed">
-                                  Start a new round whenever you want the next showdown.
+                                  {dictionary.rivalries.readyForRoundDescription}
                                 </p>
                               </div>
                               <button
@@ -801,7 +868,7 @@ export default function RivalryDashboard() {
                                 }
                                 className="w-full bg-primary text-on-primary py-5 rounded-full font-black text-lg shadow-[0_16px_32px_rgba(149,63,77,0.22)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                               >
-                                <Plus size={22} /> Start Round
+                                <Plus size={22} /> {dictionary.rivalries.startRound}
                               </button>
                             </>
                           )}
@@ -810,7 +877,7 @@ export default function RivalryDashboard() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-white p-6 rounded-[1.7rem] text-center shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
                             <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                              W / L
+                              {dictionary.rivalries.winsLabel}
                             </div>
                             <div className="text-3xl font-black text-on-surface flex items-center justify-center gap-2">
                               <Trophy size={22} className="text-primary" />
@@ -822,7 +889,7 @@ export default function RivalryDashboard() {
 
                           <div className="bg-white p-6 rounded-[1.7rem] text-center shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
                             <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                              Streak
+                              {dictionary.rivalries.streakLabel}
                             </div>
                             <div className="text-3xl font-black text-secondary flex items-center justify-center gap-1">
                               {myStreak}
@@ -837,7 +904,7 @@ export default function RivalryDashboard() {
                             <div className="relative z-10 flex items-center justify-between gap-4">
                               <div>
                                 <div className="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">
-                                  Rivalry Level
+                                  {dictionary.rivalries.rivalryLevel}
                                 </div>
                                 <div className="text-2xl font-black tracking-[-0.04em]">
                                   {rivalryLevel}
@@ -851,13 +918,13 @@ export default function RivalryDashboard() {
                         <div className="bg-white rounded-[2rem] p-6 shadow-[0_16px_30px_rgba(48,46,43,0.05)] space-y-4">
                           <div>
                             <p className="text-xs font-black uppercase tracking-[0.18em] text-on-surface-variant">
-                              Leave Rivalry
+                              {dictionary.rivalries.leaveRivalryEyebrow}
                             </p>
                             <h4 className="mt-2 text-2xl font-black tracking-[-0.04em] text-on-surface">
-                              End this duel
+                              {dictionary.rivalries.leaveRivalryTitle}
                             </h4>
                             <p className="mt-2 text-sm font-medium text-on-surface-variant leading-relaxed">
-                              Leaving keeps your match history, but removes this rivalry from the Lounge and blocks future rounds.
+                              {dictionary.rivalries.leaveRivalryDescription}
                             </p>
                           </div>
 
@@ -870,17 +937,17 @@ export default function RivalryDashboard() {
                           {selectedRivalryInactive ? (
                             <div className="rounded-[1.4rem] bg-surface-container px-4 py-3 text-sm font-medium text-on-surface-variant">
                               {leftByMe
-                                ? "You already left this rivalry."
-                                : `${rivalName} already left this rivalry.`}
+                                ? dictionary.rivalries.youAlreadyLeft
+                                : dictionary.rivalries.rivalAlreadyLeft(rivalName)}
                             </div>
                           ) : activeRound ? (
                             <div className="rounded-[1.4rem] bg-surface-container px-4 py-3 text-sm font-medium text-on-surface-variant">
-                              Finish the active round before leaving this rivalry.
+                              {dictionary.rivalries.finishActiveRound}
                             </div>
                           ) : leaveIntentId === selectedRivalry.id ? (
                             <div className="space-y-3">
                               <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-                                This rivalry will move to history. It will disappear from the Lounge and can no longer start new rounds.
+                                {dictionary.rivalries.leaveWarning}
                               </div>
                               <div className="flex gap-3">
                                 <button
@@ -891,14 +958,16 @@ export default function RivalryDashboard() {
                                   disabled={leaving}
                                   className="flex-1 rounded-full bg-surface-container px-5 py-3 font-black text-on-surface transition-all hover:bg-surface-container-high disabled:opacity-60"
                                 >
-                                  Cancel
+                                  {dictionary.common.cancel}
                                 </button>
                                 <button
                                   onClick={handleLeaveRivalry}
                                   disabled={leaving}
                                   className="flex-1 rounded-full bg-primary text-on-primary px-5 py-3 font-black transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60"
                                 >
-                                  {leaving ? "Leaving..." : "Confirm Leave"}
+                                  {leaving
+                                    ? dictionary.rivalries.leaving
+                                    : dictionary.rivalries.confirmLeave}
                                 </button>
                               </div>
                             </div>
@@ -910,7 +979,7 @@ export default function RivalryDashboard() {
                               }}
                               className="w-full rounded-full border border-primary/20 bg-primary-container/40 px-5 py-3.5 font-black text-primary transition-all hover:bg-primary-container/55"
                             >
-                              Leave Rivalry
+                              {dictionary.rivalries.leaveRivalryEyebrow}
                             </button>
                           )}
                         </div>
@@ -924,10 +993,10 @@ export default function RivalryDashboard() {
                             <LogOut size={42} />
                           </div>
                           <p className="text-on-surface text-2xl font-black tracking-tight mb-3">
-                            Rivalry ended before a rival joined
+                            {dictionary.rivalries.inviteArchivedTitle}
                           </p>
                           <p className="text-on-surface-variant text-lg font-medium">
-                            This invite is archived now, so it no longer appears in the Lounge or accepts new rounds.
+                            {dictionary.rivalries.inviteArchivedDescription}
                           </p>
                         </div>
                       ) : (
@@ -937,7 +1006,7 @@ export default function RivalryDashboard() {
                               <Swords size={42} />
                             </div>
                             <p className="text-on-surface-variant text-lg font-medium mb-5">
-                              Share your invite code with a friend to bring this rivalry to life.
+                              {dictionary.rivalries.inviteShareDescription}
                             </p>
                             <div className="bg-surface-container-low rounded-[2rem] p-6 mb-6">
                               <p className="text-4xl font-black text-primary tracking-[0.3em] font-mono">
@@ -959,21 +1028,21 @@ export default function RivalryDashboard() {
                                 <Copy size={16} />
                               )}
                               {copiedInviteId === selectedRivalry.id
-                                ? "Copied!"
-                                : "Copy Code"}
+                                ? dictionary.common.copied
+                                : dictionary.common.copyCode}
                             </button>
                           </div>
 
                           <div className="bg-white rounded-[2rem] p-6 shadow-[0_16px_30px_rgba(48,46,43,0.05)] space-y-4">
                             <div>
                               <p className="text-xs font-black uppercase tracking-[0.18em] text-on-surface-variant">
-                                Leave Rivalry
+                                {dictionary.rivalries.leaveRivalryEyebrow}
                               </p>
                               <h4 className="mt-2 text-2xl font-black tracking-[-0.04em] text-on-surface">
-                                Close this invite
+                                {dictionary.rivalries.closeInviteTitle}
                               </h4>
                               <p className="mt-2 text-sm font-medium text-on-surface-variant leading-relaxed">
-                                If you no longer want this duel, you can archive it. The invite code will stop appearing in the Lounge.
+                                {dictionary.rivalries.closeInviteDescription}
                               </p>
                             </div>
 
@@ -986,7 +1055,7 @@ export default function RivalryDashboard() {
                             {leaveIntentId === selectedRivalry.id ? (
                               <div className="space-y-3">
                                 <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-                                  This rivalry will move to history and stop accepting a joining rival.
+                                  {dictionary.rivalries.closeInviteWarning}
                                 </div>
                                 <div className="flex gap-3">
                                   <button
@@ -997,14 +1066,16 @@ export default function RivalryDashboard() {
                                     disabled={leaving}
                                     className="flex-1 rounded-full bg-surface-container px-5 py-3 font-black text-on-surface transition-all hover:bg-surface-container-high disabled:opacity-60"
                                   >
-                                    Cancel
+                                    {dictionary.common.cancel}
                                   </button>
                                   <button
                                     onClick={handleLeaveRivalry}
                                     disabled={leaving}
                                     className="flex-1 rounded-full bg-primary text-on-primary px-5 py-3 font-black transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60"
                                   >
-                                    {leaving ? "Leaving..." : "Confirm Leave"}
+                                    {leaving
+                                      ? dictionary.rivalries.leaving
+                                      : dictionary.rivalries.confirmLeave}
                                   </button>
                                 </div>
                               </div>
@@ -1016,7 +1087,7 @@ export default function RivalryDashboard() {
                                 }}
                                 className="w-full rounded-full border border-primary/20 bg-primary-container/40 px-5 py-3.5 font-black text-primary transition-all hover:bg-primary-container/55"
                               >
-                                Leave Rivalry
+                                {dictionary.rivalries.leaveRivalryEyebrow}
                               </button>
                             )}
                           </div>

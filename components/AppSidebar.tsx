@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, CircleHelp, Home, LogOut, Settings2, Swords } from "lucide-react";
+import {
+  formatWebsiteTime,
+  getDictionary,
+  getLocalizedLearningLanguageLabel,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import {
   type EditableProfile,
@@ -11,19 +16,19 @@ import {
 } from "@/lib/profile";
 
 type SidebarKey = "lounge" | "rivalries" | "scopes" | "settings" | "guide";
+type SidebarNavKey = Exclude<SidebarKey, "guide">;
 
 interface SidebarItem {
-  key: SidebarKey;
-  label: string;
+  key: SidebarNavKey;
   href: string;
   icon: typeof Home;
 }
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
-  { key: "lounge", label: "Lounge", href: "/lounge", icon: Home },
-  { key: "rivalries", label: "Rivalries", href: "/rivalries", icon: Swords },
-  { key: "scopes", label: "Scopes", href: "/scopes", icon: BookOpen },
-  { key: "settings", label: "Settings", href: "/settings", icon: Settings2 },
+  { key: "lounge", href: "/lounge", icon: Home },
+  { key: "rivalries", href: "/rivalries", icon: Swords },
+  { key: "scopes", href: "/scopes", icon: BookOpen },
+  { key: "settings", href: "/settings", icon: Settings2 },
 ];
 
 interface AppSidebarProps {
@@ -33,6 +38,7 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ active, profile }: AppSidebarProps) {
   const router = useRouter();
+  const dictionary = getDictionary(profile.websiteLanguage);
   const avatarTheme = getAvatarTheme(profile.avatarColor);
   const avatarLetter = normalizeAvatarLetter(
     profile.avatarLetter,
@@ -65,7 +71,11 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
                 {profile.displayName}
               </p>
               <p className="text-sm text-on-surface-variant font-medium">
-                {profile.preferredLanguage} learner
+                {getLocalizedLearningLanguageLabel(
+                  profile.preferredLanguage,
+                  profile.websiteLanguage
+                )}{" "}
+                {dictionary.common.learnerSuffix}
               </p>
             </div>
           </div>
@@ -87,7 +97,7 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
                 }`}
               >
                 <Icon size={18} />
-                <span>{item.label}</span>
+                <span>{dictionary.sidebar.items[item.key]}</span>
               </Link>
             );
           })}
@@ -95,13 +105,16 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
 
         <div className="rounded-[1.8rem] border border-white/80 bg-white/80 p-4 space-y-1 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-            Lounge rhythm
+            {dictionary.sidebar.loungeRhythmTitle}
           </p>
           <p className="text-2xl font-black tracking-tight text-on-surface">
-            {profile.weeklyMatchTime}
+            {formatWebsiteTime(
+              profile.weeklyMatchTime,
+              profile.websiteLanguage
+            )}
           </p>
           <p className="text-xs leading-relaxed text-on-surface-variant">
-            Your weekly default countdown pulse. Matches can still begin early.
+            {dictionary.sidebar.loungeRhythmHint}
           </p>
         </div>
 
@@ -117,9 +130,11 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
             <CircleHelp size={18} />
           </div>
           <div>
-            <p className="text-sm font-black tracking-tight">How It Works</p>
+            <p className="text-sm font-black tracking-tight">
+              {dictionary.sidebar.guideTitle}
+            </p>
             <p className="text-xs leading-relaxed">
-              Quick product guide and FAQ
+              {dictionary.sidebar.guideDescription}
             </p>
           </div>
         </Link>
@@ -129,7 +144,7 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
           className="w-full flex items-center justify-center gap-2 rounded-[1.4rem] border border-white/80 bg-white/85 px-4 py-3.5 text-sm font-bold text-on-surface-variant hover:text-primary transition-all"
         >
           <LogOut size={18} />
-          Log out
+          {dictionary.sidebar.logOut}
         </button>
       </div>
     </aside>

@@ -14,6 +14,12 @@ import {
   UserRound,
 } from "lucide-react";
 import HowItWorksLoop from "@/components/HowItWorksLoop";
+import {
+  getDictionary,
+  persistWebsiteLanguage,
+  resolveClientWebsiteLanguage,
+  type WebsiteLanguage,
+} from "@/lib/i18n";
 import { supabase } from "../lib/supabase";
 import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
 import {
@@ -42,10 +48,21 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<MessageState>(null);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [websiteLanguage, setWebsiteLanguage] = useState<WebsiteLanguage>(
+    () => resolveClientWebsiteLanguage()
+  );
+  const [languageTouched, setLanguageTouched] = useState(false);
 
   const isSignUp = view === "sign_up";
   const isForgotPassword = view === "forgot_password";
   const isCheckEmail = view === "check_email";
+  const dictionary = getDictionary(websiteLanguage);
+
+  const setLanguagePreference = (nextLanguage: WebsiteLanguage) => {
+    setWebsiteLanguage(nextLanguage);
+    setLanguageTouched(true);
+    persistWebsiteLanguage(nextLanguage);
+  };
 
   const syncPublicProfile = async (user: User, accessToken?: string | null) => {
     if (!accessToken) return;
@@ -86,7 +103,7 @@ export default function Login() {
     if (!resendEmail) {
       setMessage({
         type: "error",
-        text: "Enter your email first so we know where to send the confirmation link.",
+        text: dictionary.login.emailRequiredForConfirmation,
       });
       return;
     }
@@ -105,7 +122,7 @@ export default function Login() {
     if (error) {
       setMessage({
         type: "error",
-        text: error.message || "Could not resend the confirmation email.",
+        text: error.message || dictionary.login.resendConfirmationFailed,
       });
       setLoading(false);
       return;
@@ -113,7 +130,7 @@ export default function Login() {
 
     setMessage({
       type: "success",
-      text: `A fresh confirmation email is on the way to ${resendEmail}.`,
+      text: dictionary.login.resendConfirmationSuccess(resendEmail),
     });
     setLoading(false);
   };
@@ -123,7 +140,7 @@ export default function Login() {
     if (!trimmedEmail) {
       setMessage({
         type: "error",
-        text: "Enter your email first so we can send the reset link.",
+        text: dictionary.login.emailRequiredForReset,
       });
       return;
     }
@@ -138,7 +155,7 @@ export default function Login() {
     if (error) {
       setMessage({
         type: "error",
-        text: error.message || "Could not send the password reset email.",
+        text: error.message || dictionary.login.passwordResetFailed,
       });
       setLoading(false);
       return;
@@ -146,7 +163,7 @@ export default function Login() {
 
     setMessage({
       type: "success",
-      text: `Password reset email sent to ${trimmedEmail}. Open the link there to choose a new password.`,
+      text: dictionary.login.passwordResetSent(trimmedEmail),
     });
     setLoading(false);
   };
@@ -166,7 +183,7 @@ export default function Login() {
       if (!trimmedDisplayName) {
         setMessage({
           type: "error",
-          text: "Display nickname is required.",
+          text: dictionary.login.nicknameRequired,
         });
         setLoading(false);
         return;
@@ -180,6 +197,7 @@ export default function Login() {
           data: {
             display_name: resolveDisplayName(trimmedDisplayName),
             default_language_level: DEFAULT_LANGUAGE_LEVEL,
+            website_language: websiteLanguage,
           },
         },
       });
@@ -202,13 +220,14 @@ export default function Login() {
             text:
               syncError instanceof Error
                 ? syncError.message
-                : "Account created, but public profile sync failed.",
+                : dictionary.login.signUpProfileSyncFailed,
           });
           setLoading(false);
           return;
         }
       }
 
+      persistWebsiteLanguage(websiteLanguage);
       setPendingEmail(email.trim());
       setView("check_email");
       setLoading(false);
@@ -226,11 +245,36 @@ export default function Login() {
         type: "error",
         text:
           lowerMessage.includes("email not confirmed")
-            ? "Your email is not confirmed yet. Resend the confirmation email below and then try again."
+            ? dictionary.login.emailNotConfirmed
             : error.message,
       });
       setLoading(false);
       return;
+    }
+
+    if (data.user) {
+      const resolvedLanguage = languageTouched
+        ? websiteLanguage
+        : getEditableProfileFromUser(data.user).websiteLanguage;
+
+      if (languageTouched) {
+        const { error: languageUpdateError } = await supabase.auth.updateUser({
+          data: {
+            website_language: websiteLanguage,
+          },
+        });
+
+        if (languageUpdateError) {
+          setMessage({
+            type: "error",
+            text: languageUpdateError.message,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      persistWebsiteLanguage(resolvedLanguage);
     }
 
     if (data.user && data.session?.access_token) {
@@ -242,7 +286,7 @@ export default function Login() {
           text:
             syncError instanceof Error
               ? syncError.message
-              : "Signed in, but profile sync failed.",
+              : dictionary.login.signInProfileSyncFailed,
         });
         setLoading(false);
         return;
@@ -253,20 +297,20 @@ export default function Login() {
   };
 
   const cardTitle = isForgotPassword
-    ? "Reset your password"
+    ? dictionary.login.cardTitles.forgot_password
     : isSignUp
-      ? "Create your rivalry profile"
+      ? dictionary.login.cardTitles.sign_up
       : isCheckEmail
-        ? "Check your inbox"
-        : "Enter the arena";
+        ? dictionary.login.cardTitles.check_email
+        : dictionary.login.cardTitles.sign_in;
 
   const cardDescription = isForgotPassword
-    ? "We will email you a secure link so you can choose a new password."
+    ? dictionary.login.cardDescriptions.forgot_password
     : isSignUp
-      ? "Pick your identity now so your rival sees the right nickname from round one."
+      ? dictionary.login.cardDescriptions.sign_up
       : isCheckEmail
-        ? "Confirm your email first, then come back and sign in to start your first rivalry."
-        : "Sign in to manage your countdowns, rivalries, scopes, and settings.";
+        ? dictionary.login.cardDescriptions.check_email
+        : dictionary.login.cardDescriptions.sign_in;
 
   return (
     <div className="min-h-screen bg-surface p-4 md:p-6 relative overflow-hidden">
@@ -276,6 +320,25 @@ export default function Login() {
       <div className="relative z-10 max-w-[1320px] mx-auto grid grid-cols-1 xl:grid-cols-[410px_minmax(0,1fr)] gap-6 items-start">
         <section className="space-y-6">
           <div className="text-center xl:text-left">
+            <div className="mb-5 inline-flex items-center gap-1 rounded-full border border-white/80 bg-white/85 p-1 shadow-sm">
+              <span className="px-3 text-[11px] font-black uppercase tracking-[0.18em] text-on-surface-variant">
+                {dictionary.login.languageToggleLabel}
+              </span>
+              {(["en", "zh-CN"] as const).map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  onClick={() => setLanguagePreference(language)}
+                  className={`rounded-full px-3 py-2 text-sm font-black transition-all ${
+                    websiteLanguage === language
+                      ? "bg-primary text-on-primary shadow-sm"
+                      : "text-on-surface-variant hover:text-primary"
+                  }`}
+                >
+                  {dictionary.websiteLanguageLabels[language]}
+                </button>
+              ))}
+            </div>
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-container rounded-[2rem] mb-6 rotate-12 shadow-sm">
               <span className="text-4xl">⚔️</span>
             </div>
@@ -283,7 +346,7 @@ export default function Login() {
               ClashLingo
             </h1>
             <p className="text-on-surface-variant font-medium text-lg">
-              Weekly language duels with a real rival, a real scope, and a real winner.
+              {dictionary.login.brandTagline}
             </p>
           </div>
 
@@ -306,7 +369,7 @@ export default function Login() {
                     </div>
                     <div>
                       <p className="text-sm font-black uppercase tracking-[0.18em] text-on-surface-variant">
-                        Confirmation sent
+                        {dictionary.login.confirmationSent}
                       </p>
                       <p className="text-on-surface font-bold">
                         {pendingEmail || email}
@@ -314,7 +377,7 @@ export default function Login() {
                     </div>
                   </div>
                   <p className="text-sm text-on-surface-variant leading-relaxed">
-                    Open the email we just sent, confirm your account, then come back and sign in.
+                    {dictionary.login.confirmationInstructions}
                   </p>
                 </div>
 
@@ -343,7 +406,7 @@ export default function Login() {
                     ) : (
                       <>
                         <RotateCcw size={18} />
-                        Resend Email
+                        {dictionary.login.resendEmail}
                       </>
                     )}
                   </button>
@@ -352,7 +415,7 @@ export default function Login() {
                     onClick={() => switchView("sign_in")}
                     className="w-full bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold hover:bg-surface-container transition-all"
                   >
-                    Back to Sign In
+                    {dictionary.resetPassword.backToSignIn}
                   </button>
                 </div>
               </div>
@@ -363,7 +426,7 @@ export default function Login() {
                     {isSignUp && (
                       <div>
                         <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
-                          Display Nickname
+                          {dictionary.common.displayNickname}
                         </label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -378,7 +441,7 @@ export default function Login() {
                             value={displayName}
                             onChange={(event) => setDisplayName(event.target.value)}
                             className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-primary transition-all"
-                            placeholder="Language Warrior"
+                            placeholder={dictionary.login.displayNicknamePlaceholder}
                             maxLength={32}
                           />
                         </div>
@@ -387,7 +450,7 @@ export default function Login() {
 
                     <div>
                       <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
-                        Email
+                        {dictionary.common.email}
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -399,7 +462,7 @@ export default function Login() {
                           value={email}
                           onChange={(event) => setEmail(event.target.value)}
                           className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-primary transition-all"
-                          placeholder="warrior@example.com"
+                          placeholder={dictionary.login.emailPlaceholder}
                         />
                       </div>
                     </div>
@@ -407,7 +470,7 @@ export default function Login() {
                     {!isForgotPassword && (
                       <div>
                         <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
-                          Password
+                          {dictionary.common.password}
                         </label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -451,10 +514,10 @@ export default function Login() {
                     ) : (
                       <>
                         {isForgotPassword
-                          ? "Send Reset Link"
+                          ? dictionary.login.sendResetLink
                           : isSignUp
-                            ? "Create Account"
-                            : "Enter the Arena"}
+                            ? dictionary.login.createAccount
+                            : dictionary.login.enterArena}
                         <ArrowRight
                           size={20}
                           className="group-hover:translate-x-1 transition-transform"
@@ -471,14 +534,14 @@ export default function Login() {
                         onClick={() => switchView("forgot_password")}
                         className="font-medium text-on-surface-variant hover:text-primary"
                       >
-                        Forgot password?
+                        {dictionary.login.forgotPassword}
                       </button>
                       <button
                         onClick={handleResendConfirmation}
                         disabled={loading}
                         className="font-medium text-on-surface-variant hover:text-primary disabled:opacity-60"
                       >
-                        Resend confirmation
+                        {dictionary.login.resendConfirmation}
                       </button>
                     </>
                   ) : (
@@ -486,7 +549,7 @@ export default function Login() {
                       onClick={() => switchView("sign_in")}
                       className="font-medium text-on-surface-variant hover:text-primary"
                     >
-                      Back to sign in
+                      {dictionary.resetPassword.backToSignIn}
                     </button>
                   )}
                 </div>
@@ -497,10 +560,10 @@ export default function Login() {
           {!isCheckEmail && (
             <p className="text-center xl:text-left text-on-surface-variant text-sm">
               {isSignUp
-                ? "Already have an account?"
+                ? dictionary.login.alreadyHaveAccount
                 : isForgotPassword
-                  ? "Remembered it?"
-                  : "Don't have an account?"}{" "}
+                  ? dictionary.login.rememberedPassword
+                  : dictionary.login.noAccountYet}{" "}
               <button
                 onClick={() =>
                   switchView(
@@ -509,7 +572,9 @@ export default function Login() {
                 }
                 className="text-primary font-bold hover:underline"
               >
-                {isSignUp || isForgotPassword ? "Sign in" : "Sign up"}
+                {isSignUp || isForgotPassword
+                  ? dictionary.common.signIn
+                  : dictionary.common.signUp}
               </button>
             </p>
           )}
@@ -518,24 +583,24 @@ export default function Login() {
         <section className="bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low rounded-[2.8rem] p-7 md:p-8 shadow-[0_24px_60px_rgba(149,63,77,0.08)] border border-white/80 space-y-7">
           <div className="space-y-3">
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
-              How It Works
+              {dictionary.guide.loginEyebrow}
             </p>
             <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-[-0.06em] leading-none">
-              Learn by dueling
+              {dictionary.guide.loginTitle}
             </h2>
             <p className="text-on-surface-variant text-lg leading-relaxed">
-              The easiest way to understand ClashLingo is to see the loop once. This is the fast version.
+              {dictionary.guide.loginDescription}
             </p>
           </div>
 
-          <HowItWorksLoop compact />
+          <HowItWorksLoop compact websiteLanguage={websiteLanguage} />
 
           <button
             onClick={() => router.push("/how-it-works")}
             className="w-full rounded-[1.6rem] border border-white/80 bg-white/85 px-5 py-4 font-black text-on-surface transition-all hover:text-primary hover:translate-y-[-1px] flex items-center justify-center gap-2"
           >
             <CircleHelp size={18} />
-            Open Full Guide
+            {dictionary.common.openFullGuide}
           </button>
         </section>
       </div>

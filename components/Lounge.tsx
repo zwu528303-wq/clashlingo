@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import {
+  formatWebsiteTime,
+  getDictionary,
+  getLocalizedLearningLanguageLabel,
+  getLocalizedRoundStatusLabel,
+  resolveClientWebsiteLanguage,
+} from "@/lib/i18n";
 import {
   ArrowRight,
   Check,
@@ -70,16 +77,6 @@ function parseWeeklyTime(value: string) {
   };
 }
 
-function formatWeeklyTime(value: string) {
-  const { hours, minutes } = parseWeeklyTime(value);
-  const suffix = hours >= 12 ? "PM" : "AM";
-  const normalizedHours = hours % 12 || 12;
-
-  return `${normalizedHours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")} ${suffix}`;
-}
-
 function getNextWeeklyRhythmTarget(
   anchorIso: string,
   weeklyTime: string,
@@ -104,7 +101,11 @@ function getNextWeeklyRhythmTarget(
   return new Date(firstTargetMs + weeksToAdd * weekMs).toISOString();
 }
 
-function formatCountdown(target: string | null, nowMs: number) {
+function formatCountdown(
+  target: string | null,
+  nowMs: number,
+  websiteLanguage: EditableProfile["websiteLanguage"]
+) {
   if (!target) return "00:00:00";
   if (nowMs === 0) return "--:--:--";
 
@@ -118,7 +119,9 @@ function formatCountdown(target: string | null, nowMs: number) {
   const seconds = totalSeconds % 60;
 
   if (days > 0) {
-    return `${days}d ${hours.toString().padStart(2, "0")}:${minutes
+    return `${
+      websiteLanguage === "zh-CN" ? `${days}天` : `${days}d`
+    } ${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
@@ -128,27 +131,11 @@ function formatCountdown(target: string | null, nowMs: number) {
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function getRoundStatusLabel(status: string) {
-  switch (status) {
-    case "topic_selection":
-      return "Topic Selection";
-    case "confirming":
-      return "Scope Review";
-    case "countdown":
-      return "Study Countdown";
-    case "exam_ready":
-      return "Exam Ready";
-    case "exam_live":
-      return "Exam Live";
-    default:
-      return status.replace(/_/g, " ");
-  }
-}
-
 export default function Lounge() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [rivalNames, setRivalNames] = useState<Record<string, string>>({});
   const [rivalProfiles, setRivalProfiles] = useState<
@@ -177,6 +164,8 @@ export default function Lounge() {
   const [joinLang, setJoinLang] = useState<SupportedLanguage>(SUPPORTED_LANGUAGES[0]);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
+  const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
+  const dictionary = getDictionary(websiteLanguage);
 
   async function loadCurrentProfile(user: User) {
     const authProfile = getEditableProfileFromUser(user);
@@ -287,7 +276,10 @@ export default function Lounge() {
           (profiles ?? []).map((item) => [
             item.id,
             (() => {
-              const displayName = resolveDisplayName(item.display_name, "Rival");
+              const displayName = resolveDisplayName(
+                item.display_name,
+                dictionary.common.rivalFallback
+              );
               return {
                 displayName,
                 ...parsePublicAvatarValue(item.avatar_url, displayName),
@@ -298,7 +290,8 @@ export default function Lounge() {
 
         rivalIdPairs.forEach(({ rivalryId, rivalId }) => {
           const publicProfile = profileMap.get(rivalId);
-          const displayName = publicProfile?.displayName ?? "Rival";
+          const displayName =
+            publicProfile?.displayName ?? dictionary.common.rivalFallback;
 
           rivalryNameMap[rivalryId] = displayName;
           rivalryProfileMap[rivalryId] = publicProfile ?? {
@@ -332,23 +325,24 @@ export default function Lounge() {
     }
   }
 
+  const initializeLounge = useEffectEvent(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    const resolvedProfile = await loadCurrentProfile(user);
+    setUserId(user.id);
+    await fetchRivalries(user.id, resolvedProfile.weeklyMatchTime);
+    setLoading(false);
+  });
+
   // Check auth + fetch rivalries
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      const resolvedProfile = await loadCurrentProfile(user);
-      setUserId(user.id);
-      await fetchRivalries(user.id, resolvedProfile.weeklyMatchTime);
-      setLoading(false);
-    };
-    init();
-  }, [router]);
+    initializeLounge();
+  }, []);
 
   useEffect(() => {
     const shouldTick = rivalries.some((rivalry) => Boolean(rivalry.player_b_id));
@@ -416,7 +410,7 @@ export default function Lounge() {
         ),
       });
       if (retryError) {
-        setCreateError("Failed to create rivalry. Please try again.");
+        setCreateError(dictionary.lounge.errors.createFailed);
         setCreating(false);
         return;
       }
@@ -435,7 +429,7 @@ export default function Lounge() {
   const handleJoin = async () => {
     if (!userId) return;
     if (rivalries.length >= 2) {
-      setJoinError("You can only be in 2 rivalries at a time.");
+      setJoinError(dictionary.lounge.errors.rivalryLimit);
       setJoining(false);
       return;
     }
@@ -452,19 +446,19 @@ export default function Lounge() {
       .single();
 
     if (error || !data) {
-      setJoinError("Invite code not found.");
+      setJoinError(dictionary.lounge.errors.inviteCodeNotFound);
       setJoining(false);
       return;
     }
 
     if (data.player_a_id === userId) {
-      setJoinError("You can't join your own rivalry!");
+      setJoinError(dictionary.lounge.errors.ownRivalry);
       setJoining(false);
       return;
     }
 
     if (data.player_b_id) {
-      setJoinError("This rivalry already has two players.");
+      setJoinError(dictionary.lounge.errors.rivalryFull);
       setJoining(false);
       return;
     }
@@ -481,7 +475,7 @@ export default function Lounge() {
       .eq("id", data.id);
 
     if (updateError) {
-      setJoinError("Failed to join: " + updateError.message);
+      setJoinError(`${dictionary.lounge.errors.failedToJoinPrefix} ${updateError.message}`);
       setJoining(false);
       return;
     }
@@ -510,7 +504,9 @@ export default function Lounge() {
   if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="text-on-surface-variant font-medium">Loading...</div>
+        <div className="text-on-surface-variant font-medium">
+          {dictionary.common.loading}
+        </div>
       </div>
     );
   }
@@ -529,13 +525,13 @@ export default function Lounge() {
         <main className="space-y-8 pb-12">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant mb-3">
-              Match Control
+              {dictionary.lounge.eyebrow}
             </p>
             <h2 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none mb-3">
-              Your Lounge
+              {dictionary.lounge.title}
             </h2>
             <p className="text-on-surface-variant text-xl">
-              Keep an eye on the countdown, then jump straight into the next clash.
+              {dictionary.lounge.description}
             </p>
           </div>
 
@@ -552,10 +548,10 @@ export default function Lounge() {
 
               <div className="space-y-4">
                 <h3 className="text-4xl font-black text-on-surface tracking-tight">
-                  Learning alone is boring.
+                  {dictionary.lounge.emptyTitle}
                 </h3>
                 <p className="text-xl text-on-surface-variant">
-                  Crush your friends instead. Start a rivalry and see who learns faster.
+                  {dictionary.lounge.emptyDescription}
                 </p>
               </div>
 
@@ -564,34 +560,34 @@ export default function Lounge() {
                   onClick={() => { setShowCreate(true); setCreatedCode(""); setCreateError(""); }}
                   className="bg-primary text-on-primary px-8 py-4 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  <Plus size={24} /> CREATE RIVALRY
+                  <Plus size={24} /> {dictionary.lounge.createRivalry.toUpperCase()}
                 </button>
                 <button
                   onClick={() => { setShowJoin(true); setJoinError(""); setJoinCode(""); }}
                   className="bg-white text-on-surface border-2 border-surface-container px-8 py-4 rounded-full font-black text-lg shadow-sm hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  <UserPlus size={24} /> JOIN WITH CODE
+                  <UserPlus size={24} /> {dictionary.lounge.joinWithCode.toUpperCase()}
                 </button>
               </div>
 
               <div className="rounded-[2rem] bg-white/88 border border-white/80 p-5 md:p-6 text-left shadow-[0_16px_32px_rgba(48,46,43,0.05)] space-y-5">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                    How ClashLingo Works
+                    {dictionary.lounge.howItWorksTitle}
                   </p>
                   <p className="mt-2 text-on-surface-variant leading-relaxed">
-                    Start with one rivalry first. The real product is a weekly loop you keep repeating together.
+                    {dictionary.lounge.howItWorksDescription}
                   </p>
                 </div>
 
-                <HowItWorksLoop compact />
+                <HowItWorksLoop compact websiteLanguage={websiteLanguage} />
 
                 <button
                   onClick={() => router.push("/how-it-works")}
                   className="inline-flex items-center gap-2 rounded-full border border-surface-container bg-surface-container-lowest px-5 py-3 text-sm font-black text-on-surface hover:text-primary transition-colors"
                 >
                   <CircleHelp size={18} />
-                  Open Full Guide
+                  {dictionary.common.openFullGuide}
                 </button>
               </div>
             </div>
@@ -601,7 +597,7 @@ export default function Lounge() {
           <div className="space-y-6">
             {rivalries.length >= 2 && (
               <p className="text-sm text-on-surface-variant font-medium">
-                You&apos;ve reached the 2-rivalry limit.
+                {dictionary.lounge.limitReached}
               </p>
             )}
 
@@ -614,7 +610,10 @@ export default function Lounge() {
                   profile?.weeklyMatchTime || DEFAULT_WEEKLY_MATCH_TIME
                 );
                 const rivalProfile = rivalProfiles[r.id];
-                const rivalName = rivalProfile?.displayName || rivalNames[r.id] || "Rival";
+                const rivalName =
+                  rivalProfile?.displayName ||
+                  rivalNames[r.id] ||
+                  dictionary.common.rivalFallback;
                 const rivalTheme = getAvatarTheme(rivalProfile?.avatarColor);
                 const activeRound = activeRounds[r.id] ?? null;
                 const targetLang =
@@ -630,11 +629,13 @@ export default function Lounge() {
                   : null;
                 const weeklyRhythmText = formatCountdown(
                   weeklyRhythmTarget,
-                  countdownNow
+                  countdownNow,
+                  websiteLanguage
                 );
                 const countdownText = formatCountdown(
                   activeRound?.exam_at ?? null,
-                  countdownNow
+                  countdownNow,
+                  websiteLanguage
                 );
                 const myConfirmed = isPlayerA
                   ? activeRound?.player_a_confirmed
@@ -649,19 +650,25 @@ export default function Lounge() {
                   ? activeRound?.player_b_exam_ready
                   : activeRound?.player_a_exam_ready;
 
-                let badgeLabel = isPaired ? "Ready to Duel" : "Invite Ready";
+                let badgeLabel = isPaired
+                  ? dictionary.lounge.readyToDuel
+                  : dictionary.lounge.inviteReady;
                 let badgeClassName =
                   "bg-surface-container-high text-on-surface-variant";
-                let panelTitle = isPaired ? "Match unlocks in" : "Invite code";
+                let panelTitle = isPaired
+                  ? dictionary.lounge.matchUnlocksIn
+                  : dictionary.lounge.inviteCode;
                 let panelValue = isPaired
                   ? weeklyRhythmText
                   : r.invite_code;
                 let panelHint = isPaired
-                  ? `Shared weekly pulse lands at ${formatWeeklyTime(
-                      sharedWeeklyMatchTime
-                    )}. If both players want to play, start early.`
-                  : "Share this code so your rival can join.";
-                let actionLabel = isPaired ? "Start Round" : "Copy Code";
+                  ? dictionary.lounge.rhythmCountdownHint(
+                      formatWebsiteTime(sharedWeeklyMatchTime, websiteLanguage)
+                    )
+                  : dictionary.lounge.shareInviteHint;
+                let actionLabel = isPaired
+                  ? dictionary.lounge.startRound
+                  : dictionary.common.copyCode;
                 let cardBorderClassName =
                   "border-surface-container/80";
                 let cardGlowClassName =
@@ -684,7 +691,10 @@ export default function Lounge() {
                 }
 
                 if (isPaired && activeRound) {
-                  badgeLabel = getRoundStatusLabel(activeRound.status);
+                  badgeLabel = getLocalizedRoundStatusLabel(
+                    activeRound.status,
+                    websiteLanguage
+                  );
                   badgeClassName =
                     activeRound.status === "countdown"
                       ? "bg-secondary-container text-on-secondary-container"
@@ -692,7 +702,7 @@ export default function Lounge() {
                           activeRound.status === "exam_live"
                         ? "bg-primary-container text-on-primary-container"
                         : "bg-surface-container-high text-on-surface-variant";
-                  actionLabel = "Open Match";
+                  actionLabel = dictionary.lounge.openMatch;
                   action = () =>
                     router.push(
                       activeRound.status === "exam_live"
@@ -702,52 +712,51 @@ export default function Lounge() {
 
                   if (activeRound.status === "topic_selection") {
                     cardBorderClassName = "border-primary/30";
-                    panelTitle = "Next step";
-                    panelValue = activeRound.topic || "Pick a topic";
-                    panelHint =
-                      "Generate the scope to kick off this round, or sync up and start before the weekly timer if both players are ready.";
+                    panelTitle = dictionary.lounge.nextStep;
+                    panelValue = activeRound.topic || dictionary.lounge.pickTopic;
+                    panelHint = dictionary.lounge.topicSelectionHint;
                   } else if (activeRound.status === "confirming") {
                     cardBorderClassName = "border-primary/35";
-                    panelTitle = "Confirmation";
+                    panelTitle = dictionary.lounge.confirmation;
                     panelValue = myConfirmed
                       ? rivalConfirmed
-                        ? "Both confirmed"
-                        : "You confirmed"
-                      : "Your confirmation needed";
+                        ? dictionary.lounge.bothConfirmed
+                        : dictionary.lounge.youConfirmed
+                      : dictionary.lounge.yourConfirmationNeeded;
                     panelHint = rivalConfirmed
-                      ? "Your rival already locked in. Once you confirm, the study countdown begins."
-                      : "Both players must confirm before the study countdown begins.";
+                      ? dictionary.lounge.rivalLockedInHint
+                      : dictionary.lounge.bothConfirmHint;
                   } else if (activeRound.status === "countdown") {
                     cardBorderClassName = "border-secondary/40";
                     panelSurfaceClassName =
                       "border-secondary/20 bg-secondary-container/15";
-                    panelTitle = "Exam unlocks in";
+                    panelTitle = dictionary.lounge.examUnlocksIn;
                     panelValue = countdownText;
-                    panelHint = activeRound.topic
-                      ? `${activeRound.topic} · keep studying, or both tap ready inside the round to start early.`
-                      : "Keep studying, or both tap ready inside the round to start early.";
-                    actionLabel = "Open Study Round";
+                    panelHint = dictionary.lounge.countdownHint(
+                      activeRound.topic ?? null
+                    );
+                    actionLabel = dictionary.lounge.openStudyRound;
                   } else if (activeRound.status === "exam_ready") {
                     cardBorderClassName = "border-primary/45";
                     panelSurfaceClassName =
                       "border-primary/20 bg-primary-container/12";
-                    panelTitle = "Ready check";
+                    panelTitle = dictionary.lounge.readyCheck;
                     panelValue = myReady
                       ? rivalReady
-                        ? "Both players ready"
-                        : "You are ready"
-                      : "Tap ready when you are set";
+                        ? dictionary.lounge.bothReady
+                        : dictionary.lounge.youAreReady
+                      : dictionary.lounge.tapReady;
                     panelHint = rivalReady
-                      ? "Your rival is already ready."
-                      : "The exam starts as soon as both players are ready.";
+                      ? dictionary.lounge.rivalReadyHint
+                      : dictionary.lounge.bothReadyHint;
                   } else if (activeRound.status === "exam_live") {
                     cardBorderClassName = "border-primary/45";
                     panelSurfaceClassName =
                       "border-primary/20 bg-primary-container/14";
-                    panelTitle = "Live now";
-                    panelValue = "Exam in progress";
-                    panelHint = "Jump in and submit before your rival pulls ahead.";
-                    actionLabel = "Take Exam";
+                    panelTitle = dictionary.lounge.liveNow;
+                    panelValue = dictionary.lounge.examInProgress;
+                    panelHint = dictionary.lounge.examLiveHint;
+                    actionLabel = dictionary.lounge.takeExam;
                   }
                 }
 
@@ -776,7 +785,7 @@ export default function Lounge() {
                           onClick={() => router.push(`/rivalries?rivalry=${r.id}`)}
                           className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-on-surface-variant shadow-sm transition-colors hover:text-primary"
                         >
-                          Rivalry Hub
+                          {dictionary.rivalries.title}
                         </button>
                       </div>
 
@@ -817,10 +826,19 @@ export default function Lounge() {
 
                           <div className="space-y-2">
                             <h3 className="text-[2.4rem] md:text-[2.7rem] font-black text-on-surface tracking-[-0.06em] leading-none">
-                              {isPaired ? `vs ${rivalName}` : "Waiting for rival"}
+                              {isPaired
+                                ? `vs ${rivalName}`
+                                : dictionary.lounge.waitingForRival}
                             </h3>
                             <p className="text-on-surface-variant text-lg font-medium">
-                              {targetLang} • Round {roundNumber}
+                              {getLocalizedLearningLanguageLabel(
+                                targetLang,
+                                websiteLanguage
+                              )}{" "}
+                              •{" "}
+                              {websiteLanguage === "zh-CN"
+                                ? `第 ${roundNumber} 轮`
+                                : `Round ${roundNumber}`}
                             </p>
                           </div>
                         </div>
@@ -854,7 +872,9 @@ export default function Lounge() {
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {myConfirmed ? "You confirmed" : "You pending"}
+                                {myConfirmed
+                                  ? dictionary.lounge.youConfirmed
+                                  : dictionary.lounge.youPending}
                               </span>
                               <span
                                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
@@ -863,7 +883,9 @@ export default function Lounge() {
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {rivalConfirmed ? "Rival confirmed" : "Rival pending"}
+                                {rivalConfirmed
+                                  ? dictionary.lounge.rivalConfirmed
+                                  : dictionary.lounge.rivalPending}
                               </span>
                             </div>
                           )}
@@ -877,7 +899,9 @@ export default function Lounge() {
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {myReady ? "You ready now" : "You still studying"}
+                                {myReady
+                                  ? dictionary.lounge.youReady
+                                  : dictionary.lounge.youStillStudying}
                               </span>
                               <span
                                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
@@ -886,7 +910,9 @@ export default function Lounge() {
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {rivalReady ? "Rival ready now" : "Rival still studying"}
+                                {rivalReady
+                                  ? dictionary.lounge.rivalReady
+                                  : dictionary.lounge.rivalStillStudying}
                               </span>
                             </div>
                           )}
@@ -900,7 +926,9 @@ export default function Lounge() {
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {myReady ? "You ready" : "You pending"}
+                                {myReady
+                                  ? dictionary.lounge.youReady
+                                  : dictionary.lounge.youPending}
                               </span>
                               <span
                                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
@@ -909,7 +937,9 @@ export default function Lounge() {
                                     : "bg-surface-container text-on-surface-variant"
                                 }`}
                               >
-                                {rivalReady ? "Rival ready" : "Rival pending"}
+                                {rivalReady
+                                  ? dictionary.lounge.rivalReady
+                                  : dictionary.lounge.rivalPending}
                               </span>
                             </div>
                           )}
@@ -917,14 +947,18 @@ export default function Lounge() {
                           {showWeeklyRhythmPanel && (
                             <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 text-center space-y-1 mt-3">
                               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                                Weekly rhythm in
+                                {dictionary.lounge.rhythmBadge}
                               </p>
                               <div className="text-[1.9rem] font-black tracking-[-0.04em] text-primary">
                                 {weeklyRhythmText}
                               </div>
                               <p className="text-xs text-on-surface-variant leading-relaxed">
-                                Shared pulse for this rivalry lands at{" "}
-                                {formatWeeklyTime(sharedWeeklyMatchTime)}. It is a guide, not a lock.
+                                {dictionary.lounge.rhythmCountdownHint(
+                                  formatWebsiteTime(
+                                    sharedWeeklyMatchTime,
+                                    websiteLanguage
+                                  )
+                                )}
                               </p>
                             </div>
                           )}
@@ -933,7 +967,11 @@ export default function Lounge() {
                             onClick={action}
                             className={`mt-2 w-full py-4 rounded-[1.6rem] font-black text-base transition-all flex items-center justify-center gap-2 ${actionClassName}`}
                           >
-                            <span>{copiedInviteId === r.id ? "Code Copied" : actionLabel}</span>
+                            <span>
+                              {copiedInviteId === r.id
+                                ? dictionary.lounge.codeCopied
+                                : actionLabel}
+                            </span>
                             {copiedInviteId !== r.id && <ArrowRight size={18} />}
                           </button>
                         </div>
@@ -950,10 +988,10 @@ export default function Lounge() {
                   </div>
                   <div className="space-y-3 max-w-sm">
                     <h3 className="text-[2.3rem] font-black text-on-surface tracking-[-0.05em] leading-none">
-                      Start New Rivalry
+                      {dictionary.lounge.createRivalry}
                     </h3>
                     <p className="text-on-surface-variant text-lg leading-relaxed">
-                      Challenge another friend and add a fresh duel to your lounge.
+                      {dictionary.lounge.emptyDescription}
                     </p>
                   </div>
                   <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
@@ -965,7 +1003,7 @@ export default function Lounge() {
                       }}
                       className="flex-1 bg-primary text-on-primary py-4 rounded-[1.5rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all shadow-[0_16px_28px_rgba(149,63,77,0.22)]"
                     >
-                      Create
+                      {dictionary.lounge.createRivalry}
                     </button>
                     <button
                       onClick={() => {
@@ -975,7 +1013,7 @@ export default function Lounge() {
                       }}
                       className="flex-1 bg-white text-on-surface border border-surface-container py-4 rounded-[1.5rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
                     >
-                      Join with Code
+                      {dictionary.lounge.joinWithCode}
                     </button>
                   </div>
                 </article>
@@ -1002,12 +1040,16 @@ export default function Lounge() {
 
             {!createdCode ? (
               <>
-                <h3 className="text-2xl font-black text-on-surface mb-2">Create a Rivalry</h3>
-                <p className="text-on-surface-variant mb-8">Pick your language, then share the code with your rival.</p>
+                <h3 className="text-2xl font-black text-on-surface mb-2">
+                  {dictionary.lounge.createModalTitle}
+                </h3>
+                <p className="text-on-surface-variant mb-8">
+                  {dictionary.lounge.createModalDescription}
+                </p>
 
                 <div className="mb-8">
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
-                    I want to learn
+                    {dictionary.lounge.wantToLearn}
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     {SUPPORTED_LANGUAGES.map((lang) => (
@@ -1020,7 +1062,7 @@ export default function Lounge() {
                             : "bg-surface-container-low text-on-surface hover:bg-surface-container"
                         }`}
                       >
-                        {lang}
+                        {getLocalizedLearningLanguageLabel(lang, websiteLanguage)}
                       </button>
                     ))}
                   </div>
@@ -1036,7 +1078,9 @@ export default function Lounge() {
                   disabled={creating}
                   className="w-full bg-primary text-on-primary py-4 rounded-2xl font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60"
                 >
-                  {creating ? "Creating..." : "Create Rivalry"}
+                  {creating
+                    ? dictionary.lounge.creating
+                    : dictionary.lounge.createRivalry}
                 </button>
               </>
             ) : (
@@ -1046,8 +1090,12 @@ export default function Lounge() {
                   <Swords size={40} className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-on-surface mb-2">Rivalry Created!</h3>
-                  <p className="text-on-surface-variant">Share this code with your rival:</p>
+                  <h3 className="text-2xl font-black text-on-surface mb-2">
+                    {dictionary.lounge.createdTitle}
+                  </h3>
+                  <p className="text-on-surface-variant">
+                    {dictionary.lounge.createdDescription}
+                  </p>
                 </div>
 
                 <div className="bg-surface-container-low rounded-2xl p-6">
@@ -1059,23 +1107,26 @@ export default function Lounge() {
                     className="flex items-center gap-2 mx-auto text-sm font-bold text-on-surface-variant hover:text-primary transition-colors"
                   >
                     {copied ? <Check size={16} /> : <Copy size={16} />}
-                    {copied ? "Copied!" : "Copy Code"}
+                    {copied ? dictionary.common.copied : dictionary.common.copyCode}
                   </button>
                 </div>
 
                 <div className="rounded-[1.8rem] bg-surface-container-low p-5 text-left space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                    What happens next
+                    {dictionary.lounge.nextStepsTitle}
                   </p>
                   <div className="space-y-2 text-sm text-on-surface-variant leading-relaxed">
                     <p>
-                      <span className="font-black text-on-surface">1.</span> Share this invite code with your rival.
+                      <span className="font-black text-on-surface">1.</span>{" "}
+                      {dictionary.lounge.nextSteps[0]}
                     </p>
                     <p>
-                      <span className="font-black text-on-surface">2.</span> Once they join, this duel appears in your Lounge.
+                      <span className="font-black text-on-surface">2.</span>{" "}
+                      {dictionary.lounge.nextSteps[1]}
                     </p>
                     <p>
-                      <span className="font-black text-on-surface">3.</span> Start a round, review the scope together, then study until the match begins.
+                      <span className="font-black text-on-surface">3.</span>{" "}
+                      {dictionary.lounge.nextSteps[2]}
                     </p>
                   </div>
                 </div>
@@ -1084,7 +1135,7 @@ export default function Lounge() {
                   onClick={() => setShowCreate(false)}
                   className="w-full bg-surface-container-low text-on-surface py-4 rounded-2xl font-bold hover:bg-surface-container transition-colors"
                 >
-                  Done
+                  {dictionary.common.done}
                 </button>
               </div>
             )}
@@ -1106,8 +1157,12 @@ export default function Lounge() {
               <X size={24} />
             </button>
 
-            <h3 className="text-2xl font-black text-on-surface mb-2">Join a Rivalry</h3>
-            <p className="text-on-surface-variant mb-8">Enter the code your rival shared with you.</p>
+            <h3 className="text-2xl font-black text-on-surface mb-2">
+              {dictionary.lounge.joinModalTitle}
+            </h3>
+            <p className="text-on-surface-variant mb-8">
+              {dictionary.lounge.joinModalDescription}
+            </p>
 
             <div className="mb-6">
               <input
@@ -1122,7 +1177,7 @@ export default function Lounge() {
 
             <div className="mb-6">
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
-                I want to learn
+                {dictionary.lounge.wantToLearn}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {SUPPORTED_LANGUAGES.map((lang) => (
@@ -1136,7 +1191,7 @@ export default function Lounge() {
                         : "bg-surface-container-low text-on-surface hover:bg-surface-container"
                     }`}
                   >
-                    {lang}
+                    {getLocalizedLearningLanguageLabel(lang, websiteLanguage)}
                   </button>
                 ))}
               </div>
@@ -1153,7 +1208,9 @@ export default function Lounge() {
               disabled={joining || joinCode.length < 4}
               className="w-full bg-primary text-on-primary py-4 rounded-2xl font-black text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60"
             >
-              {joining ? "Joining..." : "Join Rivalry"}
+              {joining
+                ? dictionary.lounge.joining
+                : dictionary.lounge.joinRivalry}
             </button>
           </div>
         </div>

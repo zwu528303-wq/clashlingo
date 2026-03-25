@@ -27,12 +27,12 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 ## Main Routes
 
 - `/` - checks Supabase auth, redirects to `/login` or `/lounge`
-- `/login` - auth UI plus first-time onboarding guidance (`components/Login.tsx`)
+- `/login` - auth UI plus first-time onboarding guidance and a website-language toggle for first-time visitors (`components/Login.tsx`)
 - `/reset-password` - recovery screen for choosing a new password from an email link (`components/ResetPasswordPage.tsx`)
 - `/how-it-works` - full product guide with the rivalry loop, page map, rhythm rules, level rules, and FAQs (`components/HowItWorksPage.tsx`)
 - `/lounge` - countdown-first control surface for active rivalries, create rivalry, and join by invite code (`components/Lounge.tsx`)
 - `/rivalries` - rivalry hub with rivalry selection, W/L, streak, and match history (`components/RivalryDashboard.tsx`)
-- `/settings` - user profile, default language level, and weekly preference settings (`components/SettingsPage.tsx`)
+- `/settings` - user profile, website language, default language level, and weekly preference settings (`components/SettingsPage.tsx`)
 - `/rivalry/[id]` - deep link into the same rivalry hub component used by `/rivalries`
 - `/rivalry/[id]/new-round` - create a new round
 - `/round/[id]` - round lifecycle page (`components/RoundPage.tsx`)
@@ -104,6 +104,18 @@ Observed status values:
 - Sign-up now asks for `Display Nickname` up front and writes it into auth metadata during account creation
 - Login now supports resend-confirmation and forgot-password entry points
 - The app now ships a `/reset-password` recovery page for setting a new password from the email link
+- Website UI now supports `English` and `简体中文`
+- Login now includes a first-visit website-language toggle before sign-in
+- Settings now persists `Website Language` through auth metadata
+- The first translated UI batch is now live across:
+  - Login
+  - Reset Password
+  - Lounge
+  - Rivalries
+  - Scopes
+  - Settings
+  - How It Works
+  - AppSidebar
 - Lounge UI for creating a rivalry and joining by invite code
 - Login and empty-lounge states now use a loop-based onboarding guide with the same wording as the full manual
 - The app now ships a `/how-it-works` guide page, and the sidebar links to it directly
@@ -154,6 +166,12 @@ Ran on 2026-03-24:
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
 - There are still no checked-in Supabase SQL migrations; `SUPABASE_SCHEMA.md` documents the live shape, but it is not a migration source of truth yet.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
+- Website language is only translated for the first-batch shell/pages right now.
+  - `RoundPage`
+  - `ExamPage`
+  - `ResultsPage`
+  - some API-returned status/error strings
+  still need a second translation pass if full bilingual coverage becomes a priority.
 
 ## Notes For The Next Session
 
@@ -170,5 +188,9 @@ Ran on 2026-03-24:
   - AI routes resolve the effective round level server-side from `target_lang`
 - If you continue the UI pass, keep pushing the current `Lounge` vs `Rivalries` split instead of blending those two responsibilities together again.
 - Any follow-up lounge / rivalries edits should be visual polish only unless the product rules change again.
+- Preserve the current website-language split:
+  - UI language can be `English` or `简体中文`
+  - it is separate from the user's learning language
+  - it should not change AI syllabus or exam generation behavior
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, update `README.md`, `.env.example`, and `SUPABASE_SCHEMA.md` in the same batch.

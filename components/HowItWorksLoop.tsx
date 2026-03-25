@@ -2,9 +2,8 @@ import {
   ArrowDown,
   Sparkles,
 } from "lucide-react";
-import { FIRST_TIME_SETUP, WEEKLY_LOOP_STEPS } from "@/lib/onboarding";
-
-type LoopStep = (typeof WEEKLY_LOOP_STEPS)[number];
+import { getDictionary, type WebsiteLanguage } from "@/lib/i18n";
+import { getFirstTimeSetup, getWeeklyLoopSteps } from "@/lib/onboarding";
 
 const DESKTOP_POSITIONS = [
   "left-1/2 top-0 -translate-x-1/2",
@@ -52,7 +51,7 @@ function StepCard({
   className = "",
 }: {
   index: number;
-  step: LoopStep;
+  step: ReturnType<typeof getWeeklyLoopSteps>[number];
   compact: boolean;
   className?: string;
 }) {
@@ -89,19 +88,29 @@ function StepCard({
   );
 }
 
-export default function HowItWorksLoop({ compact = false }: { compact?: boolean }) {
+export default function HowItWorksLoop({
+  compact = false,
+  websiteLanguage = "en",
+}: {
+  compact?: boolean;
+  websiteLanguage?: WebsiteLanguage;
+}) {
+  const dictionary = getDictionary(websiteLanguage);
+  const firstTimeSetup = getFirstTimeSetup(websiteLanguage);
+  const weeklyLoopSteps = getWeeklyLoopSteps(websiteLanguage);
+
   return (
     <div className="space-y-6">
       <div className="mx-auto max-w-md">
         <div className="rounded-[2rem] border border-primary/20 bg-white/90 px-5 py-5 text-center shadow-[0_18px_34px_rgba(48,46,43,0.05)]">
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
-            {FIRST_TIME_SETUP.eyebrow}
+            {firstTimeSetup.eyebrow}
           </p>
           <p className="mt-2 text-2xl font-black tracking-tight text-on-surface">
-            {FIRST_TIME_SETUP.title}
+            {firstTimeSetup.title}
           </p>
           <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
-            {FIRST_TIME_SETUP.description}
+            {firstTimeSetup.description}
           </p>
         </div>
         <div className="flex justify-center pt-3 text-on-surface-variant/70">
@@ -117,21 +126,21 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
             </div>
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
-                Weekly Loop
+                {dictionary.guide.weeklyLoopEyebrow}
               </p>
               <p className="text-on-surface-variant text-sm">
-                This same round cycle repeats inside each rivalry.
+                {dictionary.guide.weeklyLoopCenterCompact}
               </p>
             </div>
           </div>
         </div>
 
-        {WEEKLY_LOOP_STEPS.map((step, index) => (
+        {weeklyLoopSteps.map((step, index) => (
           <div key={step.key} className="space-y-2">
             <div className="flex justify-center">
               <StepCard index={index} step={step} compact={compact} />
             </div>
-            {index < WEEKLY_LOOP_STEPS.length - 1 && (
+            {index < weeklyLoopSteps.length - 1 && (
               <div className="flex justify-center text-on-surface-variant/65">
                 <ArrowDown size={18} />
               </div>
@@ -150,14 +159,14 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
                 <Sparkles size={18} />
               </div>
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                Weekly Loop
+                {dictionary.guide.weeklyLoopEyebrow}
               </p>
               <p className="mt-2 text-[13px] leading-relaxed text-on-surface-variant">
-                The same round cycle repeats inside each rivalry.
+                {dictionary.guide.weeklyLoopCenterCompact}
               </p>
             </div>
 
-            {WEEKLY_LOOP_STEPS.map((step, index) => (
+            {weeklyLoopSteps.map((step, index) => (
               <div
                 key={step.key}
                 className={`absolute ${COMPACT_DESKTOP_POSITIONS[index]}`}
@@ -182,14 +191,14 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
               <Sparkles size={20} />
             </div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-              Weekly Loop
+              {dictionary.guide.weeklyLoopEyebrow}
             </p>
             <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
-              The same cycle keeps repeating after each round ends.
+              {dictionary.guide.weeklyLoopCenterFull}
             </p>
           </div>
 
-          {WEEKLY_LOOP_STEPS.map((step, index) => (
+          {weeklyLoopSteps.map((step, index) => (
             <div
               key={step.key}
               className={`absolute ${DESKTOP_POSITIONS[index]}`}

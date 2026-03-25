@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { Round, Syllabus } from "@/lib/domain-types";
+import {
+  getDictionary,
+  getLocalizedLearningLanguageLabel,
+  getLocalizedRoundStatusLabel,
+  resolveClientWebsiteLanguage,
+} from "@/lib/i18n";
 import {
   BookOpen,
   ChevronDown,
@@ -27,15 +33,6 @@ type ScopeRound = Pick<
   syllabus: Syllabus | null;
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  topic_selection: "Topic Selection",
-  confirming: "Confirming",
-  countdown: "Countdown",
-  exam_ready: "Exam Ready",
-  exam_live: "Live",
-  completed: "Completed",
-};
-
 const STATUS_COLOR: Record<string, string> = {
   topic_selection: "bg-yellow-100 text-yellow-800",
   confirming: "bg-yellow-100 text-yellow-800",
@@ -46,14 +43,9 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const ACTIVE_STATUSES = ["topic_selection", "confirming", "countdown", "exam_ready", "exam_live"];
-const LANGUAGE_FALLBACK = "Unassigned";
 const LANGUAGE_ORDER = new Map<string, number>(
   SUPPORTED_LANGUAGES.map((language, index) => [language, index])
 );
-
-function getLanguageLabel(value: string | null) {
-  return value || LANGUAGE_FALLBACK;
-}
 
 function compareLanguageGroups(a: string, b: string) {
   const aIndex = LANGUAGE_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER;
@@ -66,11 +58,17 @@ function compareLanguageGroups(a: string, b: string) {
   return a.localeCompare(b);
 }
 
-function groupScopesByLanguage(scopes: ScopeRound[]) {
+function groupScopesByLanguage(
+  scopes: ScopeRound[],
+  websiteLanguage: EditableProfile["websiteLanguage"]
+) {
   const grouped = new Map<string, ScopeRound[]>();
 
   scopes.forEach((scope) => {
-    const key = getLanguageLabel(scope.target_lang);
+    const key = getLocalizedLearningLanguageLabel(
+      scope.target_lang,
+      websiteLanguage
+    );
     const current = grouped.get(key) ?? [];
     current.push(scope);
     grouped.set(key, current);
@@ -84,9 +82,12 @@ function groupScopesByLanguage(scopes: ScopeRound[]) {
 export default function ScopesPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
   const [scopes, setScopes] = useState<ScopeRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
+  const dictionary = getDictionary(websiteLanguage);
 
   async function loadCurrentProfile(user: User) {
     const authProfile = getEditableProfileFromUser(user);
@@ -127,7 +128,10 @@ export default function ScopesPage() {
         .in("id", uniqueRivalIds);
       if (profiles) {
         for (const p of profiles) {
-          nameMap[p.id] = resolveDisplayName(p.display_name, "Rival");
+          nameMap[p.id] = resolveDisplayName(
+            p.display_name,
+            dictionary.common.rivalFallback
+          );
         }
       }
     }
@@ -153,49 +157,57 @@ export default function ScopesPage() {
       topic: r.topic,
       target_lang: r.target_lang,
       rivalry_id: r.rivalry_id,
-      rivalName: nameMap[rivalIdMap[r.rivalry_id]] || "Rival",
+      rivalName:
+        nameMap[rivalIdMap[r.rivalry_id]] || dictionary.common.rivalFallback,
       syllabus: r.syllabus as Syllabus | null,
     }));
 
     setScopes(built);
   }
 
+  const initializeScopes = useEffectEvent(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    await loadCurrentProfile(user);
+    await loadScopes(user.id);
+    setLoading(false);
+  });
+
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      await loadCurrentProfile(user);
-      await loadScopes(user.id);
-      setLoading(false);
-    };
-    init();
-  }, [router]);
+    initializeScopes();
+  }, []);
 
   const activeScopes = scopes.filter(
     (scope) => ACTIVE_STATUSES.includes(scope.status) && scope.syllabus
   );
   const pastScopes = scopes.filter((s) => s.status === "completed" && s.syllabus);
-  const activeScopeGroups = groupScopesByLanguage(activeScopes);
-  const pastScopeGroups = groupScopesByLanguage(pastScopes);
+  const activeScopeGroups = groupScopesByLanguage(activeScopes, websiteLanguage);
+  const pastScopeGroups = groupScopesByLanguage(pastScopes, websiteLanguage);
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const renderSyllabus = (syllabus: Syllabus | null) => {
-    if (!syllabus) return <p className="text-sm text-gray-400 italic">No syllabus available yet.</p>;
+    if (!syllabus) {
+      return (
+        <p className="text-sm text-gray-400 italic">
+          {dictionary.scopes.noSyllabusYet}
+        </p>
+      );
+    }
 
     const sections = [
-      { key: "can_do", label: "Can-Do Goals" },
-      { key: "vocabulary", label: "Vocabulary" },
-      { key: "grammar", label: "Grammar" },
-      { key: "expressions", label: "Expressions" },
-      { key: "listening", label: "Listening" },
+      { key: "can_do", label: dictionary.scopes.sections.can_do },
+      { key: "vocabulary", label: dictionary.scopes.sections.vocabulary },
+      { key: "grammar", label: dictionary.scopes.sections.grammar },
+      { key: "expressions", label: dictionary.scopes.sections.expressions },
+      { key: "listening", label: dictionary.scopes.sections.listening },
     ];
 
     return (
@@ -268,21 +280,23 @@ export default function ScopesPage() {
             <BookOpen className="w-6 h-6 text-primary" />
             <div>
               <h1 className="text-3xl md:text-4xl font-black text-on-surface tracking-tight">
-                Exam Scopes
+                {dictionary.scopes.title}
               </h1>
               <p className="text-on-surface-variant mt-1">
-                Review what is in play right now and what you have already conquered.
+                {dictionary.scopes.description}
               </p>
             </div>
           </div>
 
         {/* Current Scope */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Current Scopes</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            {dictionary.scopes.currentScopes}
+          </h2>
 
           {activeScopeGroups.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm">
-              No active scope right now. Generate a syllabus in a round to see it here.
+              {dictionary.scopes.noActiveScopes}
             </div>
           ) : (
             <div className="space-y-4">
@@ -293,7 +307,7 @@ export default function ScopesPage() {
                       {language}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {languageScopes.length} active
+                      {dictionary.scopes.activeCountLabel(languageScopes.length)}
                     </span>
                   </div>
 
@@ -307,31 +321,39 @@ export default function ScopesPage() {
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div>
                               <p className="text-xs text-gray-400 mb-1">
-                                vs {scope.rivalName} · Round {scope.round_number}
+                                vs {scope.rivalName} ·{" "}
+                                {websiteLanguage === "zh-CN"
+                                  ? `第 ${scope.round_number} 轮`
+                                  : `Round ${scope.round_number}`}
                               </p>
                               <h3 className="text-lg font-bold text-gray-900">
                                 {scope.topic}
                               </h3>
                             </div>
                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${STATUS_COLOR[scope.status] ?? "bg-gray-100 text-gray-600"}`}>
-                              {STATUS_LABEL[scope.status] ?? scope.status}
+                              {getLocalizedRoundStatusLabel(
+                                scope.status,
+                                websiteLanguage
+                              )}
                             </span>
                           </div>
 
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleExpand(scope.id)}
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#953f4d] text-white text-sm font-medium hover:bg-[#7d3440] transition-colors"
-                            >
-                              <BookOpen className="w-4 h-4" />
-                              {expandedId === scope.id ? "Hide Scope" : "Review Scope"}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#953f4d] text-white text-sm font-medium hover:bg-[#7d3440] transition-colors"
+                          >
+                            <BookOpen className="w-4 h-4" />
+                              {expandedId === scope.id
+                                ? dictionary.scopes.hideScope
+                                : dictionary.scopes.reviewScope}
                               {expandedId === scope.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </button>
                             <button
                               onClick={() => router.push(`/round/${scope.id}`)}
                               className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
                             >
-                              Go to Round <ArrowRight className="w-4 h-4" />
+                              {dictionary.scopes.goToRound} <ArrowRight className="w-4 h-4" />
                             </button>
                           </div>
 
@@ -352,11 +374,13 @@ export default function ScopesPage() {
 
         {/* Past Scopes */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Past Scopes</h2>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            {dictionary.scopes.pastScopes}
+          </h2>
 
           {pastScopes.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm">
-              Completed rounds will appear here.
+              {dictionary.scopes.noPastScopes}
             </div>
           ) : (
             <div className="space-y-5">
@@ -367,7 +391,9 @@ export default function ScopesPage() {
                       {language}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {languageScopes.length} completed
+                      {dictionary.scopes.completedCountLabel(
+                        languageScopes.length
+                      )}
                     </span>
                   </div>
 
@@ -381,7 +407,10 @@ export default function ScopesPage() {
                           <div className="flex items-start justify-between gap-2 mb-3">
                             <div className="min-w-0">
                               <p className="text-xs text-gray-400 mb-0.5 truncate">
-                                vs {scope.rivalName} · Round {scope.round_number}
+                                vs {scope.rivalName} ·{" "}
+                                {websiteLanguage === "zh-CN"
+                                  ? `第 ${scope.round_number} 轮`
+                                  : `Round ${scope.round_number}`}
                               </p>
                               <p className="text-sm font-semibold text-gray-900 leading-snug">
                                 {scope.topic}
@@ -395,10 +424,12 @@ export default function ScopesPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleExpand(scope.id)}
-                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
-                            >
-                              <BookOpen className="w-3.5 h-3.5" />
-                              {expandedId === scope.id ? "Hide" : "Scope"}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                              {expandedId === scope.id
+                                ? dictionary.scopes.hideScope
+                                : dictionary.scopes.scopeShort}
                               {expandedId === scope.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             <span className="text-gray-200">·</span>
@@ -406,7 +437,7 @@ export default function ScopesPage() {
                               onClick={() => router.push(`/round/${scope.id}/results`)}
                               className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
                             >
-                              Results <ArrowRight className="w-3.5 h-3.5" />
+                              {dictionary.scopes.results} <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
 

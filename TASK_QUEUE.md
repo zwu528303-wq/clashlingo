@@ -4,6 +4,11 @@ Last updated: 2026-03-25
 
 ## Recently Completed
 
+- Added website-language support for the first UI batch.
+  - Website UI now supports `English` and `简体中文`.
+  - Login now includes a first-visit language toggle for unsigned users.
+  - Settings now stores `Website Language` in auth metadata.
+  - The first translated batch covers Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, and AppSidebar.
 - Fixed the exam route wiring.
   - `app/round/[id]/exam/page.tsx` now renders the real exam experience.
 - Added the first-pass settings and profile flow.
@@ -86,21 +91,25 @@ Last updated: 2026-03-25
    - A share action exists already.
    - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
-2. Keep the lint baseline clean while touching product work.
+2. Decide whether to finish the second website-language translation batch.
+   - First-batch bilingual UI is live.
+   - Remaining major pages are `Round`, `Exam`, and `Results`, plus a few API-returned system messages.
+
+3. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
-3. Decide whether the new lounge / rivalries visual pass needs one more polish round.
+4. Decide whether the new lounge / rivalries visual pass needs one more polish round.
    - The first UI fusion pass is shipped.
    - Any follow-up should stay visual-only and preserve the current lounge-vs-hub responsibility split.
 
 ## Engineering Follow-Up
 
-4. Add a minimal regression test strategy.
+5. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-5. Review AI prompt robustness.
+6. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

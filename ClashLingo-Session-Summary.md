@@ -21,6 +21,12 @@ Date: 2026-03-25
   - `/reset-password` now exists for completing password recovery from the recovery email.
   - Login and empty-lounge states now use a loop-based onboarding guide so first-time users understand the product loop faster.
   - `/how-it-works` now exists as a full product manual covering the rivalry loop, page roles, rhythm rules, level rules, and FAQ.
+- Added website-language support for the first UI batch.
+  - Website UI now supports `English` and `简体中文`.
+  - Login now includes a first-visit language toggle before sign-in.
+  - Settings now persists `Website Language`.
+  - The first translated batch covers Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, and the shared sidebar shell.
+  - Learning-language values and AI syllabus/exam logic were not changed by this UI-language work.
 - Added `Default Language Level` as a real product setting.
   - Settings now supports `Beginner / Elementary / Intermediate / Advanced`.
   - New and joined rivalries now persist each player's level in `player_a_difficulty` / `player_b_difficulty`.
@@ -98,8 +104,9 @@ Date: 2026-03-25
 ## Recommended Next Task
 
 1. Deepen the results sharing experience when you want the next user-facing feature.
-2. Decide whether the new lounge / rivalries UI needs a final visual polish pass.
-3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
+2. Decide whether to finish the second website-language translation batch for `Round`, `Exam`, `Results`, and API-returned system messages.
+3. Decide whether the new lounge / rivalries UI needs a final visual polish pass.
+4. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order
 

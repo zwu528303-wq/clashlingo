@@ -1,6 +1,6 @@
 # Supabase Schema And Data Model
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 
 This document reflects the live table shape and current code usage in ClashLingo.
 It is not a migration file. There are still no checked-in SQL migrations in this repo.
@@ -37,6 +37,7 @@ The app currently stores these profile preferences in Supabase Auth `user_metada
 - `preferred_language`
 - `default_language_level`
 - `weekly_match_time`
+- `website_language`
 
 Important note:
 

@@ -1,6 +1,6 @@
 # Project Rules
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 Status: approved product rules + shipped MVP notes
 
 ## Product Intent
@@ -46,6 +46,7 @@ When product behavior is ambiguous:
 - Settings should include:
   - display nickname
   - avatar
+  - website language
   - learning language preferences
   - default language level
   - weekly matching time
@@ -57,6 +58,27 @@ When product behavior is ambiguous:
   - custom image upload is not supported in this phase
 - Nickname and avatar should be shown in the lounge and rivalry surfaces where identity matters.
 - Shared lounge / rivalry identity should come from the public profile layer, not from viewer-local fallbacks.
+
+### 2B. Website Language Rules
+
+- The product supports exactly two website UI languages in the current phase:
+  - English
+  - 简体中文
+- Website language is a UI preference, not a learning-language preference.
+- Learning-language options remain:
+  - French
+  - Spanish
+  - Japanese
+  - Korean
+  - Chinese
+  - English
+- The login page should expose a quick website-language toggle for first-time visitors.
+- Settings should include a persistent `Website Language` selector.
+- The user's saved website language should override browser detection after the first manual change.
+- Browser language may be used only for the initial default.
+- Website language should not add locale routes in the current MVP.
+- Website language should not change AI syllabus or exam generation behavior in the current MVP.
+- When website language is Chinese, UI labels may show learning-language names in Chinese, but stored values should remain the existing English enums.
 
 ### 3. Match Timing And Start Rules
 
@@ -159,7 +181,10 @@ As of the latest reviewed state, the following product changes are already in th
 - lounge and rivalries now share a first-pass fused visual language that follows the approved AI Studio reference direction without changing product logic
 - scopes now classify current and past scope cards by target language
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
+- settings page now includes `Website Language`
 - settings page now includes `Default Language Level`
+- login now includes an unsigned-user website-language toggle
+- the first website-language batch is now localized across Login, Reset Password, Lounge, Rivalries, Scopes, Settings, How It Works, and the shared sidebar shell
 - settings save syncs shared nickname and public avatar identity through a server route
 - lounge now reads profile preferences and uses the new supported language list
 - lounge enforces a 2-rivalry limit in the UI
