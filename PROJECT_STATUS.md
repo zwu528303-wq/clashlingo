@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 Stage: clickable prototype / early MVP
 
 ## Product Summary
@@ -27,7 +27,8 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 ## Main Routes
 
 - `/` - checks Supabase auth, redirects to `/login` or `/lounge`
-- `/login` - auth UI (`components/Login.tsx`)
+- `/login` - auth UI plus first-time onboarding guidance (`components/Login.tsx`)
+- `/reset-password` - recovery screen for choosing a new password from an email link (`components/ResetPasswordPage.tsx`)
 - `/lounge` - countdown-first control surface for active rivalries, create rivalry, and join by invite code (`components/Lounge.tsx`)
 - `/rivalries` - rivalry hub with rivalry selection, W/L, streak, and match history (`components/RivalryDashboard.tsx`)
 - `/settings` - user profile, default language level, and weekly preference settings (`components/SettingsPage.tsx`)
@@ -100,7 +101,10 @@ Observed status values:
 
 - Email/password sign-up and sign-in through Supabase
 - Sign-up now asks for `Display Nickname` up front and writes it into auth metadata during account creation
+- Login now supports resend-confirmation and forgot-password entry points
+- The app now ships a `/reset-password` recovery page for setting a new password from the email link
 - Lounge UI for creating a rivalry and joining by invite code
+- Login and empty-lounge states now include a lightweight "How ClashLingo works" onboarding guide
 - Settings page now supports a four-tier default language level: `Beginner`, `Elementary`, `Intermediate`, `Advanced`
 - Create/join rivalry now writes each player's default level into `player_a_difficulty` / `player_b_difficulty`
 - Lounge now presents rivalries as status cards with countdown / action panels

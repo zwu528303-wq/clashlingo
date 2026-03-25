@@ -27,7 +27,8 @@ Two players create a rivalry, pick a topic, get an AI-generated syllabus tuned t
 ## Main Routes
 
 - `/` redirects to `/login` or `/lounge` based on auth.
-- `/login` handles auth.
+- `/login` handles auth, onboarding guidance, resend confirmation, and password-reset entry.
+- `/reset-password` lets a user set a new password from a recovery email.
 - `/lounge` is the main rivalry control surface.
 - `/settings` manages nickname, letter avatar, language preference, default language level, and weekly rhythm.
 - `/scopes` shows current and past scopes, grouped by language.

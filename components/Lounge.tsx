@@ -18,6 +18,7 @@ import {
 import AppSidebar from "@/components/AppSidebar";
 import type { Rivalry, Round } from "@/lib/domain-types";
 import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
+import { HOW_IT_WORKS_STEPS, PRODUCT_SURFACES } from "@/lib/onboarding";
 import {
   getSharedWeeklyMatchTime,
   isRivalryInactive,
@@ -543,7 +544,7 @@ export default function Lounge() {
             <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-primary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
             <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-secondary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
 
-            <div className="relative z-10 max-w-lg mx-auto space-y-8">
+            <div className="relative z-10 max-w-4xl mx-auto space-y-8">
               <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto shadow-xl rotate-12">
                 <Swords size={64} className="text-primary" />
               </div>
@@ -570,6 +571,52 @@ export default function Lounge() {
                 >
                   <UserPlus size={24} /> JOIN WITH CODE
                 </button>
+              </div>
+
+              <div className="rounded-[2rem] bg-white/88 border border-white/80 p-5 md:p-6 text-left shadow-[0_16px_32px_rgba(48,46,43,0.05)] space-y-5">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                    How ClashLingo Works
+                  </p>
+                  <p className="mt-2 text-on-surface-variant leading-relaxed">
+                    Start with one rivalry first. Once you finish a round, the rest of the product starts feeling much more intuitive.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {HOW_IT_WORKS_STEPS.map((item) => (
+                    <div
+                      key={item.step}
+                      className="rounded-[1.6rem] bg-surface-container-low px-4 py-4"
+                    >
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                        Step {item.step}
+                      </p>
+                      <p className="mt-2 text-lg font-black text-on-surface tracking-tight">
+                        {item.title}
+                      </p>
+                      <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {PRODUCT_SURFACES.map((surface) => (
+                    <div
+                      key={surface.title}
+                      className="rounded-[1.5rem] bg-surface-container-lowest px-4 py-4"
+                    >
+                      <p className="text-base font-black text-on-surface tracking-tight">
+                        {surface.title}
+                      </p>
+                      <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
+                        {surface.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1038,6 +1085,23 @@ export default function Lounge() {
                     {copied ? <Check size={16} /> : <Copy size={16} />}
                     {copied ? "Copied!" : "Copy Code"}
                   </button>
+                </div>
+
+                <div className="rounded-[1.8rem] bg-surface-container-low p-5 text-left space-y-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                    What happens next
+                  </p>
+                  <div className="space-y-2 text-sm text-on-surface-variant leading-relaxed">
+                    <p>
+                      <span className="font-black text-on-surface">1.</span> Share this invite code with your rival.
+                    </p>
+                    <p>
+                      <span className="font-black text-on-surface">2.</span> Once they join, this duel appears in your Lounge.
+                    </p>
+                    <p>
+                      <span className="font-black text-on-surface">3.</span> Start a round, review the scope together, then study until the match begins.
+                    </p>
+                  </div>
                 </div>
 
                 <button

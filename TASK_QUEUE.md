@@ -1,6 +1,6 @@
 # Task Queue
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 
 ## Recently Completed
 
@@ -17,6 +17,10 @@ Last updated: 2026-03-24
 - Added `Display Nickname` directly to sign-up.
   - New accounts now collect nickname during registration instead of waiting for settings.
   - Login now also attempts a public-profile sync after auth succeeds so shared identity comes online earlier.
+- Upgraded auth onboarding and self-service support.
+  - Login now includes resend-confirmation and forgot-password entry points.
+  - `/reset-password` now exists for completing password recovery from email.
+  - Login and empty-lounge states now include a lightweight "How ClashLingo works" guide to reduce first-time confusion.
 - Added `Default Language Level`.
   - Settings now supports `Beginner / Elementary / Intermediate / Advanced`.
   - Create/join rivalry now stores each player's level in the rivalry row.
