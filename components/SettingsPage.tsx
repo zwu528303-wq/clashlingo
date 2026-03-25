@@ -17,7 +17,6 @@ import {
   DEFAULT_WEEKLY_MATCH_TIME,
   SUPPORTED_LANGUAGES,
   type EditableProfile,
-  getAvatarTheme,
   getDisplayInitial,
   getEditableProfileFromUser,
   normalizeAvatarLetter,
@@ -171,15 +170,13 @@ export default function SettingsPage() {
     );
   }
 
-  const avatarTheme = getAvatarTheme(profile.avatarColor);
-
   return (
     <div className="min-h-screen bg-surface">
       <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
         <AppSidebar active="settings" profile={profile} />
 
         <main className="space-y-8">
-          <section className="bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
+          <section className="max-w-4xl bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
               Your Identity
@@ -363,54 +360,6 @@ export default function SettingsPage() {
             )}
           </button>
           </section>
-
-          <aside className="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-6 h-fit max-w-xl">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-16 h-16 rounded-[1.5rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-3xl font-black shadow-sm`}
-            >
-              {normalizeAvatarLetter(
-                profile.avatarLetter,
-                profile.displayName
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">
-                Live Preview
-              </p>
-              <h2 className="text-2xl font-black text-on-surface tracking-tight">
-                {profile.displayName}
-              </h2>
-            </div>
-          </div>
-
-          <div className={`rounded-[2rem] p-6 ${avatarTheme.softClassName}`}>
-            <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2">
-              Lounge Card Snapshot
-            </p>
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-14 h-14 rounded-2xl ${avatarTheme.avatarClassName} flex items-center justify-center text-2xl font-black shadow-sm`}
-              >
-                {normalizeAvatarLetter(
-                  profile.avatarLetter,
-                  profile.displayName
-                )}
-              </div>
-              <div>
-                <p className="font-black text-lg leading-none">
-                  {profile.displayName}
-                </p>
-                <p className="text-sm opacity-80 mt-2">
-                  {profile.preferredLanguage} learner
-                </p>
-                <p className="text-xs opacity-70 mt-1">
-                  Lounge rhythm {profile.weeklyMatchTime}
-                </p>
-              </div>
-            </div>
-          </div>
-          </aside>
         </main>
       </div>
     </div>
