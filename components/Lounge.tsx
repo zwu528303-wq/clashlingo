@@ -513,27 +513,16 @@ export default function Lounge() {
         <AppSidebar active="lounge" profile={profile} />
 
         <main className="space-y-8 pb-12">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant mb-3">
-                Match Control
-              </p>
-              <h2 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none mb-3">
-                Your Lounge
-              </h2>
-              <p className="text-on-surface-variant text-xl">
-                Keep an eye on the countdown, then jump straight into the next clash.
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-white/80 bg-white/80 px-5 py-4 shadow-sm max-w-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                Queue Rules
-              </p>
-              <p className="text-sm text-on-surface-variant leading-relaxed mt-2">
-                Lounge is only for rhythm, readiness, and entering a match. Long-term stats live in Rivalries.
-              </p>
-            </div>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant mb-3">
+              Match Control
+            </p>
+            <h2 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none mb-3">
+              Your Lounge
+            </h2>
+            <p className="text-on-surface-variant text-xl">
+              Keep an eye on the countdown, then jump straight into the next clash.
+            </p>
           </div>
 
           {rivalries.length === 0 ? (

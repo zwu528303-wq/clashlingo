@@ -305,28 +305,16 @@ export default function RivalryDashboard() {
         <AppSidebar active="rivalries" profile={profile} />
 
         <main className="space-y-8 pb-12">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
-                Long Game
-              </p>
-              <h1 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none">
-                Rivalry Hub
-              </h1>
-              <p className="text-on-surface-variant text-xl">
-                Wins, streaks, milestones, and every showdown live here.
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-white/80 bg-white/80 px-5 py-4 shadow-sm max-w-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                Hub Focus
-              </p>
-              <p className="text-sm text-on-surface-variant leading-relaxed mt-2">
-                Rivalries keeps the long-term story separate from the Lounge,
-                which is only for countdowns and entering matches.
-              </p>
-            </div>
+          <div className="space-y-3">
+            <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
+              Long Game
+            </p>
+            <h1 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none">
+              Rivalry Hub
+            </h1>
+            <p className="text-on-surface-variant text-xl">
+              Wins, streaks, milestones, and every showdown live here.
+            </p>
           </div>
 
           {rivalries.length === 0 ? (
