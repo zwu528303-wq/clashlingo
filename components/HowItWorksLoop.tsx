@@ -47,6 +47,42 @@ const DESKTOP_ARROWS = [
   },
 ];
 
+const COMPACT_DESKTOP_POSITIONS = [
+  "left-1/2 top-0 -translate-x-1/2",
+  "right-0 top-[18%]",
+  "right-2 bottom-[15%]",
+  "left-1/2 bottom-0 -translate-x-1/2",
+  "left-2 bottom-[15%]",
+  "left-0 top-[18%]",
+];
+
+const COMPACT_DESKTOP_ARROWS = [
+  {
+    icon: ArrowDownRight,
+    className: "right-[22%] top-[9%]",
+  },
+  {
+    icon: ArrowDown,
+    className: "right-[7%] top-[42%]",
+  },
+  {
+    icon: ArrowDownLeft,
+    className: "right-[22%] bottom-[9%]",
+  },
+  {
+    icon: ArrowLeft,
+    className: "left-1/2 bottom-[6%] -translate-x-1/2",
+  },
+  {
+    icon: ArrowUp,
+    className: "left-[7%] top-[42%]",
+  },
+  {
+    icon: ArrowUpRight,
+    className: "left-[22%] top-[9%]",
+  },
+];
+
 function getStepTone(index: number) {
   if (index === 0 || index === 2 || index === 5) {
     return {
@@ -84,7 +120,9 @@ function StepCard({
   return (
     <div
       className={`rounded-[1.8rem] border bg-white/92 px-5 py-4 shadow-[0_16px_30px_rgba(48,46,43,0.05)] ${tone.borderClassName} ${
-        compact ? "max-w-[15rem]" : "max-w-[16.5rem]"
+        compact
+          ? "max-w-[14.5rem] lg:max-w-[11.75rem] lg:px-4 lg:py-3.5"
+          : "max-w-[16.5rem]"
       } ${className}`}
     >
       <div
@@ -92,12 +130,16 @@ function StepCard({
       >
         {String(index + 1).padStart(2, "0")}
       </div>
-      <p className="mt-3 text-xl font-black tracking-tight text-on-surface">
+      <p
+        className={`mt-3 font-black tracking-tight text-on-surface ${
+          compact ? "text-xl lg:text-lg" : "text-xl"
+        }`}
+      >
         {step.title}
       </p>
       <p
         className={`mt-2 leading-relaxed text-on-surface-variant ${
-          compact ? "text-sm" : "text-base"
+          compact ? "text-sm lg:text-[13px]" : "text-base"
         }`}
       >
         {step.description}
@@ -156,30 +198,41 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
       </div>
 
       {compact ? (
-        <div className="hidden lg:block rounded-[2.2rem] border border-white/80 bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low px-6 py-6 shadow-[0_20px_45px_rgba(149,63,77,0.08)] space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-[1rem] bg-primary-container text-primary flex items-center justify-center shrink-0">
-              <Sparkles size={18} />
-            </div>
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
+        <div className="hidden lg:block">
+          <div className="relative mx-auto h-[35rem] max-w-[62rem] xl:h-[36rem]">
+            <div className="absolute inset-[16%] rounded-full border border-dashed border-outline-variant/60 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.6),_transparent_72%)]" />
+
+            <div className="absolute left-1/2 top-1/2 w-[11rem] -translate-x-1/2 -translate-y-1/2 rounded-[1.8rem] border border-white/80 bg-white/88 px-5 py-4 text-center shadow-[0_20px_45px_rgba(149,63,77,0.08)]">
+              <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[1rem] bg-primary-container text-primary">
+                <Sparkles size={18} />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
                 Weekly Loop
               </p>
-              <p className="text-on-surface-variant text-sm leading-relaxed">
+              <p className="mt-2 text-[13px] leading-relaxed text-on-surface-variant">
                 The same round cycle repeats inside each rivalry.
               </p>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {COMPACT_DESKTOP_ARROWS.map((arrow, index) => {
+              const Icon = arrow.icon;
+              return (
+                <div
+                  key={`compact-arrow-${index}`}
+                  className={`absolute text-on-surface-variant/65 ${arrow.className}`}
+                >
+                  <Icon size={18} />
+                </div>
+              );
+            })}
+
             {WEEKLY_LOOP_STEPS.map((step, index) => (
-              <StepCard
+              <div
                 key={step.key}
-                index={index}
-                step={step}
-                compact={compact}
-                className="max-w-none h-full"
-              />
+                className={`absolute ${COMPACT_DESKTOP_POSITIONS[index]}`}
+              >
+                <StepCard index={index} step={step} compact={compact} />
+              </div>
             ))}
           </div>
         </div>

@@ -273,7 +273,7 @@ export default function Login() {
       <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-primary-container/40 rounded-full blur-3xl mix-blend-multiply opacity-70" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-secondary-container/40 rounded-full blur-3xl mix-blend-multiply opacity-70" />
 
-      <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 xl:grid-cols-[430px_minmax(0,1fr)] gap-6 items-start">
+      <div className="relative z-10 max-w-[1320px] mx-auto grid grid-cols-1 xl:grid-cols-[410px_minmax(0,1fr)] gap-6 items-start">
         <section className="space-y-6">
           <div className="text-center xl:text-left">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-container rounded-[2rem] mb-6 rotate-12 shadow-sm">
