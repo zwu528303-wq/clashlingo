@@ -178,14 +178,14 @@ export default function SettingsPage() {
       <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
         <AppSidebar active="settings" profile={profile} />
 
-        <main className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8">
+        <main className="space-y-8">
           <section className="bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
               Your Identity
             </h1>
             <p className="text-on-surface-variant text-lg">
-              Set how you show up in ClashLingo. Avatar is letter-based for now.
+              Set how you show up in ClashLingo.
             </p>
           </div>
 
@@ -364,7 +364,7 @@ export default function SettingsPage() {
           </button>
           </section>
 
-          <aside className="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-6 h-fit">
+          <aside className="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-6 h-fit max-w-xl">
           <div className="flex items-center gap-3">
             <div
               className={`w-16 h-16 rounded-[1.5rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-3xl font-black shadow-sm`}
@@ -409,17 +409,6 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-[2rem] bg-surface-container-low p-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-              Current Rules
-            </p>
-            <ul className="space-y-2 text-sm text-on-surface-variant">
-              <li>Letter avatar only in this phase</li>
-              <li>Nickname controls your default identity</li>
-              <li>Weekly time shapes lounge countdowns, not round locks</li>
-            </ul>
           </div>
           </aside>
         </main>
