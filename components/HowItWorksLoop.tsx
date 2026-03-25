@@ -131,7 +131,7 @@ function StepCard({
         {String(index + 1).padStart(2, "0")}
       </div>
       <p
-        className={`mt-3 font-black tracking-tight text-on-surface ${
+        className={`mt-3 font-black tracking-[-0.025em] leading-[1.1] text-on-surface ${
           compact ? "text-xl lg:text-lg" : "text-xl"
         }`}
       >
@@ -156,10 +156,10 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
             {FIRST_TIME_SETUP.eyebrow}
           </p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-on-surface">
+          <p className="mt-2 text-2xl font-black tracking-[-0.03em] leading-[1.08] text-on-surface">
             {FIRST_TIME_SETUP.title}
           </p>
-          <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
+          <p className="mt-2 text-sm text-on-surface-variant leading-[1.68]">
             {FIRST_TIME_SETUP.description}
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
                 Weekly Loop
               </p>
-              <p className="text-on-surface-variant text-sm">
+              <p className="text-on-surface-variant text-sm leading-[1.62]">
                 This same round cycle repeats inside each rivalry.
               </p>
             </div>
@@ -209,7 +209,7 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
                 Weekly Loop
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-on-surface-variant">
+              <p className="mt-2 text-[13px] leading-[1.62] text-on-surface-variant">
                 The same round cycle repeats inside each rivalry.
               </p>
             </div>
@@ -253,7 +253,7 @@ export default function HowItWorksLoop({ compact = false }: { compact?: boolean 
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
               Weekly Loop
             </p>
-            <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
+            <p className="mt-2 text-sm text-on-surface-variant leading-[1.68]">
               The same cycle keeps repeating after each round ends.
             </p>
           </div>

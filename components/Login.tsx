@@ -520,10 +520,10 @@ export default function Login() {
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
               How It Works
             </p>
-            <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-[-0.06em] leading-none">
+            <h2 className="max-w-[11ch] text-4xl md:text-[4.4rem] font-black text-on-surface tracking-[-0.045em] leading-[0.96] md:leading-[0.98]">
               Learn by dueling
             </h2>
-            <p className="text-on-surface-variant text-lg leading-relaxed">
+            <p className="max-w-2xl text-on-surface-variant text-lg leading-[1.72]">
               The easiest way to understand ClashLingo is to see the loop once. This is the fast version.
             </p>
           </div>

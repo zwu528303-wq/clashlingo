@@ -55,10 +55,10 @@ export default function HowItWorksPage() {
           <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
             How It Works
           </p>
-          <h1 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none">
+          <h1 className="max-w-[12ch] text-5xl md:text-[5.25rem] font-black text-on-surface tracking-[-0.05em] leading-[0.98]">
             ClashLingo, explained simply
           </h1>
-          <p className="text-on-surface-variant text-xl leading-relaxed max-w-3xl">
+          <p className="max-w-3xl text-on-surface-variant text-xl leading-[1.72]">
             ClashLingo is a weekly 1v1 language duel. You and a friend study the
             same round, take the exam, compare scores, and keep the rivalry going
             over time.
@@ -67,10 +67,10 @@ export default function HowItWorksPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-5">
           <div className="rounded-[2rem] bg-white/88 border border-surface-container px-6 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
-            <p className="text-lg font-black text-on-surface tracking-tight">
+            <p className="text-xl font-black text-on-surface tracking-[-0.02em] leading-[1.12]">
               The short version
             </p>
-            <p className="mt-3 text-on-surface-variant leading-relaxed">
+            <p className="mt-3 text-on-surface-variant leading-[1.72]">
               One rivalry is one friend. Inside that rivalry, you keep repeating
               the same round loop: start the round, get the scope, confirm it,
               study or start early, take the exam, then compare results.
@@ -81,10 +81,10 @@ export default function HowItWorksPage() {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
               Best first step
             </p>
-            <p className="mt-3 text-2xl font-black tracking-tight text-on-surface">
+            <p className="mt-3 text-[1.9rem] font-black tracking-[-0.03em] leading-[1.12] text-on-surface">
               Start one rivalry first.
             </p>
-            <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
+            <p className="mt-2 text-sm text-on-surface-variant leading-[1.68]">
               Once you finish your first round, the rest of the app becomes much
               easier to understand.
             </p>
@@ -97,10 +97,10 @@ export default function HowItWorksPage() {
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
             The Loop
           </p>
-          <h2 className="text-4xl font-black tracking-[-0.06em] text-on-surface">
+          <h2 className="max-w-[14ch] text-4xl md:text-[3.45rem] font-black tracking-[-0.045em] leading-[1.02] text-on-surface">
             How a rivalry actually works
           </h2>
-          <p className="text-on-surface-variant leading-relaxed max-w-3xl">
+          <p className="max-w-3xl text-on-surface-variant leading-[1.72]">
             Creating or joining a rivalry is just the setup. The real product is
             the weekly loop below.
           </p>
@@ -114,7 +114,7 @@ export default function HowItWorksPage() {
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
             Product Map
           </p>
-          <h2 className="text-4xl font-black tracking-[-0.06em] text-on-surface">
+          <h2 className="max-w-[13ch] text-4xl md:text-[3.35rem] font-black tracking-[-0.045em] leading-[1.02] text-on-surface">
             What each page is for
           </h2>
         </div>
@@ -125,10 +125,10 @@ export default function HowItWorksPage() {
               key={surface.title}
               className="rounded-[2rem] bg-white/88 border border-surface-container px-5 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]"
             >
-              <p className="text-2xl font-black tracking-tight text-on-surface">
+              <p className="text-[1.75rem] font-black tracking-[-0.025em] leading-[1.12] text-on-surface">
                 {surface.title}
               </p>
-              <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">
+              <p className="mt-3 text-sm leading-[1.68] text-on-surface-variant">
                 {surface.description}
               </p>
             </div>
@@ -145,15 +145,15 @@ export default function HowItWorksPage() {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
               Weekly Rhythm
             </p>
-            <h2 className="text-3xl font-black tracking-[-0.05em] text-on-surface">
+            <h2 className="max-w-[13ch] text-[2.45rem] md:text-[2.8rem] font-black tracking-[-0.04em] leading-[1.08] text-on-surface">
               The countdown is a rhythm, not a lock
             </h2>
           </div>
-          <p className="text-on-surface-variant leading-relaxed">
+          <p className="text-on-surface-variant leading-[1.72]">
             Your weekly time keeps the duel feeling regular. It tells both players
             when the rivalry normally comes alive.
           </p>
-          <p className="text-on-surface-variant leading-relaxed">
+          <p className="text-on-surface-variant leading-[1.72]">
             But if both players are ready, the match can still start early.
             ClashLingo should feel like a shared weekly rhythm, not a hard gate.
           </p>
@@ -167,15 +167,15 @@ export default function HowItWorksPage() {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
               Language Level
             </p>
-            <h2 className="text-3xl font-black tracking-[-0.05em] text-on-surface">
+            <h2 className="max-w-[14ch] text-[2.45rem] md:text-[2.8rem] font-black tracking-[-0.04em] leading-[1.08] text-on-surface">
               Level helps the AI pitch the round correctly
             </h2>
           </div>
-          <p className="text-on-surface-variant leading-relaxed">
+          <p className="text-on-surface-variant leading-[1.72]">
             Your default level helps ClashLingo choose the right syllabus and exam
             difficulty.
           </p>
-          <p className="text-on-surface-variant leading-relaxed">
+          <p className="text-on-surface-variant leading-[1.72]">
             If both players study the same language at different levels, the round
             uses the lower level so the shared scope still works for both sides.
           </p>
@@ -190,7 +190,7 @@ export default function HowItWorksPage() {
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
             FAQ
           </p>
-          <h2 className="text-4xl font-black tracking-[-0.06em] text-on-surface">
+          <h2 className="max-w-[12ch] text-4xl md:text-[3.35rem] font-black tracking-[-0.045em] leading-[1.02] text-on-surface">
             Common questions
           </h2>
         </div>
@@ -201,10 +201,10 @@ export default function HowItWorksPage() {
               key={item.question}
               className="rounded-[2rem] bg-white/88 border border-surface-container px-5 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]"
             >
-              <p className="text-lg font-black tracking-tight text-on-surface">
+              <p className="max-w-[24ch] text-[1.95rem] font-black tracking-[-0.03em] leading-[1.12] text-on-surface">
                 {item.question}
               </p>
-              <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">
+              <p className="mt-4 text-sm leading-[1.72] text-on-surface-variant">
                 {item.answer}
               </p>
             </div>
