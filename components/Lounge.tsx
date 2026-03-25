@@ -18,7 +18,11 @@ import {
 import AppSidebar from "@/components/AppSidebar";
 import type { Rivalry, Round } from "@/lib/domain-types";
 import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
-import { getSharedWeeklyMatchTime, setSharedWeeklyMatchTime } from "@/lib/rivalry-ledger";
+import {
+  getSharedWeeklyMatchTime,
+  isRivalryInactive,
+  setSharedWeeklyMatchTime,
+} from "@/lib/rivalry-ledger";
 import {
   DEFAULT_WEEKLY_MATCH_TIME,
   SUPPORTED_LANGUAGES,
@@ -239,19 +243,23 @@ export default function Lounge() {
         ),
       }));
 
-      setRivalries(normalizedRivalries);
+      const activeRivalries = normalizedRivalries.filter(
+        (rivalry) => !isRivalryInactive(rivalry.cumulative_ledger)
+      );
 
-      if (normalizedRivalries.length === 0) {
+      setRivalries(activeRivalries);
+
+      if (activeRivalries.length === 0) {
         setRivalNames({});
         setRivalProfiles({});
         setActiveRounds({});
         return;
       }
 
-      const rivalryIds = normalizedRivalries.map((rivalry) => rivalry.id);
+      const rivalryIds = activeRivalries.map((rivalry) => rivalry.id);
       const rivalryNameMap: Record<string, string> = {};
       const rivalryProfileMap: Record<string, RivalPublicProfile> = {};
-      const rivalIdPairs = normalizedRivalries
+      const rivalIdPairs = activeRivalries
         .map((rivalry) => ({
           rivalryId: rivalry.id,
           rivalId:

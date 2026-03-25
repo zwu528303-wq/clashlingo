@@ -24,8 +24,22 @@ When product behavior is ambiguous:
 ### 1. Rivalry Management
 
 - A user can be in at most 2 rivalries at a time.
-- Leaving / exiting a rivalry is not part of the current MVP scope.
-- The product should focus on creating, joining, and progressing active rivalries cleanly before introducing rivalry-exit flows.
+- Users can leave a rivalry through a `Leave Rivalry` action.
+- Leaving a rivalry is not a hard delete.
+- Leaving should preserve history:
+  - rivalry record
+  - rounds
+  - exams
+  - submissions
+  - results
+- Leaving should mark the rivalry inactive.
+- Inactive rivalries should:
+  - disappear from `Lounge`
+  - stop accepting new rounds
+  - remain visible in `Rivalries` as history
+- Leaving is only allowed when there is no active round.
+- If a round is still in `topic_selection`, `confirming`, `countdown`, `exam_ready`, or `exam_live`, the product should block leave and ask the user to finish that round first.
+- The UI should use `Leave Rivalry`, not `Delete Rivalry`.
 
 ### 2. Settings And Profile
 
@@ -157,6 +171,8 @@ As of the latest reviewed state, the following product changes are already in th
 - shared views no longer fall back to email-style public display names
 - lounge and rivalry surfaces now read rival avatar letter/color from shared public identity data
 - weekly rhythm is now stored per rivalry as a shared countdown pulse, seeded from the creator's default settings value
+- rivalries can now be left without deleting history
+- inactive rivalries are hidden from lounge, remain visible in rivalry history, and block future rounds
 
 ## Approved But Not Yet Shipped
 

@@ -50,6 +50,10 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 - `/api/profile`
   - validates the signed-in user on the server
   - syncs `users.display_name` plus public avatar identity for shared surfaces such as lounge and rivalry
+- `/api/leave-rivalry`
+  - validates the signed-in user on the server
+  - blocks leave if the rivalry still has any non-completed round
+  - marks the rivalry inactive in `rivalries.cumulative_ledger` without deleting history
 
 ## Expected Environment Variables
 
@@ -115,6 +119,8 @@ Observed status values:
 - Lounge and rivalry surfaces now read shared avatar letter/color from the public identity layer instead of inventing rival avatars locally
 - Weekly time in settings now acts as the default for new rivalries, while each rivalry keeps its own shared weekly countdown pulse
 - Lounge countdown cards now use rivalry-shared weekly rhythm data instead of per-viewer-only timing
+- Users can now leave a rivalry from the rivalry hub when no active round exists
+- Leaving a rivalry now preserves history, hides that rivalry from lounge, and blocks future rounds
 - Rivalry dashboard and round list
 - New round flow with topic, default study window, and optional prize/stake
 - AI syllabus generation and confirmation flow
@@ -148,6 +154,10 @@ Ran on 2026-03-24:
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
 - Shared avatar sync and rivalry-shared weekly rhythm are now shipped; if a later session touches them, preserve the public-identity/public-ledger split instead of moving those values back into viewer-local rendering.
+- Leave-rivalry is now shipped through `cumulative_ledger.inactive`.
+  - Preserve history.
+  - Keep inactive rivalries out of lounge.
+  - Do not let new rounds start once a rivalry is inactive.
 - Language level is now a shipped product rule. Preserve the current split:
   - `Settings` stores the user's default level
   - `rivalries.player_a_difficulty / player_b_difficulty` store per-rivalry levels

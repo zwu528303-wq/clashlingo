@@ -22,10 +22,12 @@ Last updated: 2026-03-24
   - Create/join rivalry now stores each player's level in the rivalry row.
   - Syllabus/exam generation now resolves level server-side from rivalry difficulty and the round target language.
   - Same-language rivalries now generate to the lower of the two saved levels.
+- Added `Leave Rivalry`.
+  - Rivalry Hub now supports a confirmed leave flow.
+  - Leaving preserves rivalry history, removes the rivalry from lounge, and blocks future rounds.
+  - The flow is blocked whenever an active round still exists.
 - Removed email-style public identity fallback.
   - Lounge, rivalry, and scopes now avoid showing email-derived display names.
-- Removed rivalry exit from current MVP rules.
-  - This is no longer an active product task.
 - Restored a clean lint baseline.
   - `npm run lint` now passes.
   - Current expectation: whenever a page is touched, clear that page's lint issues before moving on.

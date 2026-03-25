@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import type { Rivalry } from "@/lib/domain-types";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
+import { isRivalryInactive } from "@/lib/rivalry-ledger";
 import { ArrowLeft, Sparkles, Clock, Trophy, ArrowRight, Loader2 } from "lucide-react";
 
 export default function NewRoundPage() {
@@ -49,7 +50,7 @@ export default function NewRoundPage() {
         .eq("id", rivalryId)
         .single();
 
-      if (!data || (!data.player_b_id)) {
+      if (!data || !data.player_b_id || isRivalryInactive(data.cumulative_ledger)) {
         router.push(`/rivalries?rivalry=${rivalryId}`);
         return;
       }
@@ -63,6 +64,15 @@ export default function NewRoundPage() {
     if (!userId || !rivalry || !topic.trim()) return;
     setCreating(true);
     setMessage(null);
+
+    if (isRivalryInactive(rivalry.cumulative_ledger)) {
+      setMessage({
+        type: "error",
+        text: "This rivalry has ended and cannot start new rounds.",
+      });
+      setCreating(false);
+      return;
+    }
 
     const newRoundNumber = rivalry.current_round_num + 1;
 

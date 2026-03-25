@@ -29,7 +29,10 @@ Date: 2026-03-24
   - New rivalries now inherit the creator's default weekly rhythm.
   - Rivalries now persist their own shared countdown pulse in `cumulative_ledger.shared_weekly_time`.
   - Lounge cards now use that shared pulse, and exam completion preserves it when updating rivalry outcomes.
-- Updated product rules to remove rivalry exit from the current MVP scope.
+- Added `Leave Rivalry` as a real shipped flow.
+  - Rivalry Hub now supports a confirmed leave action.
+  - Leaving preserves rivalry history, removes the rivalry from lounge, and blocks future rounds.
+  - Leaving is blocked while any active round still exists.
 - Cleaned lint issues across the active pages and supporting routes.
   - `Lounge`, `RivalryDashboard`, `Scopes`, `Settings`, `RoundPage`, `ExamPage`, `ResultsPage`
   - `app/api/generate-syllabus`, `app/api/generate-exam`, `app/rivalry/[id]/new-round/page.tsx`

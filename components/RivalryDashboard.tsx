@@ -9,10 +9,12 @@ import {
   useSearchParams,
 } from "next/navigation";
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   Copy,
   Flame,
+  LogOut,
   Medal,
   Plus,
   Sparkles,
@@ -36,6 +38,7 @@ import {
   parsePublicAvatarValue,
   resolveDisplayName,
 } from "@/lib/profile";
+import { isRivalryInactive } from "@/lib/rivalry-ledger";
 
 interface RivalPublicProfile {
   displayName: string;
@@ -73,6 +76,9 @@ export default function RivalryDashboard() {
   >({});
   const [loading, setLoading] = useState(true);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+  const [leaveIntentId, setLeaveIntentId] = useState<string | null>(null);
+  const [leaveError, setLeaveError] = useState("");
+  const [leaving, setLeaving] = useState(false);
 
   async function loadCurrentProfile(user: User) {
     const authProfile = getEditableProfileFromUser(user);
@@ -103,17 +109,23 @@ export default function RivalryDashboard() {
       return;
     }
 
-    setRivalries(rivalryRows);
+    const sortedRivalries = [...rivalryRows].sort(
+      (left, right) =>
+        Number(isRivalryInactive(left.cumulative_ledger)) -
+        Number(isRivalryInactive(right.cumulative_ledger))
+    );
 
-    if (rivalryRows.length === 0) {
+    setRivalries(sortedRivalries);
+
+    if (sortedRivalries.length === 0) {
       setRoundsByRivalry({});
       setRivalNames({});
       setRivalProfiles({});
       return;
     }
 
-    const rivalryIds = rivalryRows.map((rivalry) => rivalry.id);
-    const rivalIdPairs = rivalryRows
+    const rivalryIds = sortedRivalries.map((rivalry) => rivalry.id);
+    const rivalIdPairs = sortedRivalries
       .map((rivalry) => ({
         rivalryId: rivalry.id,
         rivalId:
@@ -250,6 +262,11 @@ export default function RivalryDashboard() {
     : null;
 
   const ledger = (selectedRivalry?.cumulative_ledger ?? {}) as RivalryLedger;
+  const selectedRivalryInactive = isRivalryInactive(
+    selectedRivalry?.cumulative_ledger
+  );
+  const leftByUserId = selectedRivalry?.cumulative_ledger?.left_by ?? null;
+  const leftByMe = leftByUserId === userId;
   const myWins = (userId && ledger.wins?.[userId]) || 0;
   const rivalWins = (rivalId && ledger.wins?.[rivalId]) || 0;
   const myStreak = (() => {
@@ -266,6 +283,8 @@ export default function RivalryDashboard() {
     ledger.rounds?.find((round: RivalryLedgerRound) => round.round_id === roundId);
 
   const handleSelectRivalry = (rivalryId: string) => {
+    setLeaveIntentId(null);
+    setLeaveError("");
     router.push(buildRivalryHref(rivalryId));
   };
 
@@ -275,6 +294,46 @@ export default function RivalryDashboard() {
     setTimeout(() => {
       setCopiedInviteId((current) => (current === rivalryId ? null : current));
     }, 2000);
+  };
+
+  const handleLeaveRivalry = async () => {
+    if (!selectedRivalry || !userId) return;
+
+    setLeaving(true);
+    setLeaveError("");
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      setLeaveError("Your session expired. Please sign in again.");
+      setLeaving(false);
+      return;
+    }
+
+    const response = await fetch("/api/leave-rivalry", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ rivalryId: selectedRivalry.id }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | { error?: string }
+      | null;
+
+    if (!response.ok) {
+      setLeaveError(payload?.error || "Could not leave this rivalry.");
+      setLeaving(false);
+      return;
+    }
+
+    await loadRivalries(userId);
+    setLeaveIntentId(null);
+    setLeaving(false);
   };
 
   if (loading || !profile) {
@@ -339,11 +398,14 @@ export default function RivalryDashboard() {
             </section>
           ) : (
             <>
-              <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {rivalries.map((rivalry) => {
                   const selected = selectedRivalry?.id === rivalry.id;
                   const rivalryIsPlayerA = rivalry.player_a_id === userId;
                   const paired = Boolean(rivalry.player_b_id);
+                  const rivalryInactive = isRivalryInactive(
+                    rivalry.cumulative_ledger
+                  );
                   const publicProfile = rivalProfiles[rivalry.id];
                   const name = publicProfile?.displayName ?? rivalNames[rivalry.id] ?? "Rival";
                   const selectorTheme = getAvatarTheme(publicProfile?.avatarColor);
@@ -351,11 +413,13 @@ export default function RivalryDashboard() {
                   const rivalryActiveRound = rivalryRounds.find(
                     (round) => round.status !== "completed"
                   );
-                  const nextLabel = rivalryActiveRound
-                    ? rivalryActiveRound.status.replace(/_/g, " ")
-                    : paired
-                      ? `Round ${rivalry.current_round_num + 1}`
-                      : "Waiting for rival";
+                  const nextLabel = rivalryInactive
+                    ? "Rivalry ended"
+                    : rivalryActiveRound
+                      ? rivalryActiveRound.status.replace(/_/g, " ")
+                      : paired
+                        ? `Round ${rivalry.current_round_num + 1}`
+                        : "Waiting for rival";
                   const labelLanguage = rivalryIsPlayerA
                     ? rivalry.player_a_lang
                     : rivalry.player_b_lang || rivalry.player_a_lang;
@@ -399,12 +463,14 @@ export default function RivalryDashboard() {
 
                         <span
                           className={`px-3.5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.18em] shrink-0 ${
-                            selected
+                            rivalryInactive
+                              ? "bg-surface-container text-on-surface-variant"
+                              : selected
                               ? "bg-primary text-on-primary shadow-sm"
                               : "bg-surface-container text-on-surface-variant"
                           }`}
                         >
-                          {selected ? "Open" : "View"}
+                          {rivalryInactive ? "Ended" : selected ? "Open" : "View"}
                         </span>
                       </div>
                     </button>
@@ -518,6 +584,26 @@ export default function RivalryDashboard() {
                       </div>
                     </div>
                   </section>
+
+                  {selectedRivalryInactive && (
+                    <section className="rounded-[2.2rem] border border-surface-container-high bg-white px-6 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 w-11 h-11 rounded-2xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+                          <AlertTriangle size={20} />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-xl font-black text-on-surface tracking-tight">
+                            Rivalry ended
+                          </h3>
+                          <p className="text-on-surface-variant font-medium">
+                            {leftByMe
+                              ? "You left this rivalry. History stays here, but this duel can no longer start new rounds."
+                              : `${rivalName} left this rivalry. History stays here, but this duel can no longer start new rounds.`}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+                  )}
 
                   {selectedRivalry.player_b_id ? (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -636,13 +722,37 @@ export default function RivalryDashboard() {
                       <div className="space-y-5">
                         <div className="bg-surface-container-high rounded-[2.4rem] p-8 text-center space-y-6 flex flex-col items-center shadow-[0_18px_38px_rgba(48,46,43,0.05)]">
                           <div className="w-20 h-20 bg-primary-container rounded-[1.7rem] flex items-center justify-center shadow-inner rotate-3">
-                            <Swords
-                              size={40}
-                              className="text-primary fill-primary/20"
-                            />
+                            {selectedRivalryInactive ? (
+                              <LogOut
+                                size={40}
+                                className="text-on-surface-variant"
+                              />
+                            ) : (
+                              <Swords
+                                size={40}
+                                className="text-primary fill-primary/20"
+                              />
+                            )}
                           </div>
 
-                          {activeRound ? (
+                          {selectedRivalryInactive ? (
+                            <>
+                              <div className="space-y-2">
+                                <h4 className="text-3xl font-black tracking-[-0.05em]">
+                                  Rivalry closed
+                                </h4>
+                                <p className="text-on-surface-variant text-sm px-4 font-medium leading-relaxed">
+                                  This rivalry is now archived. You can still review the story here, but no new rounds can begin.
+                                </p>
+                              </div>
+                              <button
+                                disabled
+                                className="w-full bg-surface-container text-on-surface-variant py-5 rounded-full font-black text-lg cursor-not-allowed"
+                              >
+                                No New Rounds
+                              </button>
+                            </>
+                          ) : activeRound ? (
                             <>
                               <div className="space-y-2">
                                 <h4 className="text-3xl font-black tracking-[-0.05em]">
@@ -737,39 +847,181 @@ export default function RivalryDashboard() {
                             </div>
                           </div>
                         </div>
+
+                        <div className="bg-white rounded-[2rem] p-6 shadow-[0_16px_30px_rgba(48,46,43,0.05)] space-y-4">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-on-surface-variant">
+                              Leave Rivalry
+                            </p>
+                            <h4 className="mt-2 text-2xl font-black tracking-[-0.04em] text-on-surface">
+                              End this duel
+                            </h4>
+                            <p className="mt-2 text-sm font-medium text-on-surface-variant leading-relaxed">
+                              Leaving keeps your match history, but removes this rivalry from the Lounge and blocks future rounds.
+                            </p>
+                          </div>
+
+                          {leaveError && (
+                            <div className="rounded-[1.4rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                              {leaveError}
+                            </div>
+                          )}
+
+                          {selectedRivalryInactive ? (
+                            <div className="rounded-[1.4rem] bg-surface-container px-4 py-3 text-sm font-medium text-on-surface-variant">
+                              {leftByMe
+                                ? "You already left this rivalry."
+                                : `${rivalName} already left this rivalry.`}
+                            </div>
+                          ) : activeRound ? (
+                            <div className="rounded-[1.4rem] bg-surface-container px-4 py-3 text-sm font-medium text-on-surface-variant">
+                              Finish the active round before leaving this rivalry.
+                            </div>
+                          ) : leaveIntentId === selectedRivalry.id ? (
+                            <div className="space-y-3">
+                              <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                                This rivalry will move to history. It will disappear from the Lounge and can no longer start new rounds.
+                              </div>
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={() => {
+                                    setLeaveIntentId(null);
+                                    setLeaveError("");
+                                  }}
+                                  disabled={leaving}
+                                  className="flex-1 rounded-full bg-surface-container px-5 py-3 font-black text-on-surface transition-all hover:bg-surface-container-high disabled:opacity-60"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={handleLeaveRivalry}
+                                  disabled={leaving}
+                                  className="flex-1 rounded-full bg-primary text-on-primary px-5 py-3 font-black transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60"
+                                >
+                                  {leaving ? "Leaving..." : "Confirm Leave"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setLeaveIntentId(selectedRivalry.id);
+                                setLeaveError("");
+                              }}
+                              className="w-full rounded-full border border-primary/20 bg-primary-container/40 px-5 py-3.5 font-black text-primary transition-all hover:bg-primary-container/55"
+                            >
+                              Leave Rivalry
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-[2.8rem] p-12 text-center max-w-xl shadow-[0_22px_55px_rgba(48,46,43,0.06)]">
-                      <div className="w-24 h-24 rounded-[2rem] bg-primary-container text-primary mx-auto flex items-center justify-center shadow-inner rotate-3 mb-6">
-                        <Swords size={42} />
-                      </div>
-                      <p className="text-on-surface-variant text-lg font-medium mb-5">
-                        Share your invite code with a friend to bring this rivalry to life.
-                      </p>
-                      <div className="bg-surface-container-low rounded-[2rem] p-6 mb-6">
-                        <p className="text-4xl font-black text-primary tracking-[0.3em] font-mono">
-                          {selectedRivalry.invite_code}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          handleInviteCopy(
-                            selectedRivalry.id,
-                            selectedRivalry.invite_code
-                          )
-                        }
-                        className="flex items-center gap-2 mx-auto rounded-full bg-primary text-on-primary px-6 py-3.5 text-sm font-black shadow-[0_14px_30px_rgba(149,63,77,0.2)] transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      >
-                        {copiedInviteId === selectedRivalry.id ? (
-                          <Check size={16} />
-                        ) : (
-                          <Copy size={16} />
-                        )}
-                        {copiedInviteId === selectedRivalry.id
-                          ? "Copied!"
-                          : "Copy Code"}
-                      </button>
+                    <div className="max-w-xl space-y-5">
+                      {selectedRivalryInactive ? (
+                        <div className="bg-white rounded-[2.8rem] p-12 text-center shadow-[0_22px_55px_rgba(48,46,43,0.06)]">
+                          <div className="w-24 h-24 rounded-[2rem] bg-surface-container text-on-surface-variant mx-auto flex items-center justify-center shadow-inner rotate-3 mb-6">
+                            <LogOut size={42} />
+                          </div>
+                          <p className="text-on-surface text-2xl font-black tracking-tight mb-3">
+                            Rivalry ended before a rival joined
+                          </p>
+                          <p className="text-on-surface-variant text-lg font-medium">
+                            This invite is archived now, so it no longer appears in the Lounge or accepts new rounds.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-white rounded-[2.8rem] p-12 text-center shadow-[0_22px_55px_rgba(48,46,43,0.06)]">
+                            <div className="w-24 h-24 rounded-[2rem] bg-primary-container text-primary mx-auto flex items-center justify-center shadow-inner rotate-3 mb-6">
+                              <Swords size={42} />
+                            </div>
+                            <p className="text-on-surface-variant text-lg font-medium mb-5">
+                              Share your invite code with a friend to bring this rivalry to life.
+                            </p>
+                            <div className="bg-surface-container-low rounded-[2rem] p-6 mb-6">
+                              <p className="text-4xl font-black text-primary tracking-[0.3em] font-mono">
+                                {selectedRivalry.invite_code}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleInviteCopy(
+                                  selectedRivalry.id,
+                                  selectedRivalry.invite_code
+                                )
+                              }
+                              className="flex items-center gap-2 mx-auto rounded-full bg-primary text-on-primary px-6 py-3.5 text-sm font-black shadow-[0_14px_30px_rgba(149,63,77,0.2)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                              {copiedInviteId === selectedRivalry.id ? (
+                                <Check size={16} />
+                              ) : (
+                                <Copy size={16} />
+                              )}
+                              {copiedInviteId === selectedRivalry.id
+                                ? "Copied!"
+                                : "Copy Code"}
+                            </button>
+                          </div>
+
+                          <div className="bg-white rounded-[2rem] p-6 shadow-[0_16px_30px_rgba(48,46,43,0.05)] space-y-4">
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-[0.18em] text-on-surface-variant">
+                                Leave Rivalry
+                              </p>
+                              <h4 className="mt-2 text-2xl font-black tracking-[-0.04em] text-on-surface">
+                                Close this invite
+                              </h4>
+                              <p className="mt-2 text-sm font-medium text-on-surface-variant leading-relaxed">
+                                If you no longer want this duel, you can archive it. The invite code will stop appearing in the Lounge.
+                              </p>
+                            </div>
+
+                            {leaveError && (
+                              <div className="rounded-[1.4rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                                {leaveError}
+                              </div>
+                            )}
+
+                            {leaveIntentId === selectedRivalry.id ? (
+                              <div className="space-y-3">
+                                <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                                  This rivalry will move to history and stop accepting a joining rival.
+                                </div>
+                                <div className="flex gap-3">
+                                  <button
+                                    onClick={() => {
+                                      setLeaveIntentId(null);
+                                      setLeaveError("");
+                                    }}
+                                    disabled={leaving}
+                                    className="flex-1 rounded-full bg-surface-container px-5 py-3 font-black text-on-surface transition-all hover:bg-surface-container-high disabled:opacity-60"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={handleLeaveRivalry}
+                                    disabled={leaving}
+                                    className="flex-1 rounded-full bg-primary text-on-primary px-5 py-3 font-black transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60"
+                                  >
+                                    {leaving ? "Leaving..." : "Confirm Leave"}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setLeaveIntentId(selectedRivalry.id);
+                                  setLeaveError("");
+                                }}
+                                className="w-full rounded-full border border-primary/20 bg-primary-container/40 px-5 py-3.5 font-black text-primary transition-all hover:bg-primary-container/55"
+                              >
+                                Leave Rivalry
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </>

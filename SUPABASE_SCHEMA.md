@@ -91,6 +91,7 @@ Current app usage:
 - Stores the latest round number.
 - Stores long-term outcome history in `cumulative_ledger`.
 - Stores the rivalry-shared weekly countdown pulse in `cumulative_ledger.shared_weekly_time`.
+- Stores rivalry archive state in `cumulative_ledger.inactive`, plus `left_by` and `left_at` when a player leaves.
 
 Notes:
 
@@ -201,6 +202,13 @@ Current app usage:
 - Calls Anthropic to generate exam JSON.
 - Inserts or updates the `exams` row for that round.
 - Moves the round to `exam_ready`.
+
+### [app/api/leave-rivalry/route.ts](./app/api/leave-rivalry/route.ts)
+
+- Validates the current user from a bearer token.
+- Confirms the user belongs to the rivalry being left.
+- Refuses to leave while any non-completed round still exists.
+- Marks the rivalry inactive in `cumulative_ledger` instead of deleting history.
 
 ## Practical Modeling Notes
 

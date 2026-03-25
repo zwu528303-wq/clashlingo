@@ -22,3 +22,21 @@ export function setSharedWeeklyMatchTime(
     shared_weekly_time: normalizeWeeklyMatchTime(weeklyTime),
   };
 }
+
+export function isRivalryInactive(
+  ledger: RivalryLedger | null | undefined
+) {
+  return Boolean(ledger?.inactive);
+}
+
+export function setRivalryInactive(
+  ledger: RivalryLedger | null | undefined,
+  userId: string
+): RivalryLedger {
+  return {
+    ...(ledger ?? {}),
+    inactive: true,
+    left_by: userId,
+    left_at: new Date().toISOString(),
+  };
+}
