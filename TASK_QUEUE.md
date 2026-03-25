@@ -46,6 +46,9 @@ Last updated: 2026-03-24
 - Centralized shared domain types.
   - `lib/domain-types.ts` now defines shared `Rivalry`, `Round`, `Exam`, `Submission`, `Syllabus`, and related exam/ledger types.
   - Lounge, rivalry, round, exam, results, scopes, new-round, and both AI routes now import those types instead of redefining them locally.
+- Extended the shared sidebar shell to rivalry dashboard.
+  - `components/RivalryDashboard.tsx` now loads the current profile and renders through the same `AppSidebar` used by lounge, scopes, and settings.
+  - The page keeps its own content and back-to-lounge action, but no longer relies on a separate top-right settings shortcut.
 
 ## Highest Priority
 

@@ -98,6 +98,7 @@ Observed status values:
 - Lounge now presents rivalries as status cards with countdown / action panels
 - Lounge now keeps a weekly rhythm countdown visible on paired rivalry cards, even before a round reaches the actual study-countdown state
 - Lounge, scopes, and settings now share a sidebar navigation shell
+- Rivalry dashboard now also uses the shared sidebar shell
 - Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
 - Settings save now syncs public nickname server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names

@@ -48,6 +48,8 @@ Date: 2026-03-24
   - `SUPABASE_SCHEMA.md` now documents the current Supabase tables, relationships, and auth metadata fields.
 - Centralized shared domain types in `lib/domain-types.ts`.
   - Shared `Rivalry`, `Round`, `Exam`, `Submission`, `Syllabus`, and related exam/ledger types now back the main pages and AI routes.
+- Extended the shared sidebar shell to rivalry dashboard.
+  - `components/RivalryDashboard.tsx` now loads the current user profile and renders within the same `AppSidebar` used elsewhere.
 
 ## What Was Verified
 

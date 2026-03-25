@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import AppSidebar from "@/components/AppSidebar";
 import type {
   Rivalry,
   RivalryLedger,
@@ -17,9 +19,12 @@ import {
   ArrowRight,
   Copy,
   Check,
-  Settings,
 } from "lucide-react";
-import { resolveDisplayName } from "@/lib/profile";
+import {
+  type EditableProfile,
+  getEditableProfileFromUser,
+  resolveDisplayName,
+} from "@/lib/profile";
 
 interface UserProfile {
   id: string;
@@ -32,12 +37,27 @@ export default function RivalryDashboard() {
   const rivalryId = params.id as string;
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [rivalry, setRivalry] = useState<Rivalry | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
   const [playerAName, setPlayerAName] = useState("Player A");
   const [playerBName, setPlayerBName] = useState("Player B");
   const [copied, setCopied] = useState(false);
+
+  async function loadCurrentProfile(user: User) {
+    const authProfile = getEditableProfileFromUser(user);
+    const { data } = await supabase
+      .from("users")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle<{ display_name: string | null }>();
+
+    setProfile({
+      ...authProfile,
+      displayName: resolveDisplayName(data?.display_name, authProfile.displayName),
+    });
+  }
 
   useEffect(() => {
     const init = async () => {
@@ -50,6 +70,7 @@ export default function RivalryDashboard() {
       }
 
       setUserId(user.id);
+      await loadCurrentProfile(user);
 
       const { data: rivalryData, error } = await supabase
         .from("rivalries")
@@ -144,7 +165,7 @@ export default function RivalryDashboard() {
   const getRoundResult = (roundId: string) =>
     ledger.rounds?.find((r: RivalryLedgerRound) => r.round_id === roundId);
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="text-on-surface-variant font-medium">Loading...</div>
@@ -156,24 +177,20 @@ export default function RivalryDashboard() {
 
   return (
     <div className="min-h-screen bg-surface">
-      {/* Header */}
-      <header className="flex justify-between items-center px-6 py-5 max-w-5xl mx-auto">
-        <button
-          onClick={() => router.push("/lounge")}
-          className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
-        >
-          <ArrowLeft size={20} />
-          Back to Lounge
-        </button>
-        <button
-          onClick={() => router.push("/settings")}
-          className="text-on-surface-variant hover:text-primary transition-colors"
-        >
-          <Settings size={20} />
-        </button>
-      </header>
+      <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
+        <AppSidebar active="lounge" profile={profile} />
 
-      <div className="max-w-5xl mx-auto px-6 pb-12 space-y-10">
+        <main className="space-y-10 pb-12">
+          <header className="flex items-center">
+            <button
+              onClick={() => router.push("/lounge")}
+              className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
+            >
+              <ArrowLeft size={20} />
+              Back to Lounge
+            </button>
+          </header>
+
         {/* ========== Hero VS Card ========== */}
         <section className="relative bg-surface-container-low rounded-[2.5rem] p-8 md:p-12 overflow-hidden">
           <div className="absolute -top-12 -left-12 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl"></div>
@@ -445,6 +462,7 @@ export default function RivalryDashboard() {
             </button>
           </div>
         )}
+        </main>
       </div>
     </div>
   );
