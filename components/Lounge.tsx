@@ -7,6 +7,7 @@ import { supabase } from "../lib/supabase";
 import {
   ArrowRight,
   Check,
+  CircleHelp,
   Clock3,
   Copy,
   Lock,
@@ -16,9 +17,9 @@ import {
   X,
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
+import HowItWorksLoop from "@/components/HowItWorksLoop";
 import type { Rivalry, Round } from "@/lib/domain-types";
 import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
-import { HOW_IT_WORKS_STEPS, PRODUCT_SURFACES } from "@/lib/onboarding";
 import {
   getSharedWeeklyMatchTime,
   isRivalryInactive,
@@ -579,44 +580,19 @@ export default function Lounge() {
                     How ClashLingo Works
                   </p>
                   <p className="mt-2 text-on-surface-variant leading-relaxed">
-                    Start with one rivalry first. Once you finish a round, the rest of the product starts feeling much more intuitive.
+                    Start with one rivalry first. The real product is a weekly loop you keep repeating together.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {HOW_IT_WORKS_STEPS.map((item) => (
-                    <div
-                      key={item.step}
-                      className="rounded-[1.6rem] bg-surface-container-low px-4 py-4"
-                    >
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                        Step {item.step}
-                      </p>
-                      <p className="mt-2 text-lg font-black text-on-surface tracking-tight">
-                        {item.title}
-                      </p>
-                      <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
-                        {item.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <HowItWorksLoop compact />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {PRODUCT_SURFACES.map((surface) => (
-                    <div
-                      key={surface.title}
-                      className="rounded-[1.5rem] bg-surface-container-lowest px-4 py-4"
-                    >
-                      <p className="text-base font-black text-on-surface tracking-tight">
-                        {surface.title}
-                      </p>
-                      <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
-                        {surface.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  onClick={() => router.push("/how-it-works")}
+                  className="inline-flex items-center gap-2 rounded-full border border-surface-container bg-surface-container-lowest px-5 py-3 text-sm font-black text-on-surface hover:text-primary transition-colors"
+                >
+                  <CircleHelp size={18} />
+                  Open Full Guide
+                </button>
               </div>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Home, LogOut, Settings2, Swords } from "lucide-react";
+import { BookOpen, CircleHelp, Home, LogOut, Settings2, Swords } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   type EditableProfile,
@@ -10,7 +10,7 @@ import {
   normalizeAvatarLetter,
 } from "@/lib/profile";
 
-type SidebarKey = "lounge" | "rivalries" | "scopes" | "settings";
+type SidebarKey = "lounge" | "rivalries" | "scopes" | "settings" | "guide";
 
 interface SidebarItem {
   key: SidebarKey;
@@ -27,7 +27,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 ];
 
 interface AppSidebarProps {
-  active: SidebarKey;
+  active?: SidebarKey;
   profile: EditableProfile;
 }
 
@@ -104,6 +104,25 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
             Your weekly default countdown pulse. Matches can still begin early.
           </p>
         </div>
+
+        <Link
+          href="/how-it-works"
+          className={`flex items-center gap-3 rounded-[1.6rem] border px-4 py-4 transition-all ${
+            active === "guide"
+              ? "border-primary/20 bg-primary-container/30 text-primary shadow-sm"
+              : "border-white/80 bg-white/85 text-on-surface-variant hover:text-primary"
+          }`}
+        >
+          <div className="w-10 h-10 rounded-[1rem] bg-white/90 flex items-center justify-center shadow-sm">
+            <CircleHelp size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-black tracking-tight">How It Works</p>
+            <p className="text-xs leading-relaxed">
+              Quick product guide and FAQ
+            </p>
+          </div>
+        </Link>
 
         <button
           onClick={handleLogout}

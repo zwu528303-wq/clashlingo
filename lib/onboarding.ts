@@ -1,27 +1,40 @@
-export const HOW_IT_WORKS_STEPS = [
+export const FIRST_TIME_SETUP = {
+  eyebrow: "First time only",
+  title: "Create / Join Rivalry",
+  description:
+    "You only do this when starting with a new friend. After that, the same rivalry becomes your weekly loop.",
+} as const;
+
+export const WEEKLY_LOOP_STEPS = [
   {
-    step: "01",
-    title: "Start a rivalry",
-    description:
-      "Create a duel or join with an invite code. Each rivalry is one friend you keep challenging over time.",
+    key: "start_round",
+    title: "Start Round",
+    description: "Pick the next weekly topic and open a fresh showdown.",
   },
   {
-    step: "02",
-    title: "Pick the weekly showdown",
-    description:
-      "Choose a topic, generate the scope, and confirm it together before the study countdown begins.",
+    key: "get_scope",
+    title: "Get Scope",
+    description: "Generate the study scope for this round's language and level.",
   },
   {
-    step: "03",
-    title: "Study or start early",
-    description:
-      "The weekly rhythm keeps everyone on pace, but both players can still agree to jump in before the timer ends.",
+    key: "confirm_together",
+    title: "Confirm Together",
+    description: "Both players lock in the scope before the countdown starts.",
   },
   {
-    step: "04",
-    title: "Take the exam and compare",
-    description:
-      "Submit the round, compare scores, review the scope, and build your rivalry history over time.",
+    key: "study_or_start_early",
+    title: "Study or Start Early",
+    description: "Follow the weekly rhythm, or jump in sooner if both players agree.",
+  },
+  {
+    key: "take_exam",
+    title: "Take Exam",
+    description: "Answer the duel and submit your score for the round.",
+  },
+  {
+    key: "compare_results",
+    title: "Compare Results",
+    description: "See who won, review the scope, and roll back into the next round.",
   },
 ] as const;
 
@@ -37,5 +50,37 @@ export const PRODUCT_SURFACES = [
   {
     title: "Scopes",
     description: "Study material grouped by language and round.",
+  },
+  {
+    title: "Settings",
+    description: "Nickname, avatar, language defaults, level, and weekly rhythm.",
+  },
+] as const;
+
+export const GUIDE_FAQS = [
+  {
+    question: "Do we have to wait for the countdown to finish?",
+    answer:
+      "No. The weekly rhythm is a guide, not a hard lock. If both players are ready, the round can start early.",
+  },
+  {
+    question: "What is the difference between Lounge and Rivalries?",
+    answer:
+      "Lounge is for what is happening now: countdowns, readiness, and entering the match. Rivalries is the long-term history and stats view.",
+  },
+  {
+    question: "When do scopes appear?",
+    answer:
+      "A scope appears as soon as the syllabus exists for a round. You do not need to wait for the exam to be created.",
+  },
+  {
+    question: "What does language level actually change?",
+    answer:
+      "It helps ClashLingo choose the right syllabus and exam difficulty. It does not block matchmaking or change scoring rules.",
+  },
+  {
+    question: "Why is a rivalry missing from Lounge?",
+    answer:
+      "Only active rivalries stay in Lounge. If a rivalry was left, it moves out of Lounge and remains in Rivalries as history.",
   },
 ] as const;

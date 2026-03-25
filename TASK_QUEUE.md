@@ -20,7 +20,8 @@ Last updated: 2026-03-25
 - Upgraded auth onboarding and self-service support.
   - Login now includes resend-confirmation and forgot-password entry points.
   - `/reset-password` now exists for completing password recovery from email.
-  - Login and empty-lounge states now include a lightweight "How ClashLingo works" guide to reduce first-time confusion.
+  - Login and empty-lounge states now use a loop-based onboarding guide instead of a generic numbered explainer.
+  - `/how-it-works` now exists as the full product manual, and the sidebar links to it.
 - Added `Default Language Level`.
   - Settings now supports `Beginner / Elementary / Intermediate / Advanced`.
   - Create/join rivalry now stores each player's level in the rivalry row.

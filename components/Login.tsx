@@ -5,18 +5,17 @@ import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle2,
+  CircleHelp,
   Loader2,
   Lock,
   Mail,
   RotateCcw,
-  Swords,
   UserRound,
 } from "lucide-react";
+import HowItWorksLoop from "@/components/HowItWorksLoop";
 import { supabase } from "../lib/supabase";
 import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
-import { HOW_IT_WORKS_STEPS, PRODUCT_SURFACES } from "@/lib/onboarding";
 import {
   getEditableProfileFromUser,
   resolveDisplayName,
@@ -525,62 +524,19 @@ export default function Login() {
               Learn by dueling
             </h2>
             <p className="text-on-surface-variant text-lg leading-relaxed">
-              ClashLingo is easiest to understand once you see the full loop. Here is the whole game in one place.
+              The easiest way to understand ClashLingo is to see the loop once. This is the fast version.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {HOW_IT_WORKS_STEPS.map((item) => (
-              <div
-                key={item.step}
-                className="rounded-[2rem] bg-white/85 border border-surface-container p-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]"
-              >
-                <div className="w-11 h-11 rounded-[1rem] bg-primary-container text-primary flex items-center justify-center font-black text-sm shadow-sm">
-                  {item.step}
-                </div>
-                <h3 className="mt-4 text-xl font-black tracking-tight text-on-surface">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
+          <HowItWorksLoop compact />
 
-          <div className="rounded-[2rem] bg-surface-container-low p-5 space-y-4 border border-white/80">
-            <div className="flex items-center gap-2">
-              <BookOpen size={18} className="text-primary" />
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-on-surface-variant">
-                Product Map
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {PRODUCT_SURFACES.map((surface) => (
-                <div
-                  key={surface.title}
-                  className="rounded-[1.5rem] bg-white/90 p-4 shadow-sm"
-                >
-                  <p className="text-lg font-black tracking-tight text-on-surface">
-                    {surface.title}
-                  </p>
-                  <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
-                    {surface.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-[1.5rem] border border-primary/10 bg-primary-container/20 p-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-[1rem] bg-primary-container text-primary flex items-center justify-center shrink-0">
-                <Swords size={18} />
-              </div>
-              <p className="text-sm leading-relaxed text-on-surface-variant">
-                If you are new here, the fastest path is: <span className="font-bold text-on-surface">create or join one rivalry</span>, start a round, and let the rest of the product make sense from there.
-              </p>
-            </div>
-          </div>
+          <button
+            onClick={() => router.push("/how-it-works")}
+            className="w-full rounded-[1.6rem] border border-white/80 bg-white/85 px-5 py-4 font-black text-on-surface transition-all hover:text-primary hover:translate-y-[-1px] flex items-center justify-center gap-2"
+          >
+            <CircleHelp size={18} />
+            Open Full Guide
+          </button>
         </section>
       </div>
     </div>
