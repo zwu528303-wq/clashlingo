@@ -15,6 +15,7 @@ Date: 2026-03-24
 - Added a first-pass `Settings` flow for nickname, letter avatar, avatar color, default language, and weekly match time.
 - Added `app/api/profile/route.ts` to sync public nickname data server-side.
 - Extended public profile sync so shared lounge / rivalry surfaces can render letter-avatar identity from the `users` table.
+- Updated the auth screen so sign-up collects `Display Nickname` immediately instead of waiting for settings.
 - Fixed the `users` sync bug by matching the real table shape.
   - `users` has `id`, `display_name`, `avatar_url`, and `created_at`
   - it does not have an `email` column

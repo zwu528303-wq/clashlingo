@@ -95,6 +95,7 @@ Observed status values:
 ## What Works Today
 
 - Email/password sign-up and sign-in through Supabase
+- Sign-up now asks for `Display Nickname` up front and writes it into auth metadata during account creation
 - Lounge UI for creating a rivalry and joining by invite code
 - Lounge now presents rivalries as status cards with countdown / action panels
 - Lounge now keeps a weekly rhythm countdown visible on paired rivalry cards, even before a round reaches the actual study-countdown state

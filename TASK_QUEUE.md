@@ -14,6 +14,9 @@ Last updated: 2026-03-24
 - Extended shared profile sync to public avatars.
   - `app/api/profile/route.ts` now also syncs letter-avatar identity into the public `users` row.
   - Lounge and rivalry surfaces now render rival avatar letter/color from shared profile data instead of local fallback styling.
+- Added `Display Nickname` directly to sign-up.
+  - New accounts now collect nickname during registration instead of waiting for settings.
+  - Login now also attempts a public-profile sync after auth succeeds so shared identity comes online earlier.
 - Removed email-style public identity fallback.
   - Lounge, rivalry, and scopes now avoid showing email-derived display names.
 - Removed rivalry exit from current MVP rules.

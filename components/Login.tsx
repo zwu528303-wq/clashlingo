@@ -3,15 +3,47 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import { Mail, Lock, ArrowRight, Loader2, UserRound } from "lucide-react";
+import {
+  getEditableProfileFromUser,
+  resolveDisplayName,
+} from "@/lib/profile";
 
 export default function Login() {
   const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const syncPublicProfile = async (user: User, accessToken?: string | null) => {
+    if (!accessToken) return;
+
+    const editableProfile = getEditableProfileFromUser(user);
+    const response = await fetch("/api/profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        displayName: editableProfile.displayName,
+        avatarLetter: editableProfile.avatarLetter,
+        avatarColor: editableProfile.avatarColor,
+      }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+
+      throw new Error(payload?.error || "Failed to sync profile.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,19 +51,48 @@ export default function Login() {
     setError("");
 
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const trimmedDisplayName = displayName.trim();
+      if (!trimmedDisplayName) {
+        setError("Display nickname is required.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: resolveDisplayName(trimmedDisplayName),
+          },
+        },
+      });
       if (error) {
         setError(error.message);
         setLoading(false);
         return;
       }
-      // 注册成功后提示去查邮箱，或者直接登录（取决于 Supabase 设置）
+
+      if (data.user && data.session?.access_token) {
+        try {
+          await syncPublicProfile(data.user, data.session.access_token);
+        } catch (syncError) {
+          setError(
+            syncError instanceof Error
+              ? syncError.message
+              : "Account created, but public profile sync failed."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       setError("Check your email to confirm your account!");
       setLoading(false);
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -39,6 +100,20 @@ export default function Login() {
       setError(error.message);
       setLoading(false);
       return;
+    }
+
+    if (data.user && data.session?.access_token) {
+      try {
+        await syncPublicProfile(data.user, data.session.access_token);
+      } catch (syncError) {
+        setError(
+          syncError instanceof Error
+            ? syncError.message
+            : "Signed in, but profile sync failed."
+        );
+        setLoading(false);
+        return;
+      }
     }
 
     router.push("/lounge");
@@ -68,6 +143,31 @@ export default function Login() {
         <div className="bg-surface-container-lowest p-8 rounded-[2.5rem] shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
+              {isSignUp && (
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
+                    Display Nickname
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <UserRound
+                        size={20}
+                        className="text-on-surface-variant/50"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      required={isSignUp}
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-primary transition-all"
+                      placeholder="Language Warrior"
+                      maxLength={32}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Email */}
               <div>
                 <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
@@ -151,6 +251,7 @@ export default function Login() {
             onClick={() => {
               setIsSignUp(!isSignUp);
               setError("");
+              setDisplayName("");
             }}
             className="text-primary font-bold hover:underline"
           >
