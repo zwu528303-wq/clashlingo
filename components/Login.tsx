@@ -515,15 +515,15 @@ export default function Login() {
           )}
         </section>
 
-        <section className="bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low rounded-[2.8rem] p-7 md:p-8 shadow-[0_24px_60px_rgba(149,63,77,0.08)] border border-white/80 space-y-7">
-          <div className="space-y-3">
+        <section className="bg-gradient-to-br from-surface-container-lowest via-white to-surface-container-low rounded-[2.8rem] p-6 md:p-7 shadow-[0_24px_60px_rgba(149,63,77,0.08)] border border-white/80 space-y-5">
+          <div className="space-y-2.5">
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
               How It Works
             </p>
-            <h2 className="max-w-[11ch] text-4xl md:text-[4.4rem] font-black text-on-surface tracking-[-0.045em] leading-[0.96] md:leading-[0.98]">
+            <h2 className="max-w-[10ch] text-[3.45rem] md:text-[4.05rem] font-black text-on-surface tracking-[-0.045em] leading-[0.94] md:leading-[0.96]">
               Learn by dueling
             </h2>
-            <p className="max-w-2xl text-on-surface-variant text-lg leading-[1.72]">
+            <p className="max-w-xl text-on-surface-variant text-base md:text-[1.05rem] leading-[1.66]">
               The easiest way to understand ClashLingo is to see the loop once. This is the fast version.
             </p>
           </div>
@@ -532,7 +532,7 @@ export default function Login() {
 
           <button
             onClick={() => router.push("/how-it-works")}
-            className="w-full rounded-[1.6rem] border border-white/80 bg-white/85 px-5 py-4 font-black text-on-surface transition-all hover:text-primary hover:translate-y-[-1px] flex items-center justify-center gap-2"
+            className="w-full rounded-[1.6rem] border border-white/80 bg-white/85 px-5 py-3.5 font-black text-on-surface transition-all hover:text-primary hover:translate-y-[-1px] flex items-center justify-center gap-2"
           >
             <CircleHelp size={18} />
             Open Full Guide
