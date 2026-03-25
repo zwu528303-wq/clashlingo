@@ -90,6 +90,8 @@ Rules:
 - Results should update when the rival submits.
 - Rivalry history should preserve cumulative outcomes such as wins, losses, ties, and round scores.
 - The product should show meaningful review material after the exam, including the tested scope or study material when available.
+- Live opponent exam-progress UI is not part of the current MVP.
+- For now, realtime competition should stop at results updates instead of showing in-exam progress.
 
 ## Shipped Changes Already In Code
 

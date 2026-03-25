@@ -30,48 +30,41 @@ Last updated: 2026-03-24
 - Grouped `/scopes` by target language.
   - Current scopes and past scopes now classify cards under language sections.
   - The scopes review view also renders grouped vocabulary entries instead of flattening them into `[object Object]`.
+- Polished round/new-round/settings copy around countdown rules.
+  - `study_days` is now framed in the UI as a default study window instead of a hard lock.
+  - Weekly time is described as a lounge rhythm, not a round gate.
+  - Realtime opponent exam progress is explicitly out of scope for the current MVP.
 
 ## Highest Priority
 
-1. Polish the remaining round-flow copy.
-   - The behavior is now soft-countdown, but there are still some old "study days" phrases worth reviewing.
-   - Make sure lounge, round, and settings language all describe countdown as a rhythm rather than a lock.
-
-## Engineering Follow-Up
+1. Deepen the results sharing experience.
+   - A share action exists already.
+   - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
 2. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
-## Product Flow And UX
+## Engineering Follow-Up
 
-3. Add realtime exam sync.
-   - Results realtime is already in place for rival submissions.
-   - The remaining gap is optional opponent progress during the exam itself.
-   - Use Supabase Realtime on the `submissions` table if that UX proves worthwhile.
-
-4. Deepen the results sharing experience.
-   - A share action exists already.
-   - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
-
-5. Create shared domain types.
+3. Create shared domain types.
    - Move `Round`, `Rivalry`, `Exam`, `Submission`, and syllabus shapes into a shared typed module.
    - Reuse those types across client components and API routes.
 
-6. Document local setup and data model.
+4. Document local setup and data model.
    - Add `.env.example`.
    - Add Supabase schema or migration notes for `users`, `rivalries`, `rounds`, `exams`, and `submissions`.
    - Replace the boilerplate `README.md`.
 
 ## Nice To Have
 
-7. Replace `alert()`-based errors with inline UI states or toasts.
+6. Replace `alert()`-based errors with inline UI states or toasts.
 
-8. Add a minimal regression test strategy.
+7. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-9. Review AI prompt robustness.
+8. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 
@@ -80,8 +73,8 @@ Last updated: 2026-03-24
 1. Lounge -> create or join rivalry
 2. Rivalry dashboard -> start round -> pick topic
 3. Generate syllabus -> verify vocabulary and grammar display
-4. Both players confirm -> countdown starts
-5. Countdown completes -> exam becomes ready
-6. Both players ready up -> exam page loads with 24 questions
+4. Both players confirm -> default countdown starts
+5. Countdown completes or both players start early -> exam becomes ready/live
+6. Both players ready up if needed -> exam page loads with 24 questions
 7. Submit answers -> results page shows review
 8. Both players submit -> VS comparison and share action update

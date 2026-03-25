@@ -125,7 +125,7 @@ export default function NewRoundPage() {
             New Round
           </h1>
           <p className="text-on-surface-variant text-lg">
-            Pick a topic, set the rules, and challenge your rival.
+            Pick a topic, choose the default study window, and challenge your rival.
           </p>
         </div>
 
@@ -160,10 +160,10 @@ export default function NewRoundPage() {
           </div>
         </section>
 
-        {/* Study Days */}
+        {/* Default Study Window */}
         <section className="space-y-4">
           <label className="flex items-center gap-2 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
-            <Clock size={16} /> Study Days
+            <Clock size={16} /> Default Study Window
           </label>
 
           <div className="flex gap-3">
@@ -182,7 +182,7 @@ export default function NewRoundPage() {
             ))}
           </div>
           <p className="text-sm text-on-surface-variant font-medium ml-1">
-            You and your rival will have {studyDays} days to study before the exam.
+            By default, the exam unlocks after {studyDays} days. If you both want in sooner, you can still start early from the round.
           </p>
         </section>
 

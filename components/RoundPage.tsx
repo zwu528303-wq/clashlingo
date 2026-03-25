@@ -318,7 +318,7 @@ export default function RoundPage() {
                 Round {round.round_number}
               </h1>
               <p className="text-on-surface-variant text-lg">
-                Waiting for syllabus to be generated...
+                Generate the scope for this round, then set the default study rhythm in motion.
               </p>
             </div>
 
@@ -332,7 +332,7 @@ export default function RoundPage() {
                 <span className="text-on-surface font-bold text-lg">{round.target_lang}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Study Days</span>
+                <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Default Window</span>
                 <span className="text-on-surface font-bold text-lg">{round.study_days} days</span>
               </div>
               {round.prize_text && (
@@ -344,7 +344,7 @@ export default function RoundPage() {
             </div>
 
             <p className="text-on-surface-variant">
-              The syllabus will be generated soon. Once ready, both players need to confirm.
+              Once the scope is ready, both players confirm it and the default study countdown begins. You can still start early later if you both want to.
             </p>
 
             <button
@@ -375,7 +375,7 @@ export default function RoundPage() {
               {actionLoading ? (
                 <><Loader2 size={20} className="animate-spin" /> Generating...</>
               ) : (
-                "Generate Syllabus"
+                "Generate Scope"
               )}
             </button>
             {syllabusError && (
@@ -394,7 +394,7 @@ export default function RoundPage() {
                 Review & Confirm
               </h1>
               <p className="text-on-surface-variant text-lg">
-                Both players must confirm before the countdown starts.
+                Both players confirm the scope first, then the default study countdown begins.
               </p>
             </div>
 
@@ -483,7 +483,7 @@ export default function RoundPage() {
                 <div className="font-bold text-on-surface">{round.topic}</div>
               </div>
               <div className="text-center">
-                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Study Days</div>
+                <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">Default Window</div>
                 <div className="font-bold text-on-surface">{round.study_days}</div>
               </div>
               {round.prize_text && (
@@ -536,14 +536,14 @@ export default function RoundPage() {
                   <Loader2 size={24} className="animate-spin" />
                 ) : (
                   <>
-                    <Swords size={24} /> Ready to Clash
+                    <Swords size={24} /> Confirm Scope
                   </>
                 )}
               </button>
             ) : (
               <div className="text-center py-4">
                 <p className="text-on-surface-variant font-bold text-lg">
-                  ✅ You&apos;re confirmed! Waiting for your rival...
+                  ✅ You&apos;re locked in. Waiting for your rival to confirm the scope...
                 </p>
               </div>
             )}
@@ -555,7 +555,7 @@ export default function RoundPage() {
           <div className="space-y-8 text-center max-w-2xl mx-auto">
             <div>
               <div className="inline-block px-6 py-2 bg-tertiary-container text-on-tertiary-container rounded-full font-bold text-xs uppercase tracking-[0.2em] mb-6">
-                Study Phase
+                Default Study Window
               </div>
               <h1 className="text-6xl md:text-8xl font-black text-on-surface tracking-tighter leading-none mb-4">
                 <span className="text-primary">{timeLeft || "..."}</span>
@@ -692,7 +692,7 @@ export default function RoundPage() {
               ) : myExamReady ? (
                 "Waiting for rival..."
               ) : (
-                "Ready to Start"
+                "Ready to Enter Exam"
               )}
             </button>
 

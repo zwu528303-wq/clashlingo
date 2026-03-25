@@ -5,7 +5,7 @@ Stage: clickable prototype / early MVP
 
 ## Product Summary
 
-ClashLingo is a 1v1 language-learning app where two players create a rivalry, pick a topic, get an AI-generated syllabus, study for a few days, take an exam, and compare results.
+ClashLingo is a 1v1 language-learning app where two players create a rivalry, pick a topic, get an AI-generated syllabus, follow a default study window, optionally start early together, take an exam, and compare results.
 
 ## Stack
 
@@ -96,7 +96,7 @@ Observed status values:
 - Settings save now syncs public nickname server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
 - Rivalry dashboard and round list
-- New round flow with topic, study days, and optional prize/stake
+- New round flow with topic, default study window, and optional prize/stake
 - AI syllabus generation and confirmation flow
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Exam generation endpoint
@@ -114,7 +114,7 @@ Ran on 2026-03-24:
 
 ## Known Issues And Risks
 
-- Realtime currently subscribes to `rounds` updates only. There is no realtime sync for `submissions` or opponent exam progress yet.
+- Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
 - `README.md` is still the default create-next-app boilerplate and is not the source of truth.
 - There is no committed `.env.example`.
 - There are no checked-in Supabase migrations or schema notes, so local setup still depends on external context.
@@ -122,6 +122,6 @@ Ran on 2026-03-24:
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
-- Prioritize round-flow copy polish next, then consider shared type extraction or README/schema docs.
+- Prioritize results-sharing polish next if you want another user-facing feature, or move into shared types / README / schema docs for cleanup.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, document the Supabase schema and add an `.env.example`.

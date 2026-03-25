@@ -34,6 +34,10 @@ Date: 2026-03-24
 - Grouped the scopes experience by target language.
   - Current scopes and past scopes now render under language sections instead of relying on a past-only filter.
   - Scope review now renders grouped vocabulary correctly.
+- Polished round and settings copy to match the shipped soft-countdown behavior.
+  - `study_days` is now framed in the UI as a default study window instead of a hard lock.
+  - Settings now describe weekly time as a lounge rhythm rather than a round gate.
+  - In-exam opponent progress was explicitly de-scoped from the current MVP docs.
 
 ## What Was Verified
 
@@ -54,9 +58,9 @@ Date: 2026-03-24
 
 ## Recommended Next Task
 
-1. Polish remaining round-flow copy so "countdown as rhythm, not lock" reads consistently.
-2. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
-3. Consider shared domain types or README/schema docs after the UX polish pass.
+1. Deepen the results sharing experience when you want the next user-facing feature.
+2. Consider shared domain types or README/schema docs for cleanup and handoff quality.
+3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order
 

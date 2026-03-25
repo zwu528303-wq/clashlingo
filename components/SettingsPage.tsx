@@ -329,7 +329,7 @@ export default function SettingsPage() {
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                 <Clock3 size={16} />
-                Weekly Matching Time
+                Weekly Lounge Rhythm
               </label>
               <input
                 type="time"
@@ -344,8 +344,7 @@ export default function SettingsPage() {
                 className="w-full max-w-xs bg-surface-container-lowest text-on-surface rounded-2xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary transition-all border border-surface-container"
               />
               <p className="text-sm text-on-surface-variant mt-3">
-                This sets your weekly countdown preference. Matches can still
-                start early if both players tap start.
+                This sets the countdown rhythm shown on lounge cards. It does not lock a round, and both players can still start early together.
               </p>
             </div>
           </div>
@@ -419,7 +418,7 @@ export default function SettingsPage() {
                   {profile.preferredLanguage} learner
                 </p>
                 <p className="text-xs opacity-70 mt-1">
-                  Weekly match time {profile.weeklyMatchTime}
+                  Lounge rhythm {profile.weeklyMatchTime}
                 </p>
               </div>
             </div>
@@ -432,7 +431,7 @@ export default function SettingsPage() {
             <ul className="space-y-2 text-sm text-on-surface-variant">
               <li>Letter avatar only in this phase</li>
               <li>Nickname controls your default identity</li>
-              <li>Weekly time is for countdown UX, not hard locking</li>
+              <li>Weekly time shapes lounge countdowns, not round locks</li>
             </ul>
           </div>
         </aside>
