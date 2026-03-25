@@ -2,8 +2,8 @@ import {
   ArrowDown,
   ArrowDownLeft,
   ArrowDownRight,
-  ArrowLeft,
   ArrowUp,
+  ArrowUpLeft,
   ArrowUpRight,
   Sparkles,
 } from "lucide-react";
@@ -34,8 +34,8 @@ const DESKTOP_ARROWS = [
     className: "right-[22%] bottom-[11%]",
   },
   {
-    icon: ArrowLeft,
-    className: "left-1/2 bottom-[7%] -translate-x-1/2",
+    icon: ArrowUpLeft,
+    className: "left-[22%] bottom-[11%]",
   },
   {
     icon: ArrowUp,
@@ -49,37 +49,37 @@ const DESKTOP_ARROWS = [
 
 const COMPACT_DESKTOP_POSITIONS = [
   "left-1/2 top-0 -translate-x-1/2",
-  "right-0 top-[18%]",
-  "right-2 bottom-[15%]",
+  "right-[4%] top-[19%]",
+  "right-[4%] bottom-[19%]",
   "left-1/2 bottom-0 -translate-x-1/2",
-  "left-2 bottom-[15%]",
-  "left-0 top-[18%]",
+  "left-[4%] bottom-[19%]",
+  "left-[4%] top-[19%]",
 ];
 
 const COMPACT_DESKTOP_ARROWS = [
   {
     icon: ArrowDownRight,
-    className: "right-[22%] top-[9%]",
+    className: "right-[28%] top-[10%]",
   },
   {
     icon: ArrowDown,
-    className: "right-[7%] top-[42%]",
+    className: "right-[11%] top-1/2 -translate-y-1/2",
   },
   {
     icon: ArrowDownLeft,
-    className: "right-[22%] bottom-[9%]",
+    className: "right-[28%] bottom-[10%]",
   },
   {
-    icon: ArrowLeft,
-    className: "left-1/2 bottom-[6%] -translate-x-1/2",
+    icon: ArrowUpLeft,
+    className: "left-[28%] bottom-[10%]",
   },
   {
     icon: ArrowUp,
-    className: "left-[7%] top-[42%]",
+    className: "left-[11%] top-1/2 -translate-y-1/2",
   },
   {
     icon: ArrowUpRight,
-    className: "left-[22%] top-[9%]",
+    className: "left-[28%] top-[10%]",
   },
 ];
 
@@ -121,25 +121,25 @@ function StepCard({
     <div
       className={`rounded-[1.8rem] border bg-white/92 px-5 py-4 shadow-[0_16px_30px_rgba(48,46,43,0.05)] ${tone.borderClassName} ${
         compact
-          ? "max-w-[14rem] lg:max-w-[10.75rem] lg:px-3.5 lg:py-3"
+          ? "max-w-[14rem] lg:w-[10.35rem] lg:max-w-none lg:px-3.5 lg:py-3"
           : "max-w-[16.5rem]"
       } ${className}`}
     >
       <div
-        className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${tone.badgeClassName}`}
+        className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${tone.badgeClassName}`}
       >
         {String(index + 1).padStart(2, "0")}
       </div>
       <p
-        className={`mt-3 font-black tracking-[-0.025em] leading-[1.1] text-on-surface ${
-          compact ? "text-xl lg:text-[1.3rem]" : "text-xl"
+        className={`mt-3 font-black tracking-[-0.01em] leading-[1.14] text-on-surface ${
+          compact ? "text-xl lg:text-[1.18rem]" : "text-xl"
         }`}
       >
         {step.title}
       </p>
       <p
-        className={`mt-2 leading-relaxed text-on-surface-variant ${
-          compact ? "text-sm lg:text-[12px]" : "text-base"
+        className={`mt-2 text-on-surface-variant ${
+          compact ? "text-sm lg:text-[11.5px] leading-[1.62]" : "text-base leading-relaxed"
         }`}
       >
         {step.description}
@@ -154,11 +154,11 @@ export default function HowItWorksLoop({
   compact?: boolean;
 }) {
   return (
-    <div className={compact ? "space-y-4" : "space-y-6"}>
-      <div className={`mx-auto ${compact ? "max-w-[34rem]" : "max-w-md"}`}>
+    <div className={compact ? "space-y-3.5" : "space-y-6"}>
+      <div className={`mx-auto ${compact ? "max-w-[30rem]" : "max-w-md"}`}>
         <div
           className={`rounded-[2rem] border border-primary/20 bg-white/90 text-center shadow-[0_18px_34px_rgba(48,46,43,0.05)] ${
-            compact ? "px-4 py-4" : "px-5 py-5"
+            compact ? "px-4 py-3.5" : "px-5 py-5"
           }`}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
@@ -166,20 +166,20 @@ export default function HowItWorksLoop({
           </p>
           <p
             className={`mt-2 font-black tracking-[-0.03em] leading-[1.08] text-on-surface ${
-              compact ? "text-[1.9rem]" : "text-2xl"
+              compact ? "text-[1.65rem]" : "text-2xl"
             }`}
           >
             {FIRST_TIME_SETUP.title}
           </p>
           <p
             className={`mt-2 text-on-surface-variant leading-[1.68] ${
-              compact ? "text-[13px]" : "text-sm"
+              compact ? "text-[12px]" : "text-sm"
             }`}
           >
             {FIRST_TIME_SETUP.description}
           </p>
         </div>
-        <div className="flex justify-center pt-2 text-on-surface-variant/70">
+        <div className="flex justify-center pt-1 text-on-surface-variant/70">
           <ArrowDown size={compact ? 18 : 20} />
         </div>
       </div>
@@ -215,17 +215,17 @@ export default function HowItWorksLoop({
 
       {compact ? (
         <div className="hidden lg:block">
-          <div className="relative mx-auto h-[31rem] max-w-[58rem] xl:h-[32rem]">
+          <div className="relative mx-auto h-[28rem] max-w-[54rem] xl:h-[29rem]">
             <div className="absolute inset-[16%] rounded-full border border-dashed border-outline-variant/60 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.6),_transparent_72%)]" />
 
-            <div className="absolute left-1/2 top-1/2 w-[9.6rem] -translate-x-1/2 -translate-y-1/2 rounded-[1.6rem] border border-white/80 bg-white/88 px-4 py-3.5 text-center shadow-[0_20px_45px_rgba(149,63,77,0.08)]">
-              <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-[0.95rem] bg-primary-container text-primary">
-                <Sparkles size={18} />
+            <div className="absolute left-1/2 top-1/2 w-[8.4rem] -translate-x-1/2 -translate-y-1/2 rounded-[1.5rem] border border-white/80 bg-white/88 px-3.5 py-3 text-center shadow-[0_20px_45px_rgba(149,63,77,0.08)]">
+              <div className="mx-auto mb-2.5 flex h-9 w-9 items-center justify-center rounded-[0.85rem] bg-primary-container text-primary">
+                <Sparkles size={16} />
               </div>
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
                 Weekly Loop
               </p>
-              <p className="mt-2 text-[13px] leading-[1.62] text-on-surface-variant">
+              <p className="mt-1.5 text-[11.5px] leading-[1.58] text-on-surface-variant">
                 The same round cycle repeats inside each rivalry.
               </p>
             </div>
@@ -237,7 +237,7 @@ export default function HowItWorksLoop({
                   key={`compact-arrow-${index}`}
                   className={`absolute text-on-surface-variant/65 ${arrow.className}`}
                 >
-                  <Icon size={16} />
+                  <Icon size={15} />
                 </div>
               );
             })}
