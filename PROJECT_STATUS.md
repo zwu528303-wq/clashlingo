@@ -102,6 +102,9 @@ Observed status values:
 - The product now separates `Lounge` from `Rivalries` more clearly.
   - Lounge is the operational page for countdowns and entering matches.
   - Rivalries is the history/stats hub for a selected rivalry.
+- Lounge and Rivalries now have a first-pass fused visual language inspired by the approved AI Studio reference.
+  - Lounge uses a more featured duel-card layout and stronger countdown/action panels.
+  - Rivalries uses a more explicit VS hero, rivalry selector cards, richer history rows, and a clearer action/stats column.
 - Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
 - Settings save now syncs public nickname server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
@@ -136,5 +139,6 @@ Ran on 2026-03-24:
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
 - If you continue the UI pass, keep pushing the current `Lounge` vs `Rivalries` split instead of blending those two responsibilities together again.
+- Any follow-up lounge / rivalries edits should be visual polish only unless the product rules change again.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, update `README.md`, `.env.example`, and `SUPABASE_SCHEMA.md` in the same batch.

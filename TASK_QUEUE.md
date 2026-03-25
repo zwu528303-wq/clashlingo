@@ -53,21 +53,25 @@ Last updated: 2026-03-24
   - Sidebar now includes `Rivalries` globally.
   - `/rivalries` now exists as a real hub page with rivalry selection, W/L, streak, milestone, and match history.
   - Lounge card entry points and several round/result return links now point to the rivalry hub flow instead of treating `/rivalry/[id]` as the only entry.
+- Shipped the first B-style UI fusion pass across `Lounge` and `Rivalries`.
+  - `components/Lounge.tsx` now uses a more featured duel-card layout, stronger countdown panels, and a more designed `Start New Rivalry` card.
+  - `components/RivalryDashboard.tsx` now uses a stronger hub-style VS hero, rivalry selector cards, richer history cards, and a clearer action/stats rail.
+  - `components/AppSidebar.tsx` now matches the same visual language more closely.
 
 ## Highest Priority
 
-1. Continue the B-style UI fusion across `Lounge` and `Rivalries`.
-   - The structural split is now in place.
-   - The next visual pass should bring `components/Lounge.tsx` and `components/RivalryDashboard.tsx` closer to the approved AI Studio reference language.
-
-2. Deepen the results sharing experience.
+1. Deepen the results sharing experience.
    - A share action exists already.
    - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
-3. Keep the lint baseline clean while touching product work.
+2. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
+
+3. Decide whether the new lounge / rivalries visual pass needs one more polish round.
+   - The first UI fusion pass is shipped.
+   - Any follow-up should stay visual-only and preserve the current lounge-vs-hub responsibility split.
 
 ## Engineering Follow-Up
 

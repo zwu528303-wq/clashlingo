@@ -5,8 +5,11 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
+  ArrowRight,
   Check,
+  Clock3,
   Copy,
+  Lock,
   Plus,
   Swords,
   UserPlus,
@@ -423,22 +426,36 @@ export default function Lounge() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
+      <div className="max-w-[1280px] mx-auto px-5 py-5 lg:px-6 lg:py-7 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-9">
         <AppSidebar active="lounge" profile={profile} />
 
-        <main className="space-y-8">
-          <div>
-            <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
-              Your Lounge
-            </h2>
-            <p className="text-on-surface-variant text-lg">
-              Ready to crush some dreams today?
-            </p>
+        <main className="space-y-8 pb-12">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant mb-3">
+                Match Control
+              </p>
+              <h2 className="text-5xl md:text-6xl font-black text-on-surface tracking-[-0.07em] leading-none mb-3">
+                Your Lounge
+              </h2>
+              <p className="text-on-surface-variant text-xl">
+                Keep an eye on the countdown, then jump straight into the next clash.
+              </p>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/80 bg-white/80 px-5 py-4 shadow-sm max-w-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                Queue Rules
+              </p>
+              <p className="text-sm text-on-surface-variant leading-relaxed mt-2">
+                Lounge is only for rhythm, readiness, and entering a match. Long-term stats live in Rivalries.
+              </p>
+            </div>
           </div>
 
           {rivalries.length === 0 ? (
           /* ========== Empty State ========== */
-          <div className="bg-surface-container-low rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[50vh] relative overflow-hidden">
+          <div className="bg-surface-container-low rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[50vh] relative overflow-hidden shadow-[0_30px_60px_rgba(149,63,77,0.08)]">
             <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-primary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
             <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-secondary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
 
@@ -474,14 +491,14 @@ export default function Lounge() {
           </div>
           ) : (
           /* ========== Rivalry Cards ========== */
-          <div className="space-y-5">
+          <div className="space-y-6">
             {rivalries.length >= 2 && (
               <p className="text-sm text-on-surface-variant font-medium">
                 You&apos;ve reached the 2-rivalry limit.
               </p>
             )}
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 items-stretch">
               {rivalries.map((r) => {
                 const isPlayerA = r.player_a_id === userId;
                 const isPaired = Boolean(r.player_b_id);
@@ -523,7 +540,7 @@ export default function Lounge() {
                 let badgeLabel = isPaired ? "Ready to Duel" : "Invite Ready";
                 let badgeClassName =
                   "bg-surface-container-high text-on-surface-variant";
-                let panelTitle = isPaired ? "Next weekly match in" : "Invite code";
+                let panelTitle = isPaired ? "Match unlocks in" : "Invite code";
                 let panelValue = isPaired
                   ? weeklyRhythmText
                   : r.invite_code;
@@ -533,12 +550,26 @@ export default function Lounge() {
                     )} preference. If both players want to play, start early.`
                   : "Share this code so your rival can join.";
                 let actionLabel = isPaired ? "Start Round" : "Copy Code";
+                let cardBorderClassName =
+                  "border-surface-container/80";
+                let cardGlowClassName =
+                  "bg-[radial-gradient(circle_at_top_left,_rgba(255,148,162,0.42),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(161,245,188,0.36),_transparent_40%)]";
+                let panelSurfaceClassName =
+                  "border-surface-container bg-white/90";
                 const actionClassName =
-                  "bg-primary text-on-primary hover:scale-[1.01] active:scale-[0.99]";
+                  "bg-primary text-on-primary shadow-[0_16px_32px_rgba(149,63,77,0.22)] hover:translate-y-[-1px]";
                 let action = () =>
                   isPaired
                     ? router.push(`/rivalry/${r.id}/new-round`)
                     : handleInviteCopy(r.id, r.invite_code);
+
+                if (!isPaired) {
+                  cardBorderClassName = "border-outline-variant/60";
+                  cardGlowClassName =
+                    "bg-[radial-gradient(circle_at_top_left,_rgba(236,231,226,0.9),_transparent_48%)]";
+                  panelSurfaceClassName =
+                    "border-surface-container bg-surface-container-lowest";
+                }
 
                 if (isPaired && activeRound) {
                   badgeLabel = getRoundStatusLabel(activeRound.status);
@@ -558,11 +589,13 @@ export default function Lounge() {
                     );
 
                   if (activeRound.status === "topic_selection") {
+                    cardBorderClassName = "border-primary/30";
                     panelTitle = "Next step";
                     panelValue = activeRound.topic || "Pick a topic";
                     panelHint =
                       "Generate the scope to kick off this round, or sync up and start before the weekly timer if both players are ready.";
                   } else if (activeRound.status === "confirming") {
+                    cardBorderClassName = "border-primary/35";
                     panelTitle = "Confirmation";
                     panelValue = myConfirmed
                       ? rivalConfirmed
@@ -573,6 +606,9 @@ export default function Lounge() {
                       ? "Your rival already locked in. Once you confirm, the study countdown begins."
                       : "Both players must confirm before the study countdown begins.";
                   } else if (activeRound.status === "countdown") {
+                    cardBorderClassName = "border-secondary/40";
+                    panelSurfaceClassName =
+                      "border-secondary/20 bg-secondary-container/15";
                     panelTitle = "Exam unlocks in";
                     panelValue = countdownText;
                     panelHint = activeRound.topic
@@ -580,6 +616,9 @@ export default function Lounge() {
                       : "Keep studying, or both tap ready inside the round to start early.";
                     actionLabel = "Open Study Round";
                   } else if (activeRound.status === "exam_ready") {
+                    cardBorderClassName = "border-primary/45";
+                    panelSurfaceClassName =
+                      "border-primary/20 bg-primary-container/12";
                     panelTitle = "Ready check";
                     panelValue = myReady
                       ? rivalReady
@@ -590,6 +629,9 @@ export default function Lounge() {
                       ? "Your rival is already ready."
                       : "The exam starts as soon as both players are ready.";
                   } else if (activeRound.status === "exam_live") {
+                    cardBorderClassName = "border-primary/45";
+                    panelSurfaceClassName =
+                      "border-primary/20 bg-primary-container/14";
                     panelTitle = "Live now";
                     panelValue = "Exam in progress";
                     panelHint = "Jump in and submit before your rival pulls ahead.";
@@ -607,185 +649,203 @@ export default function Lounge() {
                 return (
                   <article
                     key={r.id}
-                    className="relative overflow-hidden rounded-[2.4rem] bg-white border border-surface-container shadow-sm p-6 space-y-6"
+                    className={`relative min-h-[34rem] overflow-hidden rounded-[2.8rem] border-2 bg-white/85 p-7 md:p-8 shadow-[0_26px_60px_rgba(48,46,43,0.08)] ${cardBorderClassName}`}
                   >
-                    <div className="absolute inset-x-5 top-0 h-16 bg-gradient-to-r from-primary-container/35 via-transparent to-secondary-container/30 blur-3xl pointer-events-none" />
+                    <div className={`absolute inset-0 pointer-events-none ${cardGlowClassName}`} />
 
-                    <div className="relative flex items-start justify-between gap-3">
-                      <div
-                        className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.22em] ${badgeClassName}`}
-                      >
-                        {badgeLabel}
-                      </div>
-                      <button
-                        onClick={() => router.push(`/rivalries?rivalry=${r.id}`)}
-                        className="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
-                      >
-                        Rivalry Hub
-                      </button>
-                    </div>
-
-                    <div className="relative space-y-3 text-center">
-                      <div className="flex items-center justify-center gap-3">
-                        <div className="w-14 h-14 rounded-full bg-primary-container text-primary flex items-center justify-center text-xl font-black shadow-md">
-                          {profileLetter}
-                        </div>
-                        <div className="text-xl font-black italic text-on-surface-variant/35">
-                          VS
-                        </div>
+                    <div className="relative flex h-full flex-col">
+                      <div className="flex items-start justify-between gap-3">
                         <div
-                          className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shadow-md ${
-                            isPaired
-                              ? "bg-secondary-container text-secondary"
-                              : "bg-surface-container text-on-surface-variant"
-                          }`}
+                          className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.22em] ${badgeClassName}`}
                         >
-                          {isPaired ? getDisplayInitial(rivalName, "R") : "?"}
+                          {badgeLabel}
                         </div>
+                        <button
+                          onClick={() => router.push(`/rivalries?rivalry=${r.id}`)}
+                          className="rounded-full bg-white/85 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-on-surface-variant shadow-sm transition-colors hover:text-primary"
+                        >
+                          Rivalry Hub
+                        </button>
                       </div>
 
-                      <div>
-                        <h3 className="text-[1.9rem] font-black text-on-surface tracking-tight leading-none">
-                          {isPaired ? `vs ${rivalName}` : "Waiting for rival"}
-                        </h3>
-                        <p className="text-on-surface-variant text-base mt-1">
-                          {targetLang} • Round {roundNumber}
-                        </p>
+                      <div className="mt-8 flex flex-1 flex-col justify-between gap-8">
+                        <div className="space-y-5 text-center">
+                          <div className="flex items-center justify-center gap-4 md:gap-6">
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-full bg-primary-container/35 blur-xl" />
+                              <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-[1.75rem] border-[5px] border-white bg-primary-container text-primary flex items-center justify-center text-3xl font-black shadow-[0_18px_35px_rgba(149,63,77,0.18)]">
+                                {profileLetter}
+                              </div>
+                            </div>
+
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white border-[10px] border-surface-container-low shadow-xl flex items-center justify-center">
+                              <span className="text-2xl md:text-3xl font-black italic text-on-surface-variant/50">
+                                VS
+                              </span>
+                            </div>
+
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-full bg-secondary-container/35 blur-xl" />
+                              <div
+                                className={`relative w-20 h-20 md:w-24 md:h-24 rounded-[1.75rem] border-[5px] border-white flex items-center justify-center text-3xl font-black shadow-[0_18px_35px_rgba(12,105,61,0.14)] ${
+                                  isPaired
+                                    ? "bg-secondary-container text-secondary"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {isPaired ? getDisplayInitial(rivalName, "R") : "?"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <h3 className="text-[2.4rem] md:text-[2.7rem] font-black text-on-surface tracking-[-0.06em] leading-none">
+                              {isPaired ? `vs ${rivalName}` : "Waiting for rival"}
+                            </h3>
+                            <p className="text-on-surface-variant text-lg font-medium">
+                              {targetLang} • Round {roundNumber}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`rounded-[2rem] border p-6 text-center space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${panelSurfaceClassName}`}
+                        >
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant flex items-center justify-center gap-2">
+                            {isPaired ? <Clock3 size={14} /> : <Lock size={14} />}
+                            {panelTitle}
+                          </p>
+                          <div
+                            className={`font-black tracking-[-0.04em] ${
+                              emphasizeCountdown
+                                ? "text-[2.3rem] md:text-[2.7rem] text-primary"
+                                : "text-2xl md:text-[2rem] text-on-surface"
+                            }`}
+                          >
+                            {panelValue}
+                          </div>
+                          <p className="text-sm text-on-surface-variant leading-relaxed">
+                            {panelHint}
+                          </p>
+
+                          {activeRound?.status === "confirming" && (
+                            <div className="flex flex-wrap justify-center gap-2 pt-2">
+                              <span
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                                  myConfirmed
+                                    ? "bg-primary-container text-on-primary-container"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {myConfirmed ? "You confirmed" : "You pending"}
+                              </span>
+                              <span
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                                  rivalConfirmed
+                                    ? "bg-secondary-container text-on-secondary-container"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {rivalConfirmed ? "Rival confirmed" : "Rival pending"}
+                              </span>
+                            </div>
+                          )}
+
+                          {activeRound?.status === "countdown" && (
+                            <div className="flex flex-wrap justify-center gap-2 pt-2">
+                              <span
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                                  myReady
+                                    ? "bg-primary-container text-on-primary-container"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {myReady ? "You ready now" : "You still studying"}
+                              </span>
+                              <span
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                                  rivalReady
+                                    ? "bg-secondary-container text-on-secondary-container"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {rivalReady ? "Rival ready now" : "Rival still studying"}
+                              </span>
+                            </div>
+                          )}
+
+                          {activeRound?.status === "exam_ready" && (
+                            <div className="flex flex-wrap justify-center gap-2 pt-2">
+                              <span
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                                  myReady
+                                    ? "bg-primary-container text-on-primary-container"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {myReady ? "You ready" : "You pending"}
+                              </span>
+                              <span
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                                  rivalReady
+                                    ? "bg-secondary-container text-on-secondary-container"
+                                    : "bg-surface-container text-on-surface-variant"
+                                }`}
+                              >
+                                {rivalReady ? "Rival ready" : "Rival pending"}
+                              </span>
+                            </div>
+                          )}
+
+                          {showWeeklyRhythmPanel && (
+                            <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 text-center space-y-1 mt-3">
+                              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                                Weekly rhythm in
+                              </p>
+                              <div className="text-[1.9rem] font-black tracking-[-0.04em] text-primary">
+                                {weeklyRhythmText}
+                              </div>
+                              <p className="text-xs text-on-surface-variant leading-relaxed">
+                                Default pulse based on your {formatWeeklyTime(weeklyMatchTime)} preference. It is a guide, not a lock.
+                              </p>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={action}
+                            className={`mt-2 w-full py-4 rounded-[1.6rem] font-black text-base transition-all flex items-center justify-center gap-2 ${actionClassName}`}
+                          >
+                            <span>{copiedInviteId === r.id ? "Code Copied" : actionLabel}</span>
+                            {copiedInviteId !== r.id && <ArrowRight size={18} />}
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="rounded-[1.75rem] border border-surface-container bg-surface-container-lowest p-5 text-center space-y-2.5">
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                        {panelTitle}
-                      </p>
-                      <div
-                        className={`font-black tracking-tight ${
-                          emphasizeCountdown
-                            ? "text-3xl md:text-[2.2rem] text-primary"
-                            : "text-xl text-on-surface"
-                        }`}
-                      >
-                        {panelValue}
-                      </div>
-                      <p className="text-xs text-on-surface-variant leading-relaxed">
-                        {panelHint}
-                      </p>
-
-                      {activeRound?.status === "confirming" && (
-                        <div className="flex flex-wrap justify-center gap-2 pt-1.5">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              myConfirmed
-                                ? "bg-primary-container text-on-primary-container"
-                                : "bg-surface-container text-on-surface-variant"
-                            }`}
-                          >
-                            {myConfirmed ? "You confirmed" : "You pending"}
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              rivalConfirmed
-                                ? "bg-secondary-container text-on-secondary-container"
-                                : "bg-surface-container text-on-surface-variant"
-                            }`}
-                          >
-                            {rivalConfirmed ? "Rival confirmed" : "Rival pending"}
-                          </span>
-                        </div>
-                      )}
-
-                      {activeRound?.status === "countdown" && (
-                        <div className="flex flex-wrap justify-center gap-2 pt-1.5">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              myReady
-                                ? "bg-primary-container text-on-primary-container"
-                                : "bg-surface-container text-on-surface-variant"
-                            }`}
-                          >
-                            {myReady ? "You ready now" : "You still studying"}
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              rivalReady
-                                ? "bg-secondary-container text-on-secondary-container"
-                                : "bg-surface-container text-on-surface-variant"
-                            }`}
-                          >
-                            {rivalReady ? "Rival ready now" : "Rival still studying"}
-                          </span>
-                        </div>
-                      )}
-
-                      {activeRound?.status === "exam_ready" && (
-                        <div className="flex flex-wrap justify-center gap-2 pt-1.5">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              myReady
-                                ? "bg-primary-container text-on-primary-container"
-                                : "bg-surface-container text-on-surface-variant"
-                            }`}
-                          >
-                            {myReady ? "You ready" : "You pending"}
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              rivalReady
-                                ? "bg-secondary-container text-on-secondary-container"
-                                : "bg-surface-container text-on-surface-variant"
-                            }`}
-                          >
-                            {rivalReady ? "Rival ready" : "Rival pending"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {showWeeklyRhythmPanel && (
-                      <div className="rounded-[1.5rem] bg-surface-container-low p-4 text-center space-y-1.5">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
-                          Weekly rhythm in
-                        </p>
-                        <div className="text-[1.8rem] font-black tracking-tight text-primary">
-                          {weeklyRhythmText}
-                        </div>
-                        <p className="text-xs text-on-surface-variant leading-relaxed">
-                          Default pulse based on your {formatWeeklyTime(weeklyMatchTime)} preference. It is a guide, not a lock.
-                        </p>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={action}
-                      className={`w-full py-3.5 rounded-[1.4rem] font-black text-base transition-all ${actionClassName}`}
-                    >
-                      {copiedInviteId === r.id ? "Code Copied" : actionLabel}
-                    </button>
                   </article>
                 );
               })}
 
               {rivalries.length < 2 && (
-                <article className="rounded-[2.4rem] border-2 border-dashed border-surface-container-high bg-white/70 p-6 flex flex-col items-center justify-center text-center min-h-[22rem]">
-                  <div className="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant shadow-inner mb-6">
-                    <Plus size={36} />
+                <article className="min-h-[34rem] rounded-[2.8rem] border-2 border-dashed border-outline-variant/45 bg-white/75 p-8 flex flex-col items-center justify-center text-center shadow-[0_22px_55px_rgba(48,46,43,0.05)]">
+                  <div className="w-24 h-24 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant shadow-inner mb-7">
+                    <Plus size={42} />
                   </div>
-                  <div className="space-y-2 max-w-sm">
-                    <h3 className="text-[1.9rem] font-black text-on-surface tracking-tight leading-none">
+                  <div className="space-y-3 max-w-sm">
+                    <h3 className="text-[2.3rem] font-black text-on-surface tracking-[-0.05em] leading-none">
                       Start New Rivalry
                     </h3>
-                    <p className="text-on-surface-variant text-base leading-relaxed">
+                    <p className="text-on-surface-variant text-lg leading-relaxed">
                       Challenge another friend and add a fresh duel to your lounge.
                     </p>
                   </div>
-                  <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                  <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                     <button
                       onClick={() => {
                         setShowCreate(true);
                         setCreatedCode("");
                         setCreateError("");
                       }}
-                      className="flex-1 bg-primary text-on-primary py-3.5 rounded-[1.3rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
+                      className="flex-1 bg-primary text-on-primary py-4 rounded-[1.5rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all shadow-[0_16px_28px_rgba(149,63,77,0.22)]"
                     >
                       Create
                     </button>
@@ -795,7 +855,7 @@ export default function Lounge() {
                         setJoinError("");
                         setJoinCode("");
                       }}
-                      className="flex-1 bg-white text-on-surface border border-surface-container py-3.5 rounded-[1.3rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
+                      className="flex-1 bg-white text-on-surface border border-surface-container py-4 rounded-[1.5rem] font-black text-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
                     >
                       Join with Code
                     </button>

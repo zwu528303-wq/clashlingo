@@ -54,6 +54,10 @@ Date: 2026-03-24
   - Sidebar now includes a persistent `Rivalries` item.
   - `/rivalries` now exists as a real rivalry hub route with rivalry selection, W/L, streak, milestone, and match history.
   - Lounge rivalry cards and several back-links now route users into the rivalry hub flow.
+- Shipped the first B-style UI fusion across `Lounge` and `Rivalries`.
+  - `Lounge` now uses stronger featured duel cards and more designed countdown/action panels.
+  - `RivalryDashboard` now uses a more explicit VS hero, richer match-history cards, and a stronger action/stats rail.
+  - `AppSidebar` now visually matches the same product language more closely.
 
 ## What Was Verified
 
@@ -74,8 +78,8 @@ Date: 2026-03-24
 
 ## Recommended Next Task
 
-1. Continue the B-style UI fusion now that `Lounge` vs `Rivalries` has been split structurally.
-2. Deepen the results sharing experience when you want the next user-facing feature.
+1. Deepen the results sharing experience when you want the next user-facing feature.
+2. Decide whether the new lounge / rivalries UI needs a final visual polish pass.
 3. Keep lint clean incrementally as each touched page changes, instead of saving cleanup for the end.
 
 ## Next Session Start Order

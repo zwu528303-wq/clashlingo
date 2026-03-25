@@ -124,6 +124,7 @@ As of the latest reviewed state, the following product changes are already in th
 - countdown rounds now allow both players to ready up and start the exam early before the timer expires
 - `/rivalries` now exists as a real hub route, while `/rivalry/[id]` remains a deep link into the same hub experience
 - lounge now routes rivalry-detail entry points toward the rivalry hub flow
+- lounge and rivalries now share a first-pass fused visual language that follows the approved AI Studio reference direction without changing product logic
 - scopes now classify current and past scope cards by target language
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
 - settings save syncs shared nickname data through a server route

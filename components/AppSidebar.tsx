@@ -46,26 +46,28 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
 
   return (
     <aside className="lg:sticky lg:top-6 self-start">
-      <div className="rounded-[2.5rem] border border-surface-container bg-surface-container-low shadow-sm p-5 lg:p-6 space-y-6">
-        <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:text-left">
-          <div
-            className={`w-14 h-14 rounded-[1.25rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-2xl font-black shadow-sm shrink-0`}
-          >
-            {avatarLetter}
-          </div>
-          <div className="min-w-0">
-            <p className="text-2xl font-black text-primary tracking-tighter">
+      <div className="rounded-[2.8rem] border border-white/80 bg-gradient-to-b from-surface-container-lowest via-surface-container-low to-surface-container-low shadow-[0_24px_60px_rgba(149,63,77,0.08)] p-5 lg:p-6 space-y-7">
+        <div className="space-y-5">
+          <div>
+            <p className="text-[2.4rem] font-black text-primary tracking-[-0.06em] leading-none">
               ClashLingo
             </p>
-            <p className="text-sm text-on-surface font-bold truncate">
-              {profile.displayName}
-            </p>
-            <p className="text-xs text-on-surface-variant mt-1">
-              {profile.preferredLanguage} learner
-            </p>
-            <p className="text-xs text-on-surface-variant/80 mt-1">
-              Lounge rhythm {profile.weeklyMatchTime}
-            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div
+              className={`w-16 h-16 rounded-[1.5rem] ${avatarTheme.avatarClassName} flex items-center justify-center text-2xl font-black shadow-sm shrink-0 ring-4 ring-white/80`}
+            >
+              {avatarLetter}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xl text-on-surface font-black truncate tracking-tight">
+                {profile.displayName}
+              </p>
+              <p className="text-sm text-on-surface-variant font-medium">
+                {profile.preferredLanguage} learner
+              </p>
+            </div>
           </div>
         </div>
 
@@ -78,10 +80,10 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
               <Link
                 key={item.key}
                 href={item.href}
-                className={`flex items-center justify-center gap-2 rounded-[1.2rem] px-4 py-3 text-sm font-black transition-all lg:justify-start ${
+                className={`flex items-center justify-center gap-3 rounded-[1.4rem] px-4 py-3.5 text-sm font-black transition-all lg:justify-start ${
                   isActive
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : "bg-white text-on-surface-variant border border-surface-container hover:text-primary hover:border-primary/20"
+                    ? "bg-primary text-on-primary shadow-[0_14px_30px_rgba(149,63,77,0.22)]"
+                    : "text-on-surface-variant hover:text-primary hover:bg-white/80"
                 }`}
               >
                 <Icon size={18} />
@@ -91,9 +93,21 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
           })}
         </nav>
 
+        <div className="rounded-[1.8rem] border border-white/80 bg-white/80 p-4 space-y-1 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+            Lounge rhythm
+          </p>
+          <p className="text-2xl font-black tracking-tight text-on-surface">
+            {profile.weeklyMatchTime}
+          </p>
+          <p className="text-xs leading-relaxed text-on-surface-variant">
+            Your weekly default countdown pulse. Matches can still begin early.
+          </p>
+        </div>
+
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 rounded-[1.2rem] border border-surface-container bg-white px-4 py-3 text-sm font-bold text-on-surface-variant hover:text-primary hover:border-primary/20 transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-[1.4rem] border border-white/80 bg-white/85 px-4 py-3.5 text-sm font-bold text-on-surface-variant hover:text-primary transition-all"
         >
           <LogOut size={18} />
           Log out
