@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Home, LogOut, Settings2 } from "lucide-react";
+import { BookOpen, Home, LogOut, Settings2, Swords } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   type EditableProfile,
@@ -10,7 +10,7 @@ import {
   normalizeAvatarLetter,
 } from "@/lib/profile";
 
-type SidebarKey = "lounge" | "scopes" | "settings";
+type SidebarKey = "lounge" | "rivalries" | "scopes" | "settings";
 
 interface SidebarItem {
   key: SidebarKey;
@@ -21,6 +21,7 @@ interface SidebarItem {
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { key: "lounge", label: "Lounge", href: "/lounge", icon: Home },
+  { key: "rivalries", label: "Rivalries", href: "/rivalries", icon: Swords },
   { key: "scopes", label: "Scopes", href: "/scopes", icon: BookOpen },
   { key: "settings", label: "Settings", href: "/settings", icon: Settings2 },
 ];
@@ -68,7 +69,7 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
           </div>
         </div>
 
-        <nav className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+        <nav className="grid grid-cols-2 gap-2 lg:grid-cols-1">
           {SIDEBAR_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = item.key === active;

@@ -49,24 +49,32 @@ Last updated: 2026-03-24
 - Extended the shared sidebar shell to rivalry dashboard.
   - `components/RivalryDashboard.tsx` now loads the current profile and renders through the same `AppSidebar` used by lounge, scopes, and settings.
   - The page keeps its own content and back-to-lounge action, but no longer relies on a separate top-right settings shortcut.
+- Added a real `Rivalries` destination and split lounge vs hub responsibilities.
+  - Sidebar now includes `Rivalries` globally.
+  - `/rivalries` now exists as a real hub page with rivalry selection, W/L, streak, milestone, and match history.
+  - Lounge card entry points and several round/result return links now point to the rivalry hub flow instead of treating `/rivalry/[id]` as the only entry.
 
 ## Highest Priority
 
-1. Deepen the results sharing experience.
+1. Continue the B-style UI fusion across `Lounge` and `Rivalries`.
+   - The structural split is now in place.
+   - The next visual pass should bring `components/Lounge.tsx` and `components/RivalryDashboard.tsx` closer to the approved AI Studio reference language.
+
+2. Deepen the results sharing experience.
    - A share action exists already.
    - The next step is a richer, designed share card or generated image in `components/ResultsPage.tsx`.
 
-2. Keep the lint baseline clean while touching product work.
+3. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
 ## Engineering Follow-Up
 
-3. Add a minimal regression test strategy.
+4. Add a minimal regression test strategy.
    - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
 
-4. Review AI prompt robustness.
+5. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 

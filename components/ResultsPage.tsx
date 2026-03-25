@@ -416,10 +416,12 @@ export default function ResultsPage() {
         {/* ===== Navigation ===== */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <button
-            onClick={() => router.push(`/rivalry/${round?.rivalry_id}`)}
+            onClick={() =>
+              router.push(`/rivalries?rivalry=${round?.rivalry_id}`)
+            }
             className="bg-primary text-on-primary px-8 py-4 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <ArrowRight size={20} /> Back to Rivalry
+            <ArrowRight size={20} /> Back to Rivalry Hub
           </button>
           <button
             onClick={() => router.push("/lounge")}

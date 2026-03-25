@@ -264,7 +264,7 @@ export default function RoundPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
         <button
-          onClick={() => router.push(`/rivalry/${rivalry.id}`)}
+          onClick={() => router.push(`/rivalries?rivalry=${rivalry.id}`)}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
         >
           <ArrowLeft size={20} />

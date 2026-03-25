@@ -618,10 +618,10 @@ export default function Lounge() {
                         {badgeLabel}
                       </div>
                       <button
-                        onClick={() => router.push(`/rivalry/${r.id}`)}
+                        onClick={() => router.push(`/rivalries?rivalry=${r.id}`)}
                         className="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
                       >
-                        Dashboard
+                        Rivalry Hub
                       </button>
                     </div>
 

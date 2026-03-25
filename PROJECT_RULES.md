@@ -62,6 +62,19 @@ When product behavior is ambiguous:
   - current action state such as waiting, ready, live, or completed
 - The Google AI Studio lounge card concept is an approved reference direction for this area.
 
+### 4B. Rivalries Is The History And Stats Surface
+
+- The sidebar should include a persistent `Rivalries` destination.
+- `Lounge` and `Rivalries` should not be treated as the same page with different labels.
+- `Lounge` is for countdowns, quick status, and entering the current match.
+- `Rivalries` is for long-lived rivalry context:
+  - wins / losses
+  - streak
+  - rivalry milestone
+  - match history
+  - selected rivalry detail hub
+- If the user has more than one rivalry, the `Rivalries` page should let them choose which rivalry hub they are looking at.
+
 ### 5. Supported Languages
 
 The allowed language list should be exactly:
@@ -104,10 +117,13 @@ As of the latest reviewed state, the following product changes are already in th
 - results page includes syllabus / study material review
 - results page listens for rival submission inserts and auto-refreshes
 - lounge includes a `Scopes` entry point
+- sidebar now includes a persistent `Rivalries` destination
 - lounge now uses rivalry cards as the main control surface
-- lounge, scopes, and settings now share a sidebar navigation shell
+- lounge, rivalries, scopes, and settings now share a sidebar navigation shell
 - paired lounge cards now show a weekly rhythm countdown even before a round reaches the actual study countdown
 - countdown rounds now allow both players to ready up and start the exam early before the timer expires
+- `/rivalries` now exists as a real hub route, while `/rivalry/[id]` remains a deep link into the same hub experience
+- lounge now routes rivalry-detail entry points toward the rivalry hub flow
 - scopes now classify current and past scope cards by target language
 - settings page exists for nickname, letter avatar, avatar color, default language, and weekly match time
 - settings save syncs shared nickname data through a server route

@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { useRouter, useParams } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { supabase } from "../lib/supabase";
 import AppSidebar from "@/components/AppSidebar";
 import type {
@@ -12,13 +17,11 @@ import type {
   Round,
 } from "@/lib/domain-types";
 import {
-  ArrowLeft,
-  Swords,
+  Check,
+  Copy,
   Flame,
   Plus,
-  ArrowRight,
-  Copy,
-  Check,
+  Swords,
 } from "lucide-react";
 import {
   type EditableProfile,
@@ -26,24 +29,25 @@ import {
   resolveDisplayName,
 } from "@/lib/profile";
 
-interface UserProfile {
-  id: string;
-  display_name?: string;
+function buildRivalryHref(rivalryId: string) {
+  return `/rivalries?rivalry=${rivalryId}`;
 }
 
 export default function RivalryDashboard() {
   const router = useRouter();
-  const params = useParams();
-  const rivalryId = params.id as string;
+  const pathname = usePathname();
+  const params = useParams<{ id?: string }>();
+  const searchParams = useSearchParams();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [rivalry, setRivalry] = useState<Rivalry | null>(null);
-  const [rounds, setRounds] = useState<Round[]>([]);
+  const [rivalries, setRivalries] = useState<Rivalry[]>([]);
+  const [roundsByRivalry, setRoundsByRivalry] = useState<Record<string, Round[]>>(
+    {}
+  );
+  const [rivalNames, setRivalNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [playerAName, setPlayerAName] = useState("Player A");
-  const [playerBName, setPlayerBName] = useState("Player B");
-  const [copied, setCopied] = useState(false);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   async function loadCurrentProfile(user: User) {
     const authProfile = getEditableProfileFromUser(user);
@@ -59,11 +63,90 @@ export default function RivalryDashboard() {
     });
   }
 
+  async function loadRivalries(uid: string) {
+    const { data: rivalryRows, error } = await supabase
+      .from("rivalries")
+      .select("*")
+      .or(`player_a_id.eq.${uid},player_b_id.eq.${uid}`)
+      .order("created_at", { ascending: false });
+
+    if (error || !rivalryRows) {
+      setRivalries([]);
+      setRoundsByRivalry({});
+      setRivalNames({});
+      return;
+    }
+
+    setRivalries(rivalryRows);
+
+    if (rivalryRows.length === 0) {
+      setRoundsByRivalry({});
+      setRivalNames({});
+      return;
+    }
+
+    const rivalryIds = rivalryRows.map((rivalry) => rivalry.id);
+    const rivalIdPairs = rivalryRows
+      .map((rivalry) => ({
+        rivalryId: rivalry.id,
+        rivalId:
+          rivalry.player_a_id === uid ? rivalry.player_b_id : rivalry.player_a_id,
+      }))
+      .filter(
+        (
+          pair
+        ): pair is {
+          rivalryId: string;
+          rivalId: string;
+        } => Boolean(pair.rivalId)
+      );
+
+    const uniqueRivalIds = [...new Set(rivalIdPairs.map((pair) => pair.rivalId))];
+    const rivalryNameMap: Record<string, string> = {};
+
+    if (uniqueRivalIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("users")
+        .select("id, display_name")
+        .in("id", uniqueRivalIds);
+
+      const profileMap = new Map(
+        (profiles ?? []).map((item) => [
+          item.id,
+          resolveDisplayName(item.display_name, "Rival"),
+        ])
+      );
+
+      rivalIdPairs.forEach(({ rivalryId, rivalId }) => {
+        rivalryNameMap[rivalryId] = profileMap.get(rivalId) ?? "Rival";
+      });
+    }
+
+    setRivalNames(rivalryNameMap);
+
+    const { data: roundRows } = await supabase
+      .from("rounds")
+      .select("*")
+      .in("rivalry_id", rivalryIds)
+      .order("round_number", { ascending: false });
+
+    const nextRoundsByRivalry: Record<string, Round[]> = {};
+
+    (roundRows ?? []).forEach((round) => {
+      const current = nextRoundsByRivalry[round.rivalry_id] ?? [];
+      current.push(round as Round);
+      nextRoundsByRivalry[round.rivalry_id] = current;
+    });
+
+    setRoundsByRivalry(nextRoundsByRivalry);
+  }
+
   useEffect(() => {
     const init = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) {
         router.push("/login");
         return;
@@ -71,99 +154,82 @@ export default function RivalryDashboard() {
 
       setUserId(user.id);
       await loadCurrentProfile(user);
-
-      const { data: rivalryData, error } = await supabase
-        .from("rivalries")
-        .select("*")
-        .eq("id", rivalryId)
-        .single();
-
-      if (error || !rivalryData) {
-        router.push("/lounge");
-        return;
-      }
-
-      if (
-        rivalryData.player_a_id !== user.id &&
-        rivalryData.player_b_id !== user.id
-      ) {
-        router.push("/lounge");
-        return;
-      }
-
-      setRivalry(rivalryData);
-
-      const { data: aData } = await supabase
-        .from("users")
-        .select("id, display_name")
-        .eq("id", rivalryData.player_a_id)
-        .single<UserProfile>();
-
-      if (aData) {
-        setPlayerAName(resolveDisplayName(aData.display_name, "Player A"));
-      }
-
-      if (rivalryData.player_b_id) {
-        const { data: bData } = await supabase
-          .from("users")
-          .select("id, display_name")
-          .eq("id", rivalryData.player_b_id)
-          .single<UserProfile>();
-
-        if (bData) {
-          setPlayerBName(resolveDisplayName(bData.display_name, "Player B"));
-        }
-      }
-
-      const { data: roundsData } = await supabase
-        .from("rounds")
-        .select("*")
-        .eq("rivalry_id", rivalryId)
-        .order("round_number", { ascending: false });
-
-      if (roundsData) {
-        setRounds(roundsData);
-      }
-
+      await loadRivalries(user.id);
       setLoading(false);
     };
 
     init();
-  }, [router, rivalryId]);
+  }, [router]);
 
-  const handleCopy = async () => {
-    if (!rivalry) return;
-    await navigator.clipboard.writeText(rivalry.invite_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const deepLinkedRivalryId =
+    typeof params.id === "string" ? params.id : undefined;
+  const searchSelectedRivalryId = searchParams.get("rivalry") ?? undefined;
 
-  const isPlayerA = rivalry?.player_a_id === userId;
-  const isPaired = !!rivalry?.player_b_id;
-  const lang = isPlayerA
-    ? rivalry?.player_a_lang
-    : rivalry?.player_b_lang || rivalry?.player_a_lang;
+  const selectedRivalry = useMemo(() => {
+    const candidateId =
+      searchSelectedRivalryId ?? deepLinkedRivalryId ?? rivalries[0]?.id;
+    if (!candidateId) return null;
+    return rivalries.find((rivalry) => rivalry.id === candidateId) ?? rivalries[0] ?? null;
+  }, [deepLinkedRivalryId, rivalries, searchSelectedRivalryId]);
 
-  // Find current active round (not completed)
-  const activeRound = rounds.find((r) => r.status !== "completed");
-  const completedRounds = rounds.filter((r) => r.status === "completed");
+  useEffect(() => {
+    if (!selectedRivalry) return;
+    if (pathname !== "/rivalries") return;
+    if (searchSelectedRivalryId === selectedRivalry.id) return;
+    router.replace(buildRivalryHref(selectedRivalry.id));
+  }, [pathname, router, searchSelectedRivalryId, selectedRivalry]);
 
-  // Ledger stats
-  const ledger = ((rivalry?.cumulative_ledger ?? {}) as RivalryLedger);
-  const rivalId = isPlayerA ? rivalry?.player_b_id : rivalry?.player_a_id;
+  const selectedRounds = selectedRivalry
+    ? roundsByRivalry[selectedRivalry.id] ?? []
+    : [];
+  const activeRound = selectedRounds.find((round) => round.status !== "completed");
+  const completedRounds = selectedRounds.filter(
+    (round) => round.status === "completed"
+  );
+
+  const isPlayerA = selectedRivalry?.player_a_id === userId;
+  const rivalId = isPlayerA
+    ? selectedRivalry?.player_b_id
+    : selectedRivalry?.player_a_id;
+  const rivalName = selectedRivalry ? rivalNames[selectedRivalry.id] ?? "Rival" : "Rival";
+  const currentLanguage = selectedRivalry
+    ? isPlayerA
+      ? selectedRivalry.player_a_lang
+      : selectedRivalry.player_b_lang || selectedRivalry.player_a_lang
+    : null;
+  const opponentLanguage = selectedRivalry
+    ? isPlayerA
+      ? selectedRivalry.player_b_lang || selectedRivalry.player_a_lang
+      : selectedRivalry.player_a_lang
+    : null;
+
+  const ledger = (selectedRivalry?.cumulative_ledger ?? {}) as RivalryLedger;
   const myWins = (userId && ledger.wins?.[userId]) || 0;
   const rivalWins = (rivalId && ledger.wins?.[rivalId]) || 0;
   const myStreak = (() => {
     if (!ledger.rounds?.length || !userId) return 0;
     let streak = 0;
-    for (let i = ledger.rounds.length - 1; i >= 0; i--) {
-      if (ledger.rounds[i].winner_id === userId) streak++;
+    for (let index = ledger.rounds.length - 1; index >= 0; index--) {
+      if (ledger.rounds[index].winner_id === userId) streak++;
       else break;
     }
     return streak;
   })();
+
   const getRoundResult = (roundId: string) =>
-    ledger.rounds?.find((r: RivalryLedgerRound) => r.round_id === roundId);
+    ledger.rounds?.find((round: RivalryLedgerRound) => round.round_id === roundId);
+
+  const handleSelectRivalry = (rivalryId: string) => {
+    router.push(buildRivalryHref(rivalryId));
+  };
+
+  const handleInviteCopy = async (rivalryId: string, inviteCode: string) => {
+    await navigator.clipboard.writeText(inviteCode);
+    setCopiedInviteId(rivalryId);
+    setTimeout(() => {
+      setCopiedInviteId((current) => (current === rivalryId ? null : current));
+    }, 2000);
+  };
 
   if (loading || !profile) {
     return (
@@ -173,295 +239,417 @@ export default function RivalryDashboard() {
     );
   }
 
-  if (!rivalry) return null;
-
   return (
     <div className="min-h-screen bg-surface">
       <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
-        <AppSidebar active="lounge" profile={profile} />
+        <AppSidebar active="rivalries" profile={profile} />
 
-        <main className="space-y-10 pb-12">
-          <header className="flex items-center">
-            <button
-              onClick={() => router.push("/lounge")}
-              className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
-            >
-              <ArrowLeft size={20} />
-              Back to Lounge
-            </button>
-          </header>
+        <main className="space-y-8 pb-12">
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter">
+              Rivalry Hub
+            </h1>
+            <p className="text-on-surface-variant text-lg">
+              Track wins, streaks, and every showdown without crowding the lounge.
+            </p>
+          </div>
 
-        {/* ========== Hero VS Card ========== */}
-        <section className="relative bg-surface-container-low rounded-[2.5rem] p-8 md:p-12 overflow-hidden">
-          <div className="absolute -top-12 -left-12 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-secondary-container/30 rounded-full blur-3xl"></div>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            {/* Player A */}
-            <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-4">
-              <div className="relative">
-                <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2rem] bg-primary-container flex items-center justify-center text-primary text-6xl font-black shadow-2xl -rotate-3">
-                  {playerAName.charAt(0).toUpperCase()}
-                </div>
+          {rivalries.length === 0 ? (
+            <section className="bg-surface-container-low rounded-[2.5rem] p-10 md:p-12 text-center space-y-5">
+              <div className="w-20 h-20 rounded-[1.75rem] bg-primary-container text-primary mx-auto flex items-center justify-center shadow-inner">
+                <Swords size={36} />
               </div>
-              <div>
-                <h2 className="text-3xl font-black text-primary tracking-tighter">
-                  {isPlayerA ? "You" : playerAName}
+              <div className="space-y-2">
+                <h2 className="text-3xl font-black text-on-surface tracking-tight">
+                  No rivalries yet
                 </h2>
-                <p className="text-on-surface-variant font-medium">
-                  {rivalry.player_a_lang} Learner
+                <p className="text-on-surface-variant text-lg">
+                  Head to the lounge to create or join your first rivalry.
                 </p>
               </div>
-            </div>
+              <button
+                onClick={() => router.push("/lounge")}
+                className="mx-auto bg-primary text-on-primary px-7 py-3.5 rounded-full font-black text-base shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Go to Lounge
+              </button>
+            </section>
+          ) : (
+            <>
+              <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {rivalries.map((rivalry) => {
+                  const selected = selectedRivalry?.id === rivalry.id;
+                  const rivalryIsPlayerA = rivalry.player_a_id === userId;
+                  const paired = Boolean(rivalry.player_b_id);
+                  const name = rivalNames[rivalry.id] ?? "Rival";
+                  const rivalryRounds = roundsByRivalry[rivalry.id] ?? [];
+                  const rivalryActiveRound = rivalryRounds.find(
+                    (round) => round.status !== "completed"
+                  );
+                  const nextLabel = rivalryActiveRound
+                    ? rivalryActiveRound.status.replace(/_/g, " ")
+                    : paired
+                      ? `Round ${rivalry.current_round_num + 1}`
+                      : "Waiting for rival";
+                  const labelLanguage = rivalryIsPlayerA
+                    ? rivalry.player_a_lang
+                    : rivalry.player_b_lang || rivalry.player_a_lang;
 
-            {/* Player B */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-4">
-              {isPaired ? (
-                <>
-                  <div className="relative">
-                    <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2rem] bg-secondary-container flex items-center justify-center text-secondary text-6xl font-black shadow-2xl rotate-3">
-                      {playerBName.charAt(0).toUpperCase()}
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-black text-secondary tracking-tighter">
-                      {!isPlayerA ? "You" : playerBName}
-                    </h2>
-                    <p className="text-on-surface-variant font-medium">
-                      {rivalry.player_b_lang || rivalry.player_a_lang} Learner
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center md:items-start space-y-4">
-                  <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2rem] bg-surface-container flex items-center justify-center text-on-surface-variant text-6xl font-black shadow-lg rotate-3 border-4 border-dashed border-surface-container-high">
-                    ?
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-on-surface-variant tracking-tighter">
-                      Waiting for rival...
-                    </h2>
+                  return (
                     <button
-                      onClick={handleCopy}
-                      className="mt-2 flex items-center gap-2 text-primary font-bold hover:underline"
+                      key={rivalry.id}
+                      onClick={() => handleSelectRivalry(rivalry.id)}
+                      className={`text-left rounded-[1.8rem] border p-5 transition-all shadow-sm ${
+                        selected
+                          ? "border-primary bg-primary-container/20"
+                          : "border-surface-container bg-white hover:border-primary/30 hover:bg-surface-container-lowest"
+                      }`}
                     >
-                      {copied ? (
-                        <Check size={16} />
-                      ) : (
-                        <Copy size={16} />
-                      )}
-                      Code: {rivalry.invite_code}
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-on-surface-variant">
+                            {paired ? labelLanguage : "Invite ready"}
+                          </p>
+                          <h2 className="text-2xl font-black text-on-surface tracking-tight mt-2">
+                            {paired ? `vs ${name}` : "Waiting for rival"}
+                          </h2>
+                          <p className="text-sm text-on-surface-variant mt-1">
+                            {nextLabel}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-[0.18em] ${
+                            selected
+                              ? "bg-primary text-on-primary"
+                              : "bg-surface-container text-on-surface-variant"
+                          }`}
+                        >
+                          {selected ? "Open" : "View"}
+                        </span>
+                      </div>
                     </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                  );
+                })}
+              </section>
 
-            {/* VS Badge (desktop) */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center justify-center">
-              <div className="w-20 h-20 bg-surface-container-lowest rounded-full shadow-2xl flex items-center justify-center border-8 border-surface-container-low">
-                <span className="text-xl font-black italic text-on-surface-variant">
-                  VS
-                </span>
-              </div>
-            </div>
-          </div>
+              {selectedRivalry && (
+                <>
+                  <section className="relative bg-surface-container-low rounded-[2.5rem] p-8 md:p-12 overflow-hidden">
+                    <div className="absolute -top-12 -left-12 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl" />
+                    <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-secondary-container/30 rounded-full blur-3xl" />
 
-          {/* Language & Round Info */}
-          <div className="mt-10 flex flex-wrap gap-4 justify-center">
-            <div className="bg-surface-container-lowest px-6 py-3 rounded-full text-sm font-bold text-on-surface shadow-sm">
-              {lang}
-            </div>
-            <div className="bg-surface-container-lowest px-6 py-3 rounded-full text-sm font-bold text-on-surface shadow-sm">
-              Round {rivalry.current_round_num}
-            </div>
-            <div className="bg-surface-container-lowest px-6 py-3 rounded-full text-sm font-bold text-on-surface shadow-sm">
-              {completedRounds.length} matches played
-            </div>
-          </div>
-        </section>
-
-        {isPaired ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* ========== Match History ========== */}
-            <div className="lg:col-span-2 space-y-6">
-              <h3 className="text-2xl font-black tracking-tight px-2">
-                Match History
-              </h3>
-
-              {completedRounds.length === 0 ? (
-                <div className="bg-surface-container-lowest rounded-[2rem] p-12 text-center">
-                  <Swords
-                    size={48}
-                    className="text-on-surface-variant/30 mx-auto mb-4"
-                  />
-                  <p className="text-on-surface-variant font-medium text-lg">
-                    No matches yet. Start your first round!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {completedRounds.map((round) => {
-                    const result = getRoundResult(round.id);
-                    const iWon = result?.winner_id === userId;
-                    const tied = result !== undefined && result.winner_id === null;
-                    const myScore = userId ? result?.scores?.[userId] : undefined;
-                    const rivalScore = rivalId ? result?.scores?.[rivalId] : undefined;
-                    return (
-                      <div
-                        key={round.id}
-                        onClick={() => router.push(`/round/${round.id}/results`)}
-                        className="bg-surface-container-lowest p-6 rounded-[1.5rem] flex items-center justify-between hover:scale-[1.02] transition-transform duration-200 shadow-sm cursor-pointer"
-                      >
-                        <div className="flex items-center gap-6">
-                          <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-xl ${iWon ? "bg-primary-container text-primary" : tied ? "bg-tertiary-container text-on-tertiary-container" : "bg-surface-container text-on-surface-variant"}`}>
-                            {round.round_number}
+                    <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                      <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-4">
+                        <div className="relative">
+                          <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2rem] bg-primary-container flex items-center justify-center text-primary text-6xl font-black shadow-2xl -rotate-3">
+                            {profile.displayName.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <div className="font-bold text-lg text-on-surface">
-                                Round {round.round_number}
+                          <div className="absolute -top-3 -right-3 bg-primary text-on-primary px-5 py-2 rounded-full font-black text-lg shadow-lg">
+                            {myWins} Wins
+                          </div>
+                        </div>
+                        <div>
+                          <h2 className="text-4xl font-black text-primary tracking-tighter">
+                            You
+                          </h2>
+                          <p className="text-on-surface-variant font-medium">
+                            {currentLanguage} learner
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-4">
+                        {selectedRivalry.player_b_id ? (
+                          <>
+                            <div className="relative">
+                              <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2rem] bg-secondary-container flex items-center justify-center text-secondary text-6xl font-black shadow-2xl rotate-3">
+                                {rivalName.charAt(0).toUpperCase()}
                               </div>
-                              {result && (
-                                <span className={`text-xs font-black px-2 py-0.5 rounded-full ${iWon ? "bg-primary-container text-on-primary-container" : tied ? "bg-tertiary-container text-on-tertiary-container" : "bg-surface-container-high text-on-surface-variant"}`}>
-                                  {iWon ? "Win" : tied ? "Tie" : "Loss"}
-                                </span>
-                              )}
+                              <div className="absolute -top-3 -left-3 bg-secondary text-on-secondary px-5 py-2 rounded-full font-black text-lg shadow-lg">
+                                {rivalWins} Wins
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              {round.target_lang && (
-                                <span className="text-xs font-bold px-2 py-0.5 bg-primary-container text-on-primary-container rounded-full">
-                                  {round.target_lang}
-                                </span>
-                              )}
-                              <span className="text-sm text-on-surface-variant font-medium">
-                                {round.topic || "No topic"}
+                            <div>
+                              <h2 className="text-4xl font-black text-secondary tracking-tighter">
+                                {rivalName}
+                              </h2>
+                              <p className="text-on-surface-variant font-medium">
+                                {opponentLanguage} learner
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="space-y-4">
+                            <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2rem] bg-surface-container border-4 border-dashed border-surface-container-high flex items-center justify-center text-6xl font-black text-on-surface-variant shadow-lg rotate-3">
+                              ?
+                            </div>
+                            <div>
+                              <h2 className="text-3xl font-black text-on-surface-variant tracking-tight">
+                                Waiting for rival
+                              </h2>
+                              <p className="text-on-surface-variant font-medium">
+                                Share your invite code to start this duel.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedRivalry.player_b_id && (
+                          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center justify-center">
+                            <div className="w-20 h-20 bg-surface-container-lowest rounded-full shadow-2xl flex items-center justify-center border-8 border-surface-container-low">
+                              <span className="text-xl font-black italic text-on-surface-variant">
+                                VS
                               </span>
-                              {myScore !== undefined && rivalScore !== undefined && (
-                                <span className="text-sm font-bold text-on-surface-variant">
-                                  · {myScore}–{rivalScore}
-                                </span>
-                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-10 bg-tertiary-container/40 border-2 border-tertiary-container/30 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                      <div>
+                        <span className="text-on-surface-variant font-bold text-sm uppercase tracking-wider block mb-1">
+                          Rivalry Milestone
+                        </span>
+                        <span className="text-xl font-black text-on-tertiary-container tracking-tight">
+                          {completedRounds.length > 0
+                            ? `You've played ${completedRounds.length} matches together.`
+                            : "Start your first showdown to build this rivalry."}
+                        </span>
+                      </div>
+                      <div className="h-3 w-full md:w-64 bg-surface-container-high rounded-full overflow-hidden shadow-inner">
+                        <div
+                          className="h-full bg-tertiary rounded-full"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(10, completedRounds.length * 20)
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  {selectedRivalry.player_b_id ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      <div className="lg:col-span-2 space-y-6">
+                        <div className="flex items-center justify-between px-2">
+                          <h3 className="text-2xl font-black tracking-tight">
+                            Match History
+                          </h3>
+                          <button className="text-primary font-bold hover:bg-primary-container/20 px-4 py-2 rounded-full transition-colors">
+                            View All
+                          </button>
+                        </div>
+
+                        {completedRounds.length === 0 ? (
+                          <div className="bg-white rounded-[2rem] p-12 text-center shadow-sm">
+                            <Swords
+                              size={48}
+                              className="text-on-surface-variant/30 mx-auto mb-4"
+                            />
+                            <p className="text-on-surface-variant font-medium text-lg">
+                              No completed matches yet. Your history will live here.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {completedRounds.map((round) => {
+                              const result = getRoundResult(round.id);
+                              const iWon = result?.winner_id === userId;
+                              const tied =
+                                result !== undefined && result.winner_id === null;
+                              const myScore = userId
+                                ? result?.scores?.[userId]
+                                : undefined;
+                              const rivalScore = rivalId
+                                ? result?.scores?.[rivalId]
+                                : undefined;
+
+                              return (
+                                <div
+                                  key={round.id}
+                                  onClick={() =>
+                                    router.push(`/round/${round.id}/results`)
+                                  }
+                                  className="bg-white p-6 rounded-[1.75rem] flex items-center justify-between hover:scale-[1.01] transition-transform duration-200 shadow-sm cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-6">
+                                    <div
+                                      className={`w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl ${
+                                        iWon
+                                          ? "bg-primary-container text-primary"
+                                          : tied
+                                            ? "bg-tertiary-container text-on-tertiary-container"
+                                            : "bg-secondary-container/30 text-secondary"
+                                      }`}
+                                    >
+                                      {(round.target_lang || currentLanguage || "FR")
+                                        .slice(0, 2)
+                                        .toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div className="font-bold text-2xl text-on-surface tracking-tight">
+                                        Week {round.round_number} Showdown
+                                      </div>
+                                      <div className="text-sm text-on-surface-variant font-medium mt-1">
+                                        {round.topic || "No topic selected"}
+                                        {myScore !== undefined &&
+                                          rivalScore !== undefined && (
+                                            <span className="font-bold text-on-surface-variant">
+                                              {" "}
+                                              · {myScore}-{rivalScore}
+                                            </span>
+                                          )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0 pl-4">
+                                    <div
+                                      className={`font-black text-xl ${
+                                        iWon
+                                          ? "text-primary"
+                                          : tied
+                                            ? "text-tertiary"
+                                            : "text-secondary"
+                                      }`}
+                                    >
+                                      {tied ? "Tie" : "Winner"}
+                                    </div>
+                                    <div className="text-xs uppercase tracking-[0.18em] text-on-surface-variant font-black mt-1">
+                                      {tied ? "Nobody" : iWon ? "You" : rivalName}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="bg-surface-container-high rounded-[2rem] p-8 text-center space-y-6 flex flex-col items-center">
+                          <div className="w-20 h-20 bg-primary-container rounded-[1.5rem] flex items-center justify-center shadow-inner rotate-3">
+                            <Swords
+                              size={40}
+                              className="text-primary fill-primary/20"
+                            />
+                          </div>
+
+                          {activeRound ? (
+                            <>
+                              <div>
+                                <h4 className="text-2xl font-black mb-2">
+                                  Round {activeRound.round_number} is live
+                                </h4>
+                                {activeRound.target_lang && (
+                                  <p className="text-on-surface-variant text-sm font-medium mb-1">
+                                    Language:{" "}
+                                    <span className="text-primary font-bold">
+                                      {activeRound.target_lang}
+                                    </span>
+                                  </p>
+                                )}
+                                <p className="text-on-surface-variant text-sm font-medium">
+                                  Status:{" "}
+                                  <span className="text-primary font-bold">
+                                    {activeRound.status.replace(/_/g, " ")}
+                                  </span>
+                                </p>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  router.push(`/round/${activeRound.id}`)
+                                }
+                                className="w-full bg-primary text-on-primary py-5 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all"
+                              >
+                                Continue Round
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <h4 className="text-2xl font-black mb-2">
+                                  Ready for Round {selectedRivalry.current_round_num + 1}?
+                                </h4>
+                                <p className="text-on-surface-variant text-sm px-4 font-medium leading-relaxed">
+                                  Start a new round when you want the next showdown.
+                                </p>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/rivalry/${selectedRivalry.id}/new-round`
+                                  )
+                                }
+                                className="w-full bg-primary text-on-primary py-5 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                              >
+                                <Plus size={24} /> Start Round
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white p-6 rounded-[1.5rem] text-center shadow-sm">
+                            <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+                              W / L
+                            </div>
+                            <div className="text-2xl font-black text-on-surface">
+                              <span className="text-primary">{myWins}</span>
+                              <span className="text-on-surface-variant/40 mx-1">
+                                –
+                              </span>
+                              <span className="text-secondary">{rivalWins}</span>
+                            </div>
+                          </div>
+                          <div className="bg-white p-6 rounded-[1.5rem] text-center shadow-sm">
+                            <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+                              Streak
+                            </div>
+                            <div className="text-3xl font-black text-secondary flex items-center justify-center gap-1">
+                              {myStreak}{" "}
+                              <Flame size={24} className="fill-secondary" />
                             </div>
                           </div>
                         </div>
-                        <ArrowRight size={20} className="text-on-surface-variant" />
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* ========== Action Panel ========== */}
-            <div className="space-y-6">
-              {/* Start / Continue Round */}
-              <div className="bg-surface-container-high rounded-[2rem] p-8 text-center space-y-6 flex flex-col items-center">
-                <div className="w-20 h-20 bg-primary-container rounded-[1.5rem] flex items-center justify-center shadow-inner rotate-3">
-                  <Swords
-                    size={40}
-                    className="text-primary fill-primary/20"
-                  />
-                </div>
-
-                {activeRound ? (
-                  <>
-                    <div>
-                      <h4 className="text-2xl font-black mb-2">
-                        Round {activeRound.round_number}
-                      </h4>
-                      {activeRound.target_lang && (
-                        <p className="text-on-surface-variant text-sm font-medium mb-1">
-                          Language:{" "}
-                          <span className="text-primary font-bold">
-                            {activeRound.target_lang}
-                          </span>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-[2.5rem] p-12 text-center max-w-lg shadow-sm">
+                      <p className="text-on-surface-variant text-lg font-medium mb-4">
+                        Share your invite code with a friend to bring this rivalry to life.
+                      </p>
+                      <div className="bg-surface-container-low rounded-2xl p-6 mb-6">
+                        <p className="text-4xl font-black text-primary tracking-[0.3em] font-mono">
+                          {selectedRivalry.invite_code}
                         </p>
-                      )}
-                      <p className="text-on-surface-variant text-sm font-medium">
-                        Status:{" "}
-                        <span className="text-primary font-bold">
-                          {activeRound.status.replace("_", " ")}
-                        </span>
-                      </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleInviteCopy(
+                            selectedRivalry.id,
+                            selectedRivalry.invite_code
+                          )
+                        }
+                        className="flex items-center gap-2 mx-auto text-sm font-bold text-on-surface-variant hover:text-primary transition-colors"
+                      >
+                        {copiedInviteId === selectedRivalry.id ? (
+                          <Check size={16} />
+                        ) : (
+                          <Copy size={16} />
+                        )}
+                        {copiedInviteId === selectedRivalry.id
+                          ? "Copied!"
+                          : "Copy Code"}
+                      </button>
                     </div>
-                    <button
-                      onClick={() =>
-                        router.push(`/round/${activeRound.id}`)
-                      }
-                      className="w-full bg-primary text-on-primary py-5 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all"
-                    >
-                      Continue Round
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <h4 className="text-2xl font-black mb-2">
-                        Ready for Round{" "}
-                        {rivalry.current_round_num + 1}?
-                      </h4>
-                      <p className="text-on-surface-variant text-sm px-4 font-medium leading-relaxed">
-                        Start a new round and challenge your rival!
-                      </p>
-                    </div>
-                    <button
-                      onClick={() =>
-                        router.push(
-                          `/rivalry/${rivalry.id}/new-round`
-                        )
-                      }
-                      className="w-full bg-primary text-on-primary py-5 rounded-full font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Plus size={24} /> Start Round
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-surface-container-lowest p-6 rounded-[1.5rem] text-center shadow-sm">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                    W / L
-                  </div>
-                  <div className="text-2xl font-black text-on-surface">
-                    <span className="text-primary">{myWins}</span>
-                    <span className="text-on-surface-variant/40 mx-1">–</span>
-                    <span className="text-secondary">{rivalWins}</span>
-                  </div>
-                </div>
-                <div className="bg-surface-container-lowest p-6 rounded-[1.5rem] text-center shadow-sm">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-                    Streak
-                  </div>
-                  <div className="text-3xl font-black text-secondary flex items-center justify-center gap-1">
-                    {myStreak} <Flame size={24} className="fill-secondary" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Unpaired state */
-          <div className="bg-surface-container-lowest rounded-[2.5rem] p-12 text-center max-w-lg mx-auto">
-            <p className="text-on-surface-variant text-lg font-medium mb-4">
-              Share your invite code with a friend to get started.
-            </p>
-            <div className="bg-surface-container-low rounded-2xl p-6 mb-6">
-              <p className="text-4xl font-black text-primary tracking-[0.3em] font-mono">
-                {rivalry.invite_code}
-              </p>
-            </div>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-2 mx-auto text-sm font-bold text-on-surface-variant hover:text-primary transition-colors"
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-              {copied ? "Copied!" : "Copy Code"}
-            </button>
-          </div>
-        )}
+                  )}
+                </>
+              )}
+            </>
+          )}
         </main>
       </div>
     </div>

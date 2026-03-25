@@ -49,7 +49,7 @@ export default function NewRoundPage() {
         .single();
 
       if (!data || (!data.player_b_id)) {
-        router.push(`/rivalry/${rivalryId}`);
+        router.push(`/rivalries?rivalry=${rivalryId}`);
         return;
       }
       setRivalry(data);
@@ -111,7 +111,7 @@ export default function NewRoundPage() {
     <div className="min-h-screen bg-surface">
       <header className="flex items-center px-6 py-5 max-w-3xl mx-auto">
         <button
-          onClick={() => router.push(`/rivalry/${rivalryId}`)}
+          onClick={() => router.push(`/rivalries?rivalry=${rivalryId}`)}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium"
         >
           <ArrowLeft size={20} />

@@ -28,9 +28,10 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 
 - `/` - checks Supabase auth, redirects to `/login` or `/lounge`
 - `/login` - auth UI (`components/Login.tsx`)
-- `/lounge` - rivalry list, create rivalry, join by invite code (`components/Lounge.tsx`)
+- `/lounge` - countdown-first control surface for active rivalries, create rivalry, and join by invite code (`components/Lounge.tsx`)
+- `/rivalries` - rivalry hub with rivalry selection, W/L, streak, and match history (`components/RivalryDashboard.tsx`)
 - `/settings` - user profile and weekly preference settings (`components/SettingsPage.tsx`)
-- `/rivalry/[id]` - rivalry dashboard and round history (`components/RivalryDashboard.tsx`)
+- `/rivalry/[id]` - deep link into the same rivalry hub component used by `/rivalries`
 - `/rivalry/[id]/new-round` - create a new round
 - `/round/[id]` - round lifecycle page (`components/RoundPage.tsx`)
 - `/round/[id]/exam` - exam experience (`components/ExamPage.tsx`)
@@ -97,8 +98,10 @@ Observed status values:
 - Lounge UI for creating a rivalry and joining by invite code
 - Lounge now presents rivalries as status cards with countdown / action panels
 - Lounge now keeps a weekly rhythm countdown visible on paired rivalry cards, even before a round reaches the actual study-countdown state
-- Lounge, scopes, and settings now share a sidebar navigation shell
-- Rivalry dashboard now also uses the shared sidebar shell
+- Lounge, rivalries, scopes, and settings now share a sidebar navigation shell
+- The product now separates `Lounge` from `Rivalries` more clearly.
+  - Lounge is the operational page for countdowns and entering matches.
+  - Rivalries is the history/stats hub for a selected rivalry.
 - Settings page for nickname, letter avatar, avatar color, default language, and weekly match time
 - Settings save now syncs public nickname server-side through `/api/profile`
 - Public/shared identity no longer falls back to email-style display names
@@ -132,5 +135,6 @@ Ran on 2026-03-24:
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Prioritize results-sharing polish next if you want another user-facing feature, or move into test strategy / AI output hardening for cleanup.
+- If you continue the UI pass, keep pushing the current `Lounge` vs `Rivalries` split instead of blending those two responsibilities together again.
 - Re-run the full round flow manually after any lounge, countdown, or scope grouping changes.
 - If you change infra assumptions, update `README.md`, `.env.example`, and `SUPABASE_SCHEMA.md` in the same batch.
