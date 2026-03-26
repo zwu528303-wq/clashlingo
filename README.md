@@ -81,6 +81,31 @@ Open [http://localhost:3000](http://localhost:3000).
 - `npm run lint` runs ESLint.
 - `npm run build` builds the production app.
 - `npm run start` runs the built app.
+- `npm run test:e2e` runs the Playwright smoke suite.
+- `npm run test:e2e:headed` runs the Playwright suite in headed mode.
+- `npm run test:e2e:ui` opens the Playwright UI runner.
+
+## Smoke Tests
+
+The repo now includes a minimal Playwright structure under [`tests/e2e`](./tests/e2e):
+
+- `public-smoke.spec.ts`
+  - verifies public routes like `/login`, `/how-it-works`, and `/reset-password`
+- `authenticated-smoke.spec.ts`
+  - verifies the signed-in shell (`/lounge`, `/rivalries`, `/scopes`, `/settings`)
+  - only runs when `E2E_EMAIL` and `E2E_PASSWORD` are provided
+
+Default local run:
+
+```bash
+npm run test:e2e
+```
+
+Optional authenticated coverage:
+
+```bash
+E2E_EMAIL=you@example.com E2E_PASSWORD=secret npm run test:e2e
+```
 
 ## Data Model
 
@@ -93,6 +118,7 @@ Supabase is the source of truth for auth and gameplay data.
 - New round creation now goes through `/api/create-round`, which enforces one new round per rivalry per rolling 24 hours.
 
 See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relationship notes.
+Checked-in SQL now lives under [supabase/migrations](./supabase/migrations).
 
 ## Repo Guide
 
@@ -103,13 +129,13 @@ See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relati
 
 ## Current Caveats
 
-- There are no checked-in Supabase SQL migrations yet.
-- `SUPABASE_SCHEMA.md` documents the live table shape used by the app today.
 - Results realtime exists, but in-exam opponent progress is intentionally out of MVP scope.
 - `components/ExamPage.tsx` still has a mock-exam fallback for demo resilience; that is useful, but it can hide backend issues if left unmonitored.
 - The main user-facing routes are now bilingual. A few low-level raw server fallback strings may still appear in English if a completely unmapped backend failure surfaces.
+- The baseline Supabase migration is now checked in, but it should be treated as a foundation.
+  Add new migration files for follow-up schema changes instead of rewriting the baseline.
 
-## Manual Smoke Test
+## Manual Round-Flow Smoke Test
 
 1. Sign in.
 2. Create or join a rivalry.

@@ -94,11 +94,18 @@ Date: 2026-03-25
 - Finished the second website-language batch for the live round flow.
   - `RoundPage`, `ExamPage`, and `app/rivalry/[id]/new-round/page.tsx` now render in both `English` and `简体中文`.
   - User-facing API feedback in create-round / generate-syllabus / generate-exam flows now maps through localized page copy instead of surfacing raw English errors.
+- Added repo-level smoke-test structure and a Supabase source of truth.
+  - Playwright is now configured under `playwright.config.ts`.
+  - `tests/e2e/public-smoke.spec.ts` covers public route smoke.
+  - `tests/e2e/authenticated-smoke.spec.ts` covers env-gated signed-in shell smoke.
+  - `supabase/migrations/20260325_000001_baseline.sql` now captures the current MVP schema, indexes, minimal RLS, and realtime publication setup.
+  - `supabase/README.md` now defines how to add future schema changes without losing structure.
 
 ## What Was Verified
 
 - `npm run build` passes.
 - `npm run lint` passes.
+- The repo now has a first real automated smoke-test foundation; authenticated coverage is opt-in through `E2E_EMAIL` / `E2E_PASSWORD`.
 
 ## Important Findings
 
@@ -110,7 +117,7 @@ Date: 2026-03-25
   - `SUPABASE_SERVICE_ROLE_KEY`
 - The `users` table does not contain an `email` column, so shared identity code must not assume one exists.
 - No sensitive API key values were found in tracked files, git history, client HTML, or client build output during this session.
-- Supabase schema notes are now checked in, but they still describe the live database shape rather than checked-in SQL migrations.
+- Supabase no longer relies only on prose docs; a checked-in baseline migration now exists under `supabase/migrations/`.
 
 ## Recommended Next Task
 

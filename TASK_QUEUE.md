@@ -4,6 +4,11 @@ Last updated: 2026-03-25
 
 ## Recently Completed
 
+- Added repository structure for smoke tests and Supabase source-of-truth.
+  - Playwright is now configured for `tests/e2e/public-smoke.spec.ts` and an env-gated `tests/e2e/authenticated-smoke.spec.ts`.
+  - A checked-in Supabase baseline migration now lives under `supabase/migrations/20260325_000001_baseline.sql`.
+  - `supabase/README.md` now defines how future schema changes should be added.
+
 - Finished the second website-language batch for the live round flow.
   - `RoundPage`, `ExamPage`, and `app/rivalry/[id]/new-round/page.tsx` are now localized in `English` and `简体中文`.
   - User-facing API feedback in create-round / generate-syllabus / generate-exam flows now maps through localized page copy instead of leaking raw English strings.
@@ -113,8 +118,8 @@ Last updated: 2026-03-25
 
 ## Engineering Follow-Up
 
-4. Add a minimal regression test strategy.
-   - If full automated tests are too much right now, at least add a repeatable smoke-test checklist to the repo docs.
+4. Expand the authenticated smoke suite beyond shell navigation.
+   - Add a safe non-destructive path for signed-in smoke coverage, ideally around sign-in, lounge render, and rivalry navigation.
 
 5. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.

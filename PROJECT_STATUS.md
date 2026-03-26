@@ -176,18 +176,21 @@ Observed status values:
 Ran on 2026-03-25:
 - `npm run build` - passes
 - `npm run lint` - passes
+- `npm run test:e2e tests/e2e/public-smoke.spec.ts` - should be the default public smoke gate once Playwright browsers are installed locally
 
 ## Known Issues And Risks
 
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
-- There are still no checked-in Supabase SQL migrations; `SUPABASE_SCHEMA.md` documents the live shape, but it is not a migration source of truth yet.
+- The repo now has a checked-in Supabase baseline migration under `supabase/migrations/`, but future schema changes still need follow-up migration files instead of one-off dashboard edits.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.
 - The main user-facing routes are now bilingual, but a few low-level raw server fallback strings may still appear in English if a completely unmapped backend failure surfaces.
+- The authenticated Playwright smoke suite is env-gated; it only runs when `E2E_EMAIL` and `E2E_PASSWORD` are provided.
 
 ## Notes For The Next Session
 
 - Start by reading `PROJECT_RULES.md`, then this file, then `TASK_QUEUE.md`, then `ClashLingo-Session-Summary.md`.
 - Prioritize either final results polish or test strategy / AI output hardening next.
+- The repo now includes Playwright smoke-test structure and a Supabase baseline migration; preserve both as the new infra foundation.
 - Shared avatar sync and rivalry-shared weekly rhythm are now shipped; if a later session touches them, preserve the public-identity/public-ledger split instead of moving those values back into viewer-local rendering.
 - Leave-rivalry is now shipped through `cumulative_ledger.inactive`.
   - Preserve history.

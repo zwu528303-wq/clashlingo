@@ -3,7 +3,7 @@
 Last updated: 2026-03-25
 
 This document reflects the live table shape and current code usage in ClashLingo.
-It is not a migration file. There are still no checked-in SQL migrations in this repo.
+It is not the migration file itself; the executable baseline now lives in `supabase/migrations/20260325_000001_baseline.sql`.
 
 ## Overview
 
@@ -214,5 +214,6 @@ Current app usage:
 ## Practical Modeling Notes
 
 - A user can be in at most 2 rivalries according to current product rules, but this is enforced in the app UI rather than documented here as a database constraint.
-- The app currently relies on live schema state rather than checked-in migrations.
+- A checked-in baseline migration now exists under `supabase/migrations/`.
+- Future schema changes should add new migrations instead of rewriting the baseline.
 - If the schema changes, update this file, `PROJECT_STATUS.md`, and `.env.example` in the same batch.
