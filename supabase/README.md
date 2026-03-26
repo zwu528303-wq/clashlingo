@@ -20,9 +20,9 @@ This directory is now the checked-in source of truth for ClashLingo's database s
 When the live schema changes:
 
 1. add a new migration file under `supabase/migrations/`
-2. update [SUPABASE_SCHEMA.md](../SUPABASE_SCHEMA.md)
+2. update [SUPABASE_SCHEMA.md](../docs/database/SUPABASE_SCHEMA.md)
 3. update [README.md](../README.md) if setup steps changed
-4. mention the schema change in [PROJECT_STATUS.md](../PROJECT_STATUS.md)
+4. mention the schema change in [PROJECT_STATUS.md](../docs/project/PROJECT_STATUS.md)
 
 ## Important note
 

@@ -421,7 +421,11 @@ export default function Login() {
               </div>
             ) : (
               <>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-6"
+                  data-testid="login-form"
+                >
                   <div className="space-y-4">
                     {isSignUp && (
                       <div>
@@ -443,6 +447,7 @@ export default function Login() {
                             className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-primary transition-all"
                             placeholder={dictionary.login.displayNicknamePlaceholder}
                             maxLength={32}
+                            data-testid="login-display-name-input"
                           />
                         </div>
                       </div>
@@ -463,6 +468,7 @@ export default function Login() {
                           onChange={(event) => setEmail(event.target.value)}
                           className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-primary transition-all"
                           placeholder={dictionary.login.emailPlaceholder}
+                          data-testid="login-email-input"
                         />
                       </div>
                     </div>
@@ -484,6 +490,7 @@ export default function Login() {
                             className="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/40 rounded-2xl py-4 pl-12 pr-4 outline-none focus:ring-2 focus:ring-primary transition-all"
                             placeholder="••••••••"
                             minLength={6}
+                            data-testid="login-password-input"
                           />
                         </div>
                       </div>
@@ -508,6 +515,7 @@ export default function Login() {
                     type="submit"
                     disabled={loading}
                     className="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm group disabled:opacity-60"
+                    data-testid="login-submit-button"
                   >
                     {loading ? (
                       <Loader2 size={20} className="animate-spin" />

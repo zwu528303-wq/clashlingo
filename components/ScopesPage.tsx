@@ -275,7 +275,7 @@ export default function ScopesPage() {
       <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
         <AppSidebar active="scopes" profile={profile} />
 
-        <main className="max-w-3xl space-y-8">
+        <main className="max-w-3xl space-y-8" data-testid="scopes-shell">
           <div className="flex items-center gap-3">
             <BookOpen className="w-6 h-6 text-primary" />
             <div>
@@ -289,13 +289,16 @@ export default function ScopesPage() {
           </div>
 
         {/* Current Scope */}
-        <section>
+        <section data-testid="scopes-current-section">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
             {dictionary.scopes.currentScopes}
           </h2>
 
           {activeScopeGroups.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm">
+            <div
+              className="bg-white rounded-2xl border border-gray-100 p-6 text-center text-gray-400 text-sm"
+              data-testid="scopes-empty-current"
+            >
               {dictionary.scopes.noActiveScopes}
             </div>
           ) : (
@@ -373,7 +376,7 @@ export default function ScopesPage() {
         </section>
 
         {/* Past Scopes */}
-        <section>
+        <section data-testid="scopes-past-section">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
             {dictionary.scopes.pastScopes}
           </h2>

@@ -7,23 +7,23 @@ This version has breaking changes - APIs, conventions, and file structure may al
 # ClashLingo Agent Handoff Rules
 
 Before making code changes:
-- Read `PROJECT_RULES.md` first.
-- Read `PROJECT_STATUS.md` first.
-- Read `TASK_QUEUE.md` next.
-- Read the latest `ClashLingo-Session-Summary.md` if it exists.
+- Read `docs/project/PROJECT_RULES.md` first.
+- Read `docs/project/PROJECT_STATUS.md` first.
+- Read `docs/project/TASK_QUEUE.md` next.
+- Read the latest `docs/project/SESSION_SUMMARY.md` if it exists.
 - Preserve the existing stack: Next.js App Router, React 19, Tailwind CSS 4, Supabase, Anthropic API.
 - Preserve the current visual direction: playful minimalism, rounded shapes, primary `#953f4d`, secondary `#0c693d`.
 - Prefer updating existing components in `components/` instead of rewriting routes from scratch.
 
 When finishing work:
-- Update `PROJECT_RULES.md` if approved product behavior changed.
-- Update `PROJECT_STATUS.md` if architecture, health, or known issues changed.
-- Update `TASK_QUEUE.md` if priorities changed or a task moved.
-- Refresh `ClashLingo-Session-Summary.md` with what was done, what is blocked, and what should happen next.
+- Update `docs/project/PROJECT_RULES.md` if approved product behavior changed.
+- Update `docs/project/PROJECT_STATUS.md` if architecture, health, or known issues changed.
+- Update `docs/project/TASK_QUEUE.md` if priorities changed or a task moved.
+- Refresh `docs/project/SESSION_SUMMARY.md` with what was done, what is blocked, and what should happen next.
 - Run at least one verification command (`npm run lint` or `npm run build`) and record the real result.
 
 Current source of truth:
-- Product rules and intended behavior: `PROJECT_RULES.md`
-- Product status and architecture: `PROJECT_STATUS.md`
-- Prioritized backlog: `TASK_QUEUE.md`
-- Session-to-session baton pass: `ClashLingo-Session-Summary.md`
+- Product rules and intended behavior: `docs/project/PROJECT_RULES.md`
+- Product status and architecture: `docs/project/PROJECT_STATUS.md`
+- Prioritized backlog: `docs/project/TASK_QUEUE.md`
+- Session-to-session baton pass: `docs/project/SESSION_SUMMARY.md`

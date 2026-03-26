@@ -388,7 +388,7 @@ export default function RivalryDashboard() {
       <div className="max-w-[1280px] mx-auto px-5 py-5 lg:px-6 lg:py-7 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-9">
         <AppSidebar active="rivalries" profile={profile} />
 
-        <main className="space-y-8 pb-12">
+        <main className="space-y-8 pb-12" data-testid="rivalries-shell">
           <div className="space-y-3">
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant">
               {dictionary.rivalries.eyebrow}
@@ -402,7 +402,10 @@ export default function RivalryDashboard() {
           </div>
 
           {rivalries.length === 0 ? (
-            <section className="bg-surface-container-low rounded-[2.8rem] p-10 md:p-12 text-center space-y-5 shadow-[0_24px_60px_rgba(149,63,77,0.08)]">
+            <section
+              className="bg-surface-container-low rounded-[2.8rem] p-10 md:p-12 text-center space-y-5 shadow-[0_24px_60px_rgba(149,63,77,0.08)]"
+              data-testid="rivalries-empty-state"
+            >
               <div className="w-20 h-20 rounded-[1.75rem] bg-primary-container text-primary mx-auto flex items-center justify-center shadow-inner rotate-3">
                 <Swords size={36} />
               </div>
@@ -423,7 +426,10 @@ export default function RivalryDashboard() {
             </section>
           ) : (
             <>
-                  <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <section
+                    className="grid grid-cols-1 xl:grid-cols-2 gap-4"
+                    data-testid="rivalries-selector-grid"
+                  >
                 {rivalries.map((rivalry) => {
                   const selected = selectedRivalry?.id === rivalry.id;
                   const rivalryIsPlayerA = rivalry.player_a_id === userId;
@@ -524,7 +530,10 @@ export default function RivalryDashboard() {
 
               {selectedRivalry && (
                 <>
-                  <section className="relative bg-surface-container-low rounded-[3rem] p-8 md:p-12 overflow-hidden shadow-[0_26px_60px_rgba(149,63,77,0.08)]">
+                  <section
+                    className="relative bg-surface-container-low rounded-[3rem] p-8 md:p-12 overflow-hidden shadow-[0_26px_60px_rgba(149,63,77,0.08)]"
+                    data-testid="rivalries-hero"
+                  >
                     <div className="absolute -top-12 -left-12 w-72 h-72 bg-primary-container/28 rounded-full blur-3xl" />
                     <div className="absolute -bottom-12 -right-12 w-72 h-72 bg-secondary-container/24 rounded-full blur-3xl" />
 

@@ -117,15 +117,16 @@ Supabase is the source of truth for auth and gameplay data.
 - UI language is currently saved in Supabase Auth metadata as `website_language`.
 - New round creation now goes through `/api/create-round`, which enforces one new round per rivalry per rolling 24 hours.
 
-See [SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md) for the current schema and relationship notes.
+See [SUPABASE_SCHEMA.md](./docs/database/SUPABASE_SCHEMA.md) for the current schema and relationship notes.
 Checked-in SQL now lives under [supabase/migrations](./supabase/migrations).
 
 ## Repo Guide
 
-- [PROJECT_RULES.md](./PROJECT_RULES.md): approved product behavior
-- [PROJECT_STATUS.md](./PROJECT_STATUS.md): current implementation reality
-- [TASK_QUEUE.md](./TASK_QUEUE.md): prioritized next work
-- [ClashLingo-Session-Summary.md](./ClashLingo-Session-Summary.md): latest handoff summary
+- [docs/project/PROJECT_RULES.md](./docs/project/PROJECT_RULES.md): approved product behavior
+- [docs/project/PROJECT_STATUS.md](./docs/project/PROJECT_STATUS.md): current implementation reality
+- [docs/project/TASK_QUEUE.md](./docs/project/TASK_QUEUE.md): prioritized next work
+- [docs/project/SESSION_SUMMARY.md](./docs/project/SESSION_SUMMARY.md): latest handoff summary
+- [docs/database/SUPABASE_SCHEMA.md](./docs/database/SUPABASE_SCHEMA.md): current database reference
 
 ## Current Caveats
 

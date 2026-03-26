@@ -198,8 +198,11 @@ export default function SettingsPage() {
       <div className="max-w-7xl mx-auto px-6 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
         <AppSidebar active="settings" profile={profile} />
 
-        <main className="space-y-8">
-          <section className="max-w-4xl bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8">
+        <main className="space-y-8" data-testid="settings-shell">
+          <section
+            className="max-w-4xl bg-surface-container-low rounded-[2.5rem] p-8 md:p-10 shadow-sm space-y-8"
+            data-testid="settings-form"
+          >
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter mb-2">
               {dictionary.settings.title}

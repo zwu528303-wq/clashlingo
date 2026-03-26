@@ -51,7 +51,7 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
   };
 
   return (
-    <aside className="lg:sticky lg:top-6 self-start">
+    <aside className="lg:sticky lg:top-6 self-start" data-testid="app-sidebar">
       <div className="rounded-[2.8rem] border border-white/80 bg-gradient-to-b from-surface-container-lowest via-surface-container-low to-surface-container-low shadow-[0_24px_60px_rgba(149,63,77,0.08)] p-5 lg:p-6 space-y-7">
         <div className="space-y-5">
           <div>
@@ -90,6 +90,7 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
               <Link
                 key={item.key}
                 href={item.href}
+                data-testid={`sidebar-link-${item.key}`}
                 className={`flex items-center justify-center gap-3 rounded-[1.4rem] px-4 py-3.5 text-sm font-black transition-all lg:justify-start ${
                   isActive
                     ? "bg-primary text-on-primary shadow-[0_14px_30px_rgba(149,63,77,0.22)]"
@@ -120,6 +121,7 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
 
         <Link
           href="/how-it-works"
+          data-testid="sidebar-link-guide"
           className={`flex items-center gap-3 rounded-[1.6rem] border px-4 py-4 transition-all ${
             active === "guide"
               ? "border-primary/20 bg-primary-container/30 text-primary shadow-sm"

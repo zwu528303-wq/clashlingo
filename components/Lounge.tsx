@@ -522,7 +522,7 @@ export default function Lounge() {
       <div className="max-w-[1280px] mx-auto px-5 py-5 lg:px-6 lg:py-7 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-9">
         <AppSidebar active="lounge" profile={profile} />
 
-        <main className="space-y-8 pb-12">
+        <main className="space-y-8 pb-12" data-testid="lounge-shell">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.26em] text-on-surface-variant mb-3">
               {dictionary.lounge.eyebrow}
@@ -537,7 +537,10 @@ export default function Lounge() {
 
           {rivalries.length === 0 ? (
           /* ========== Empty State ========== */
-          <div className="bg-surface-container-low rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[50vh] relative overflow-hidden shadow-[0_30px_60px_rgba(149,63,77,0.08)]">
+          <div
+            className="bg-surface-container-low rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[50vh] relative overflow-hidden shadow-[0_30px_60px_rgba(149,63,77,0.08)]"
+            data-testid="lounge-empty-state"
+          >
             <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-primary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
             <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-secondary-container/30 rounded-full blur-3xl mix-blend-multiply"></div>
 
@@ -601,7 +604,10 @@ export default function Lounge() {
               </p>
             )}
 
-            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 items-stretch">
+            <div
+              className="grid grid-cols-1 2xl:grid-cols-2 gap-6 items-stretch"
+              data-testid="lounge-rivalry-grid"
+            >
               {rivalries.map((r) => {
                 const isPlayerA = r.player_a_id === userId;
                 const isPaired = Boolean(r.player_b_id);
