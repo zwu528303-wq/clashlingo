@@ -79,6 +79,7 @@ export default function RoundPage() {
     resolveClientWebsiteLanguage()
   );
   const examGenerationTriggered = useRef(false);
+  const examLiveSyncTriggered = useRef(false);
 
   // Countdown
   const [timeLeft, setTimeLeft] = useState("");
@@ -226,7 +227,53 @@ export default function RoundPage() {
   const rivalConfirmed = isPlayerA ? round?.player_b_confirmed : round?.player_a_confirmed;
   const myExamReady = isPlayerA ? round?.player_a_exam_ready : round?.player_b_exam_ready;
   const rivalExamReady = isPlayerA ? round?.player_b_exam_ready : round?.player_a_exam_ready;
+  const bothExamReady = !!(
+    round?.player_a_exam_ready && round?.player_b_exam_ready
+  );
   const syllabus = round?.syllabus;
+
+  const promoteExamLive = useCallback(
+    async (currentStatus: Round["status"]) => {
+      if (!round) return false;
+
+      if (currentStatus === "countdown") {
+        const examResponse = await fetch("/api/generate-exam", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roundId }),
+        });
+
+        if (!examResponse.ok) {
+          const payload = (await examResponse.json().catch(() => null)) as
+            | ApiErrorPayload
+            | null;
+          setActionError(
+            mapExamErrorCode(payload?.code, payload?.error, dictionary)
+          );
+          await loadRound();
+          return false;
+        }
+      }
+
+      const { error: liveError } = await supabase
+        .from("rounds")
+        .update({
+          status: "exam_live",
+          exam_started_at: new Date().toISOString(),
+        })
+        .eq("id", round.id);
+
+      if (liveError) {
+        setActionError(dictionary.round.errors.startExamFailed);
+        await loadRound();
+        return false;
+      }
+
+      await loadRound();
+      return true;
+    },
+    [dictionary, loadRound, round, roundId]
+  );
 
   const handleExamReady = async () => {
     if (!round || !userId) return;
@@ -267,37 +314,10 @@ export default function RoundPage() {
       updated.player_a_exam_ready && updated.player_b_exam_ready;
 
     if (bothReady) {
-      if (updated.status === "countdown") {
-        const examResponse = await fetch("/api/generate-exam", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roundId }),
-        });
-
-        if (!examResponse.ok) {
-          const payload = (await examResponse.json().catch(() => null)) as
-            | ApiErrorPayload
-            | null;
-          setActionError(
-            mapExamErrorCode(payload?.code, payload?.error, dictionary)
-          );
-          await loadRound();
-          setActionLoading(false);
-          return;
-        }
-      }
-
-      const { error: liveError } = await supabase
-        .from("rounds")
-        .update({
-          status: "exam_live",
-          exam_started_at: new Date().toISOString(),
-        })
-        .eq("id", round.id);
-
-      if (liveError) {
-        setActionError(dictionary.round.errors.startExamFailed);
-        await loadRound();
+      const activated = await promoteExamLive(
+        updated.status as Round["status"]
+      );
+      if (!activated) {
         setActionLoading(false);
         return;
       }
@@ -306,6 +326,30 @@ export default function RoundPage() {
     await loadRound();
     setActionLoading(false);
   };
+
+  useEffect(() => {
+    if (
+      !round ||
+      round.status !== "exam_ready" ||
+      !round.player_a_exam_ready ||
+      !round.player_b_exam_ready
+    ) {
+      examLiveSyncTriggered.current = false;
+      return;
+    }
+
+    if (examLiveSyncTriggered.current) return;
+    examLiveSyncTriggered.current = true;
+
+    void (async () => {
+      setActionLoading(true);
+      const activated = await promoteExamLive("exam_ready");
+      if (!activated) {
+        examLiveSyncTriggered.current = false;
+      }
+      setActionLoading(false);
+    })();
+  }, [promoteExamLive, round]);
 
   if (loading) {
     return (
@@ -792,11 +836,13 @@ export default function RoundPage() {
 
             <button
               onClick={handleExamReady}
-              disabled={actionLoading || myExamReady}
+              disabled={actionLoading || (myExamReady && !bothExamReady)}
               className="bg-primary text-on-primary py-5 px-12 rounded-full font-black text-xl shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2 size={24} className="animate-spin" />
+              ) : bothExamReady ? (
+                dictionary.round.starting
               ) : myExamReady ? (
                 dictionary.round.waitingForRival
               ) : (
