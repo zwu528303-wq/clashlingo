@@ -198,6 +198,7 @@ export default function Login() {
             display_name: resolveDisplayName(trimmedDisplayName),
             default_language_level: DEFAULT_LANGUAGE_LEVEL,
             website_language: websiteLanguage,
+            instruction_language: websiteLanguage,
           },
         },
       });

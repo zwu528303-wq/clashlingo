@@ -76,33 +76,56 @@ Return a JSON object with exactly this structure:
 {
   "topic": "${resolvedTopic}",
   "target_lang": "${resolvedTargetLang}",
-  "can_do": [
-    // 3-5 ability objectives in English, e.g. "Order a drink and pastry in French"
-  ],
-  "vocabulary": {
-    // Group words by scene/category. Each group has a label and a list of words.
-    // Words should be in the TARGET LANGUAGE ONLY, no translations.
-    // Total 30-50 words across all groups.
-    "group_label_1": ["word1", "word2", "word3"],
-    "group_label_2": ["word1", "word2"]
+  "can_do": {
+    "en": [
+      // 3-5 ability objectives in English, e.g. "Order a drink and pastry in French"
+    ],
+    "zh-CN": [
+      // The same objectives in Simplified Chinese, aligned item-by-item with "en"
+    ]
   },
-  "grammar": [
-    // 5-6 grammar concepts. Format: "Chinese concept name — target language key structure"
-    // e.g. "定冠词与不定冠词 (le / la / les vs un / une / des)"
+  "vocabulary_groups": [
+    {
+      "id": "group_slug",
+      "label": {
+        "en": "group label in English",
+        "zh-CN": "对应的简体中文分组名"
+      },
+      "words": [
+        // 5-12 words in the TARGET LANGUAGE ONLY, no translations
+      ]
+    }
   ],
+  "grammar": {
+    "en": [
+      // 5-6 grammar concepts in English, tied directly to the tested language structures
+    ],
+    "zh-CN": [
+      // The same grammar concepts in Simplified Chinese, aligned item-by-item with "en"
+    ]
+  },
   "expressions": [
     // 10 useful phrases in TARGET LANGUAGE ONLY, no translations
   ],
   "listening": [
     // 6 phrases the student might hear, in TARGET LANGUAGE ONLY
   ],
-  "how_tested": [
-    "Vocabulary will appear in multiple choice and fill-in questions",
-    "Grammar will be tested through sentence completion",
-    "Expressions may appear in translation or dialogue",
-    "You may hear variations of the listening phrases"
-  ]
+  "how_tested": {
+    "en": [
+      // 3-4 short English bullets explaining how the round will be tested
+    ],
+    "zh-CN": [
+      // The same test notes in Simplified Chinese, aligned item-by-item with "en"
+    ]
+  }
 }
+
+Rules for localization:
+- "can_do", "grammar", "how_tested", and every vocabulary group label must be provided in BOTH English and Simplified Chinese
+- The English and Chinese versions must describe the same content, in the same order
+- "expressions", "listening", and the words inside "vocabulary_groups" must stay in the TARGET LANGUAGE ONLY
+- Total vocabulary across all groups should be 30-50 words
+- Use 4-6 vocabulary groups
 
 Level guidance:
 - Beginner:

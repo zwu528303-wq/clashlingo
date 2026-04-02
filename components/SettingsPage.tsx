@@ -121,6 +121,7 @@ export default function SettingsPage() {
         default_language_level: nextProfile.defaultLanguageLevel,
         weekly_match_time: nextProfile.weeklyMatchTime,
         website_language: nextProfile.websiteLanguage,
+        instruction_language: nextProfile.instructionLanguage,
       },
     });
 
@@ -414,6 +415,37 @@ export default function SettingsPage() {
               </div>
               <p className="text-sm text-on-surface-variant mt-3">
                 {dictionary.settings.websiteLanguageHint}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                {dictionary.settings.instructionLanguage}
+              </label>
+              <div className="grid grid-cols-2 gap-3 max-w-md">
+                {WEBSITE_LANGUAGES.map((language) => (
+                  <button
+                    key={language}
+                    type="button"
+                    onClick={() =>
+                      setProfile((current) =>
+                        current
+                          ? { ...current, instructionLanguage: language }
+                          : current
+                      )
+                    }
+                    className={`py-3 px-4 rounded-xl font-bold text-sm transition-all ${
+                      profile.instructionLanguage === language
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "bg-surface-container-low text-on-surface hover:bg-surface-container"
+                    }`}
+                  >
+                    {dictionary.websiteLanguageLabels[language]}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-on-surface-variant mt-3">
+                {dictionary.settings.instructionLanguageHint}
               </p>
             </div>
 

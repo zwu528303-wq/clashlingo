@@ -96,7 +96,7 @@ ${JSON.stringify(syllabus, null, 2)}
 
 EXAM STRUCTURE (strictly follow this):
 - Questions 1-10: Multiple Choice (MCQ) — 3 points each = 30 points
-- Questions 11-20: Fill in the Blank (FITB) — 3 points each = 30 points  
+- Questions 11-20: Fill in the Blank (FITB) — 3 points each = 30 points
 - Questions 21-24: Translation — 10 points each = 40 points
 - Total: 100 points
 
@@ -105,8 +105,9 @@ RULES:
 - Difficulty must match ${difficultyLevel}
 - MCQ: 4 options each, exactly one correct
 - FITB: One blank per question, the blank should be a word from the vocabulary or a grammar structure
-- Translation Q21-23: Translate from English to target language
-- Translation Q24: Translate from target language to English
+- Questions 1-23 should have the same correct answer regardless of interface language
+- Translation Q21-23: translate a shared meaning into the target language
+- Translation Q24: translate from the target language back into each interface language
 - Questions should test vocabulary, grammar, and expressions from the syllabus
 
 LEVEL GUIDANCE:
@@ -121,36 +122,74 @@ Return a JSON object with exactly this structure:
     {
       "id": 1,
       "type": "mcq",
-      "prompt": "question text",
-      "options": ["A", "B", "C", "D"]
+      "prompt": {
+        "en": "question text in English",
+        "zh-CN": "对应的简体中文题干"
+      },
+      "options": [
+        {
+          "value": "stable canonical option value",
+          "label": {
+            "en": "option label in English",
+            "zh-CN": "对应的简体中文选项"
+          }
+        }
+      ]
     },
     {
       "id": 11,
       "type": "fitb",
-      "prompt": "sentence with ___ blank"
+      "prompt": {
+        "en": "sentence with ___ blank",
+        "zh-CN": "带有 ___ 空格的简体中文题干"
+      }
     },
     {
       "id": 21,
       "type": "translation",
-      "prompt": "Translate to French: ..."
+      "prompt": {
+        "en": "Translate to French: ...",
+        "zh-CN": "翻译成法语：……"
+      }
     }
   ],
   "rubric": [
     {
       "id": 1,
-      "answer": "correct answer text",
+      "answer": "correct canonical answer",
       "points": 3
     },
     {
       "id": 21,
-      "answer": "ideal translation",
+      "answer": "ideal target-language translation",
       "points": 10,
-      "keywords": ["key", "words", "for", "partial", "credit"]
+      "keywords": ["target", "language", "keywords"]
+    },
+    {
+      "id": 24,
+      "answer": {
+        "en": "ideal English translation",
+        "zh-CN": "理想的简体中文翻译"
+      },
+      "points": 10,
+      "keywords": {
+        "en": ["english", "keywords"],
+        "zh-CN": ["中文", "关键词"]
+      }
     }
   ]
 }
 
-For translation rubric, include a "keywords" array with important words/phrases. Partial credit will be given based on how many keywords appear in the student's answer.
+Localization rules:
+- Every question prompt must be provided in BOTH English and Simplified Chinese
+- MCQ option labels must also be provided in BOTH English and Simplified Chinese
+- If an option is naturally target-language only, it is okay for both labels to be identical
+- For MCQ rubric answers, store the canonical matching option "value"
+- For FITB rubric answers, store the exact correct fill-in text
+- For translation Q21-23, store a single target-language answer string plus target-language keywords
+- For translation Q24, store bilingual answers and bilingual keywords because the learner may answer in English or Simplified Chinese
+
+For translation rubric, include a "keywords" array or object with important words/phrases. Partial credit will be given based on how many keywords appear in the student's answer.
 
 IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. Ensure all 24 questions and 24 rubric items are present.`;
 

@@ -5,6 +5,10 @@ import {
   type WebsiteLanguage,
 } from "@/lib/i18n";
 import {
+  normalizeInstructionLanguage,
+  type InstructionLanguage,
+} from "@/lib/instruction-content";
+import {
   DEFAULT_LANGUAGE_LEVEL,
   type LanguageLevel,
   normalizeLanguageLevel,
@@ -80,6 +84,7 @@ export interface EditableProfile {
   defaultLanguageLevel: LanguageLevel;
   weeklyMatchTime: string;
   websiteLanguage: WebsiteLanguage;
+  instructionLanguage: InstructionLanguage;
   email: string;
 }
 
@@ -223,6 +228,10 @@ export function getEditableProfileFromUser(user: User): EditableProfile {
     ),
     weeklyMatchTime: normalizeWeeklyMatchTime(metadata.weekly_match_time),
     websiteLanguage: normalizeWebsiteLanguage(metadata.website_language),
+    instructionLanguage: normalizeInstructionLanguage(
+      metadata.instruction_language,
+      normalizeWebsiteLanguage(metadata.website_language)
+    ),
     email,
   };
 }

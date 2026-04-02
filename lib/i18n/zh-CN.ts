@@ -142,6 +142,9 @@ export const zhCN = {
     websiteLanguage: "网站语言",
     websiteLanguageHint:
       "这里只改变界面语言，不会改变你的学习语言，也不会改动 AI 生成内容的规则。",
+    instructionLanguage: "说明语言",
+    instructionLanguageHint:
+      "这里决定 Scope、考试和复习内容里的说明文字用什么语言展示，不会改变你正在学习的目标语言。",
     saved: "设置已保存。",
     saveFailed: "保存设置失败。",
     saveSharedSyncFailed: "个人设置已保存，但公开资料同步失败。",

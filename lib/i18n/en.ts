@@ -151,6 +151,9 @@ export const en = {
     websiteLanguage: "Website Language",
     websiteLanguageHint:
       "This changes the interface language only. It does not change your learning language or the AI content rules.",
+    instructionLanguage: "Instruction Language",
+    instructionLanguageHint:
+      "This controls the explanation language used in scopes, exams, and review content. It does not change the target language you are studying.",
     saved: "Settings saved.",
     saveFailed: "Failed to save your settings.",
     saveSharedSyncFailed:

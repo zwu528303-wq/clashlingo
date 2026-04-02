@@ -13,6 +13,11 @@ import {
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
 import { getEditableProfileFromUser } from "@/lib/profile";
 import {
+  getLocalizedList,
+  getLocalizedVocabularyGroups,
+  type InstructionLanguage,
+} from "@/lib/instruction-content";
+import {
   ArrowLeft,
   CheckCircle2,
   Circle,
@@ -78,6 +83,10 @@ export default function RoundPage() {
   const [websiteLanguage, setWebsiteLanguage] = useState(
     resolveClientWebsiteLanguage()
   );
+  const [instructionLanguage, setInstructionLanguage] =
+    useState<InstructionLanguage>(
+    resolveClientWebsiteLanguage()
+  );
   const examGenerationTriggered = useRef(false);
   const examLiveSyncTriggered = useRef(false);
 
@@ -113,8 +122,10 @@ export default function RoundPage() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
+      const profile = getEditableProfileFromUser(user);
       setUserId(user.id);
-      setWebsiteLanguage(getEditableProfileFromUser(user).websiteLanguage);
+      setWebsiteLanguage(profile.websiteLanguage);
+      setInstructionLanguage(profile.instructionLanguage);
       await loadRound();
       setLoading(false);
     };
@@ -231,6 +242,18 @@ export default function RoundPage() {
     round?.player_a_exam_ready && round?.player_b_exam_ready
   );
   const syllabus = round?.syllabus;
+  const localizedCanDo = getLocalizedList(
+    syllabus?.can_do,
+    instructionLanguage
+  );
+  const localizedGrammar = getLocalizedList(
+    syllabus?.grammar,
+    instructionLanguage
+  );
+  const vocabularyGroups = getLocalizedVocabularyGroups(
+    syllabus,
+    instructionLanguage
+  );
 
   const promoteExamLive = useCallback(
     async (currentStatus: Round["status"]) => {
@@ -524,7 +547,7 @@ export default function RoundPage() {
                     {dictionary.round.canDoObjectives}
                   </h3>
                   <ul className="space-y-2">
-                    {(syllabus.can_do || []).map((item, i) => (
+                    {localizedCanDo.map((item, i) => (
                       <li key={i} className="flex items-start gap-3 text-on-surface">
                         <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0"></div>
                         {item}
@@ -534,17 +557,19 @@ export default function RoundPage() {
                 </div>
 
                 {/* Vocabulary */}
-                {syllabus.vocabulary && (
+                {vocabularyGroups.length > 0 && (
                   <div>
                     <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                       {dictionary.scopes.sections.vocabulary}
                     </h3>
                     <div className="space-y-4">
-                      {Object.entries(syllabus.vocabulary).map(([group, words]) => (
-                        <div key={group}>
-                          <p className="text-sm font-medium text-on-surface-variant mb-2">{group}</p>
+                      {vocabularyGroups.map((group) => (
+                        <div key={group.id}>
+                          <p className="text-sm font-medium text-on-surface-variant mb-2">
+                            {group.label}
+                          </p>
                           <div className="flex flex-wrap gap-2">
-                            {words.map((w, i) => (
+                            {group.words.map((w, i) => (
                               <span key={i} className="px-3 py-1.5 bg-white border border-surface-container rounded-xl text-on-surface text-sm">{w}</span>
                             ))}
                           </div>
@@ -555,13 +580,13 @@ export default function RoundPage() {
                 )}
 
                 {/* Grammar */}
-                {syllabus.grammar && (
+                {localizedGrammar.length > 0 && (
                   <div>
                     <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
                       {dictionary.scopes.sections.grammar}
                     </h3>
                     <div className="space-y-2">
-                      {syllabus.grammar.map((g, i) => (
+                      {localizedGrammar.map((g, i) => (
                         <div key={i} className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-on-surface text-sm">{g}</div>
                       ))}
                     </div>

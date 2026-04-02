@@ -12,6 +12,10 @@ import {
   resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
 import {
+  getLocalizedList,
+  getLocalizedVocabularyGroups,
+} from "@/lib/instruction-content";
+import {
   BookOpen,
   ChevronDown,
   ChevronUp,
@@ -87,6 +91,8 @@ export default function ScopesPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
+  const instructionLanguage =
+    profile?.instructionLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);
 
   async function loadCurrentProfile(user: User) {
@@ -202,62 +208,119 @@ export default function ScopesPage() {
       );
     }
 
-    const sections = [
-      { key: "can_do", label: dictionary.scopes.sections.can_do },
-      { key: "vocabulary", label: dictionary.scopes.sections.vocabulary },
-      { key: "grammar", label: dictionary.scopes.sections.grammar },
-      { key: "expressions", label: dictionary.scopes.sections.expressions },
-      { key: "listening", label: dictionary.scopes.sections.listening },
-    ];
+    const canDo = getLocalizedList(syllabus.can_do, instructionLanguage);
+    const grammar = getLocalizedList(syllabus.grammar, instructionLanguage);
+    const vocabularyGroups = getLocalizedVocabularyGroups(
+      syllabus,
+      instructionLanguage
+    );
+    const expressions = syllabus.expressions ?? [];
+    const listening = syllabus.listening ?? [];
 
     return (
       <div className="space-y-3 mt-3">
-        {sections.map(({ key, label }) => {
-          const val = syllabus[key as keyof Syllabus];
-          if (!val) return null;
+        {canDo.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              {dictionary.scopes.sections.can_do}
+            </p>
+            <ul className="space-y-1">
+              {canDo.map((item, i) => (
+                <li
+                  key={i}
+                  className="text-sm text-gray-700 flex items-start gap-2"
+                >
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#953f4d] flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-          if (key === "vocabulary" && typeof val === "object" && val !== null) {
-            return (
-              <div key={key}>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{label}</p>
-                <div className="space-y-3">
-                  {Object.entries(val).map(([group, words]) => (
-                    <div key={group}>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
-                        {group}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {(words as string[]).map((word, index) => (
-                          <span
-                            key={`${group}-${index}`}
-                            className="px-2.5 py-1 rounded-full bg-[#953f4d]/10 text-[#953f4d] text-xs font-medium"
-                          >
-                            {word}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+        {vocabularyGroups.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              {dictionary.scopes.sections.vocabulary}
+            </p>
+            <div className="space-y-3">
+              {vocabularyGroups.map((group) => (
+                <div key={group.id}>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                    {group.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.words.map((word, index) => (
+                      <span
+                        key={`${group.id}-${index}`}
+                        className="px-2.5 py-1 rounded-full bg-[#953f4d]/10 text-[#953f4d] text-xs font-medium"
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          }
-
-          const items: string[] = Array.isArray(val) ? val : [String(val)];
-          return (
-            <div key={key}>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</p>
-              <ul className="space-y-1">
-                {items.map((item, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#953f4d] flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              ))}
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        {grammar.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              {dictionary.scopes.sections.grammar}
+            </p>
+            <ul className="space-y-1">
+              {grammar.map((item, i) => (
+                <li
+                  key={i}
+                  className="text-sm text-gray-700 flex items-start gap-2"
+                >
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#953f4d] flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {expressions.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              {dictionary.scopes.sections.expressions}
+            </p>
+            <ul className="space-y-1">
+              {expressions.map((item, i) => (
+                <li
+                  key={i}
+                  className="text-sm text-gray-700 flex items-start gap-2"
+                >
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#953f4d] flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {listening.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              {dictionary.scopes.sections.listening}
+            </p>
+            <ul className="space-y-1">
+              {listening.map((item, i) => (
+                <li
+                  key={i}
+                  className="text-sm text-gray-700 flex items-start gap-2"
+                >
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#953f4d] flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   };

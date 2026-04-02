@@ -13,6 +13,15 @@ import type {
 import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
 import { getEditableProfileFromUser } from "@/lib/profile";
 import {
+  createLocalizedList,
+  createLocalizedText,
+  getLocalizedExamOptions,
+  getLocalizedKeywords,
+  getLocalizedRubricAnswer,
+  getLocalizedText,
+  type InstructionLanguage,
+} from "@/lib/instruction-content";
+import {
   Clock,
   ChevronLeft,
   ChevronRight,
@@ -31,6 +40,8 @@ export default function ExamPage() {
   const [websiteLanguage, setWebsiteLanguage] = useState(
     resolveClientWebsiteLanguage()
   );
+  const [instructionLanguage, setInstructionLanguage] =
+    useState<InstructionLanguage>(resolveClientWebsiteLanguage());
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [ready, setReady] = useState(false); // Only true when exam + questions are loaded
@@ -51,7 +62,9 @@ export default function ExamPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUserId(user.id);
-      setWebsiteLanguage(getEditableProfileFromUser(user).websiteLanguage);
+      const profile = getEditableProfileFromUser(user);
+      setWebsiteLanguage(profile.websiteLanguage);
+      setInstructionLanguage(profile.instructionLanguage);
 
       // Get round
       const { data: roundData } = await supabase
@@ -165,20 +178,33 @@ export default function ExamPage() {
     questions.forEach((q) => {
       const myAnswer = (answers[q.id] || "").trim().toLowerCase();
       const rubricItem = rubric.find((item) => item.id === q.id);
-      const correctAnswer = (rubricItem?.answer || "").toLowerCase();
       const maxPoints = Number(rubricItem?.points ?? 0);
+      const canonicalAnswer = String(
+        typeof rubricItem?.answer === "string"
+          ? rubricItem.answer
+          : getLocalizedRubricAnswer(rubricItem, instructionLanguage)
+      )
+        .trim()
+        .toLowerCase();
 
       let score = 0;
       if (q.type === "mcq") {
-        score = myAnswer === correctAnswer ? 3 : 0;
+        score = myAnswer === canonicalAnswer ? 3 : 0;
       } else if (q.type === "fitb") {
-        score = myAnswer === correctAnswer ? 3 : 0;
+        score = myAnswer === canonicalAnswer ? 3 : 0;
       } else if (q.type === "translation") {
         // Keyword-based partial credit
-        const keywords = (rubricItem?.keywords || correctAnswer.split(" ")) as string[];
+        const localizedKeywords = getLocalizedKeywords(
+          rubricItem,
+          instructionLanguage
+        );
+        const keywords =
+          localizedKeywords.length > 0
+            ? localizedKeywords
+            : canonicalAnswer.split(" ");
         const myWords = myAnswer.split(/\s+/);
-        const matches = keywords.filter((kw: string) =>
-          myWords.some((w: string) => w.includes(kw.toLowerCase()))
+        const matches = keywords.filter((keyword) =>
+          myWords.some((word) => word.includes(keyword.toLowerCase()))
         ).length;
         const ratio = keywords.length > 0 ? matches / keywords.length : 0;
         score = Math.round(ratio * maxPoints);
@@ -282,6 +308,11 @@ export default function ExamPage() {
 
   const q = questions[currentQ];
   if (!q) return null;
+  const localizedQuestionPrompt = getLocalizedText(
+    q.prompt,
+    instructionLanguage
+  );
+  const localizedOptions = getLocalizedExamOptions(q, instructionLanguage);
 
   const answeredCount = Object.keys(answers).length;
 
@@ -364,17 +395,17 @@ export default function ExamPage() {
           </div>
 
           <h2 className="text-xl md:text-2xl font-bold text-on-surface leading-relaxed mb-8">
-            {q.prompt}
+            {localizedQuestionPrompt}
           </h2>
 
-          {q.type === "mcq" && q.options && (
+          {q.type === "mcq" && localizedOptions.length > 0 && (
             <div className="space-y-3">
-              {q.options.map((opt, i) => (
+              {localizedOptions.map((option, i) => (
                 <button
-                  key={i}
-                  onClick={() => handleAnswer(q.id, opt)}
+                  key={`${option.value}-${i}`}
+                  onClick={() => handleAnswer(q.id, option.value)}
                   className={`w-full text-left p-5 rounded-2xl font-medium transition-all border-2 ${
-                    answers[q.id] === opt
+                    answers[q.id] === option.value
                       ? "border-primary bg-primary-container/30 text-on-surface"
                       : "border-surface-container bg-surface-container-lowest text-on-surface hover:border-primary/40"
                   }`}
@@ -382,7 +413,7 @@ export default function ExamPage() {
                   <span className="font-bold text-on-surface-variant mr-3">
                     {String.fromCharCode(65 + i)}.
                   </span>
-                  {opt}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -485,55 +516,294 @@ export default function ExamPage() {
 }
 
 // ========== Mock generators (fallback if AI exam not found) ==========
-function generateMockQuestions(topic: string, lang: string): ExamQuestion[] {
+function getMockLanguageLabel(
+  language: string,
+  locale: InstructionLanguage
+) {
+  const labels: Record<string, { en: string; "zh-CN": string }> = {
+    French: { en: "French", "zh-CN": "法语" },
+    Spanish: { en: "Spanish", "zh-CN": "西班牙语" },
+    Japanese: { en: "Japanese", "zh-CN": "日语" },
+    Korean: { en: "Korean", "zh-CN": "韩语" },
+    Chinese: { en: "Chinese", "zh-CN": "中文" },
+    English: { en: "English", "zh-CN": "英语" },
+  };
+
+  return labels[language]?.[locale] ?? language;
+}
+
+function createOption(
+  value: string,
+  enLabel: string,
+  zhCNLabel = enLabel
+) {
+  return {
+    value,
+    label: createLocalizedText(enLabel, zhCNLabel),
+  };
+}
+
+function sameLabelOption(value: string) {
+  return createOption(value, value, value);
+}
+
+function generateMockQuestions(_topic: string, lang: string): ExamQuestion[] {
   const questions: ExamQuestion[] = [];
+  const englishTargetLabel = getMockLanguageLabel(lang, "en");
+  const chineseTargetLabel = getMockLanguageLabel(lang, "zh-CN");
   const mcq = [
-    { prompt: `What is "hello" in ${lang}?`, options: ["Bonjour", "Merci", "Au revoir", "Salut"] },
-    { prompt: `What is "thank you" in ${lang}?`, options: ["Bonjour", "Merci", "Pardon", "S'il vous plaît"] },
-    { prompt: `What is "goodbye" in ${lang}?`, options: ["Bonjour", "Bonsoir", "Au revoir", "Merci"] },
-    { prompt: `What is "please" in ${lang}?`, options: ["Merci", "Pardon", "S'il vous plaît", "Bonjour"] },
-    { prompt: `What is "water" in ${lang}?`, options: ["Le café", "L'eau", "Le lait", "Le jus"] },
-    { prompt: `What is "coffee" in ${lang}?`, options: ["Le thé", "Le café", "Le lait", "L'eau"] },
-    { prompt: `What is "bread" in ${lang}?`, options: ["Le pain", "Le gâteau", "La salade", "Le fromage"] },
-    { prompt: `How do you say "I would like" in ${lang}?`, options: ["Je suis", "J'ai", "Je voudrais", "Je peux"] },
-    { prompt: `What does "l'addition" mean?`, options: ["The menu", "The bill", "The table", "The waiter"] },
-    { prompt: `What is "big" in ${lang}?`, options: ["Petit", "Grand", "Chaud", "Froid"] },
+    {
+      prompt: createLocalizedText(
+        `What is "hello" in ${englishTargetLabel}?`,
+        `以下哪个是“hello”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Bonjour"),
+        sameLabelOption("Merci"),
+        sameLabelOption("Au revoir"),
+        sameLabelOption("Salut"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "thank you" in ${englishTargetLabel}?`,
+        `以下哪个是“thank you”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Bonjour"),
+        sameLabelOption("Merci"),
+        sameLabelOption("Pardon"),
+        sameLabelOption("S'il vous plaît"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "goodbye" in ${englishTargetLabel}?`,
+        `以下哪个是“goodbye”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Bonjour"),
+        sameLabelOption("Bonsoir"),
+        sameLabelOption("Au revoir"),
+        sameLabelOption("Merci"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "please" in ${englishTargetLabel}?`,
+        `以下哪个是“please”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Merci"),
+        sameLabelOption("Pardon"),
+        sameLabelOption("S'il vous plaît"),
+        sameLabelOption("Bonjour"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "water" in ${englishTargetLabel}?`,
+        `以下哪个是“water”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Le café"),
+        sameLabelOption("L'eau"),
+        sameLabelOption("Le lait"),
+        sameLabelOption("Le jus"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "coffee" in ${englishTargetLabel}?`,
+        `以下哪个是“coffee”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Le thé"),
+        sameLabelOption("Le café"),
+        sameLabelOption("Le lait"),
+        sameLabelOption("L'eau"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "bread" in ${englishTargetLabel}?`,
+        `以下哪个是“bread”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Le pain"),
+        sameLabelOption("Le gâteau"),
+        sameLabelOption("La salade"),
+        sameLabelOption("Le fromage"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `How do you say "I would like" in ${englishTargetLabel}?`,
+        `“I would like”用${chineseTargetLabel}怎么说？`
+      ),
+      options: [
+        sameLabelOption("Je suis"),
+        sameLabelOption("J'ai"),
+        sameLabelOption("Je voudrais"),
+        sameLabelOption("Je peux"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What does "l'addition" mean?`,
+        `“l'addition”是什么意思？`
+      ),
+      options: [
+        createOption("menu", "The menu", "菜单"),
+        createOption("bill", "The bill", "账单"),
+        createOption("table", "The table", "桌子"),
+        createOption("waiter", "The waiter", "服务员"),
+      ],
+    },
+    {
+      prompt: createLocalizedText(
+        `What is "big" in ${englishTargetLabel}?`,
+        `以下哪个是“big”的${chineseTargetLabel}说法？`
+      ),
+      options: [
+        sameLabelOption("Petit"),
+        sameLabelOption("Grand"),
+        sameLabelOption("Chaud"),
+        sameLabelOption("Froid"),
+      ],
+    },
   ];
-  mcq.forEach((item, i) => { questions.push({ id: i + 1, type: "mcq", prompt: item.prompt, options: item.options }); });
+  mcq.forEach((item, i) => {
+    questions.push({
+      id: i + 1,
+      type: "mcq",
+      prompt: item.prompt,
+      options: item.options,
+    });
+  });
 
   const fitb = [
-    `Je ___ un café. (would like)`, `___, je voudrais un croissant. (Hello)`, `Un café ___ lait. (with)`,
-    `C'est ___? (how much)`, `L'___, s'il vous plaît. (bill)`, `Un ___ café. (big)`,
-    `___ sucre. (without)`, `Je voudrais un ___ au chocolat. (pain)`, `Merci, au ___. (goodbye)`, `Un ___, s'il vous plaît. (tea)`,
+    createLocalizedText(
+      `Je ___ un café. (would like)`,
+      `Je ___ un café.（would like）`
+    ),
+    createLocalizedText(
+      `___, je voudrais un croissant. (Hello)`,
+      `___, je voudrais un croissant.（Hello）`
+    ),
+    createLocalizedText(
+      `Un café ___ lait. (with)`,
+      `Un café ___ lait.（with）`
+    ),
+    createLocalizedText(
+      `C'est ___? (how much)`,
+      `C'est ___?（how much）`
+    ),
+    createLocalizedText(
+      `L'___, s'il vous plaît. (bill)`,
+      `L'___, s'il vous plaît.（bill）`
+    ),
+    createLocalizedText(
+      `Un ___ café. (big)`,
+      `Un ___ café.（big）`
+    ),
+    createLocalizedText(
+      `___ sucre. (without)`,
+      `___ sucre.（without）`
+    ),
+    createLocalizedText(
+      `Je voudrais un ___ au chocolat. (pain)`,
+      `Je voudrais un ___ au chocolat.（pain）`
+    ),
+    createLocalizedText(
+      `Merci, au ___. (goodbye)`,
+      `Merci, au ___.（goodbye）`
+    ),
+    createLocalizedText(
+      `Un ___, s'il vous plaît. (tea)`,
+      `Un ___, s'il vous plaît.（tea）`
+    ),
   ];
-  fitb.forEach((prompt, i) => { questions.push({ id: i + 11, type: "fitb", prompt }); });
+  fitb.forEach((prompt, i) => {
+    questions.push({ id: i + 11, type: "fitb", prompt });
+  });
 
   const trans = [
-    `Translate to ${lang}: "I would like a large coffee with milk, please."`,
-    `Translate to ${lang}: "How much is a croissant?"`,
-    `Translate to ${lang}: "The bill, please. Thank you."`,
-    `Translate to English: "Je voudrais un thé sans sucre, s'il vous plaît."`,
+    createLocalizedText(
+      `Translate to ${englishTargetLabel}: "I would like a large coffee with milk, please."`,
+      `翻译成${chineseTargetLabel}：“I would like a large coffee with milk, please.”`
+    ),
+    createLocalizedText(
+      `Translate to ${englishTargetLabel}: "How much is a croissant?"`,
+      `翻译成${chineseTargetLabel}：“How much is a croissant?”`
+    ),
+    createLocalizedText(
+      `Translate to ${englishTargetLabel}: "The bill, please. Thank you."`,
+      `翻译成${chineseTargetLabel}：“The bill, please. Thank you.”`
+    ),
+    createLocalizedText(
+      `Translate to English: "Je voudrais un thé sans sucre, s'il vous plaît."`,
+      `把这句翻成中文：“Je voudrais un thé sans sucre, s'il vous plaît.”`
+    ),
   ];
-  trans.forEach((prompt, i) => { questions.push({ id: i + 21, type: "translation", prompt }); });
+  trans.forEach((prompt, i) => {
+    questions.push({ id: i + 21, type: "translation", prompt });
+  });
 
   return questions;
 }
 
 function generateMockRubric() {
   return [
-    { id: 1, answer: "Bonjour", points: 3 }, { id: 2, answer: "Merci", points: 3 },
-    { id: 3, answer: "Au revoir", points: 3 }, { id: 4, answer: "S'il vous plaît", points: 3 },
-    { id: 5, answer: "L'eau", points: 3 }, { id: 6, answer: "Le café", points: 3 },
-    { id: 7, answer: "Le pain", points: 3 }, { id: 8, answer: "Je voudrais", points: 3 },
-    { id: 9, answer: "The bill", points: 3 }, { id: 10, answer: "Grand", points: 3 },
-    { id: 11, answer: "voudrais", points: 3 }, { id: 12, answer: "bonjour", points: 3 },
-    { id: 13, answer: "au", points: 3 }, { id: 14, answer: "combien", points: 3 },
-    { id: 15, answer: "addition", points: 3 }, { id: 16, answer: "grand", points: 3 },
-    { id: 17, answer: "sans", points: 3 }, { id: 18, answer: "pain", points: 3 },
-    { id: 19, answer: "revoir", points: 3 }, { id: 20, answer: "thé", points: 3 },
-    { id: 21, answer: "Je voudrais un grand café au lait s'il vous plaît", points: 10, keywords: ["voudrais", "grand", "café", "lait", "plaît"] },
-    { id: 22, answer: "C'est combien un croissant", points: 10, keywords: ["combien", "croissant"] },
-    { id: 23, answer: "L'addition s'il vous plaît merci", points: 10, keywords: ["addition", "plaît", "merci"] },
-    { id: 24, answer: "I would like a tea without sugar please", points: 10, keywords: ["would", "like", "tea", "without", "sugar"] },
+    { id: 1, answer: "Bonjour", points: 3 },
+    { id: 2, answer: "Merci", points: 3 },
+    { id: 3, answer: "Au revoir", points: 3 },
+    { id: 4, answer: "S'il vous plaît", points: 3 },
+    { id: 5, answer: "L'eau", points: 3 },
+    { id: 6, answer: "Le café", points: 3 },
+    { id: 7, answer: "Le pain", points: 3 },
+    { id: 8, answer: "Je voudrais", points: 3 },
+    { id: 9, answer: "bill", points: 3 },
+    { id: 10, answer: "Grand", points: 3 },
+    { id: 11, answer: "voudrais", points: 3 },
+    { id: 12, answer: "bonjour", points: 3 },
+    { id: 13, answer: "au", points: 3 },
+    { id: 14, answer: "combien", points: 3 },
+    { id: 15, answer: "addition", points: 3 },
+    { id: 16, answer: "grand", points: 3 },
+    { id: 17, answer: "sans", points: 3 },
+    { id: 18, answer: "pain", points: 3 },
+    { id: 19, answer: "revoir", points: 3 },
+    { id: 20, answer: "thé", points: 3 },
+    {
+      id: 21,
+      answer: "Je voudrais un grand café au lait s'il vous plaît",
+      points: 10,
+      keywords: ["voudrais", "grand", "café", "lait", "plaît"],
+    },
+    {
+      id: 22,
+      answer: "C'est combien un croissant",
+      points: 10,
+      keywords: ["combien", "croissant"],
+    },
+    {
+      id: 23,
+      answer: "L'addition s'il vous plaît merci",
+      points: 10,
+      keywords: ["addition", "plaît", "merci"],
+    },
+    {
+      id: 24,
+      answer: createLocalizedText(
+        "I would like a tea without sugar, please.",
+        "我想要一杯不加糖的茶，谢谢。"
+      ),
+      points: 10,
+      keywords: createLocalizedList(
+        ["would", "like", "tea", "without", "sugar"],
+        ["想要", "茶", "不加糖"]
+      ),
+    },
   ] satisfies ExamRubricItem[];
 }

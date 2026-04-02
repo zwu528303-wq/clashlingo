@@ -1,3 +1,5 @@
+import type { WebsiteLanguage } from "@/lib/i18n/core";
+
 export type RoundStatus =
   | "topic_selection"
   | "confirming"
@@ -8,15 +10,25 @@ export type RoundStatus =
 
 export type ExamQuestionType = "mcq" | "fitb" | "translation";
 
+export type LocalizedText = Partial<Record<WebsiteLanguage, string>>;
+export type LocalizedTextList = Partial<Record<WebsiteLanguage, string[]>>;
+
+export interface VocabularyGroup {
+  id?: string;
+  label: LocalizedText;
+  words: string[];
+}
+
 export interface Syllabus {
   topic?: string;
   target_lang?: string;
-  can_do?: string[];
+  can_do?: string[] | LocalizedTextList;
   vocabulary?: Record<string, string[]>;
-  grammar?: string[];
+  vocabulary_groups?: VocabularyGroup[];
+  grammar?: string[] | LocalizedTextList;
   expressions?: string[];
   listening?: string[];
-  how_tested?: string[];
+  how_tested?: string[] | LocalizedTextList;
 }
 
 export interface RivalryLedgerRound {
@@ -73,15 +85,21 @@ export interface Round {
 export interface ExamQuestion {
   id: number;
   type: ExamQuestionType;
-  prompt: string;
-  options?: string[];
+  prompt: string | LocalizedText;
+  options?: Array<
+    | string
+    | {
+        value: string;
+        label: string | LocalizedText;
+      }
+  >;
 }
 
 export interface ExamRubricItem {
   id: number;
-  answer: string;
+  answer: string | LocalizedText;
   points: number;
-  keywords?: string[];
+  keywords?: string[] | LocalizedTextList;
 }
 
 export interface Exam {

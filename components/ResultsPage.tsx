@@ -29,6 +29,14 @@ import {
   getEditableProfileFromUser,
   resolveDisplayName,
 } from "@/lib/profile";
+import {
+  getLocalizedExamOptions,
+  getLocalizedList,
+  getLocalizedRubricAnswer,
+  getLocalizedText,
+  getLocalizedVocabularyGroups,
+  type InstructionLanguage,
+} from "@/lib/instruction-content";
 
 type ShareCardTone = "victory" | "tie" | "defeat";
 
@@ -139,6 +147,8 @@ export default function ResultsPage() {
   const [websiteLanguage, setWebsiteLanguage] = useState(
     resolveClientWebsiteLanguage()
   );
+  const [instructionLanguage, setInstructionLanguage] =
+    useState<InstructionLanguage>(resolveClientWebsiteLanguage());
   const [myDisplayName, setMyDisplayName] = useState("You");
   const [rivalDisplayName, setRivalDisplayName] = useState("Rival");
   const [round, setRound] = useState<Round | null>(null);
@@ -252,6 +262,7 @@ export default function ResultsPage() {
       const profile = getEditableProfileFromUser(user);
       setUserId(user.id);
       setWebsiteLanguage(profile.websiteLanguage);
+      setInstructionLanguage(profile.instructionLanguage);
       setMyDisplayName(
         resolveDisplayName(profile.displayName, dictionary.results.you)
       );
@@ -311,6 +322,18 @@ export default function ResultsPage() {
   const iWon = rivalScore !== null && myScore > rivalScore;
   const tied = rivalScore !== null && myScore === rivalScore;
   const syllabus = round?.syllabus;
+  const localizedCanDo = getLocalizedList(
+    syllabus?.can_do,
+    instructionLanguage
+  );
+  const localizedGrammar = getLocalizedList(
+    syllabus?.grammar,
+    instructionLanguage
+  );
+  const vocabularyGroups = getLocalizedVocabularyGroups(
+    syllabus,
+    instructionLanguage
+  );
 
   const totalPossiblePoints = useMemo(() => {
     if (!exam) return 0;
@@ -423,6 +446,21 @@ export default function ResultsPage() {
     URL.revokeObjectURL(url);
     setCardDownloaded(true);
     window.setTimeout(() => setCardDownloaded(false), 2000);
+  };
+
+  const getQuestionPromptLabel = (question: Exam["questions"][number]) =>
+    getLocalizedText(question.prompt, instructionLanguage);
+
+  const getOptionLabel = (
+    question: Exam["questions"][number],
+    optionValue: string
+  ) => {
+    const options = getLocalizedExamOptions(question, instructionLanguage);
+    const match = options.find(
+      (option) => option.value === optionValue || option.label === optionValue
+    );
+
+    return match?.label ?? optionValue;
   };
 
   if (loading) {
@@ -729,13 +767,13 @@ export default function ResultsPage() {
 
             {showSyllabus && (
               <div className="px-8 pb-8 space-y-6 border-t border-surface-container">
-                {syllabus.can_do?.length ? (
+                {localizedCanDo.length > 0 ? (
                   <div className="pt-6">
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                       {dictionary.scopes.sections.can_do}
                     </h3>
                     <ul className="space-y-2">
-                      {syllabus.can_do.map((item, index) => (
+                      {localizedCanDo.map((item, index) => (
                         <li
                           key={index}
                           className="flex items-start gap-3 text-on-surface text-sm"
@@ -748,19 +786,19 @@ export default function ResultsPage() {
                   </div>
                 ) : null}
 
-                {syllabus.vocabulary && (
+                {vocabularyGroups.length > 0 && (
                   <div>
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                       {dictionary.scopes.sections.vocabulary}
                     </h3>
                     <div className="space-y-3">
-                      {Object.entries(syllabus.vocabulary).map(([group, words]) => (
-                        <div key={group}>
+                      {vocabularyGroups.map((group) => (
+                        <div key={group.id}>
                           <p className="text-xs font-medium text-on-surface-variant mb-2">
-                            {group}
+                            {group.label}
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {words.map((word, index) => (
+                            {group.words.map((word, index) => (
                               <span
                                 key={index}
                                 className="px-3 py-1 bg-surface-container-low border border-surface-container rounded-xl text-sm text-on-surface"
@@ -775,13 +813,13 @@ export default function ResultsPage() {
                   </div>
                 )}
 
-                {syllabus.grammar?.length ? (
+                {localizedGrammar.length > 0 ? (
                   <div>
                     <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                       {dictionary.scopes.sections.grammar}
                     </h3>
                     <div className="space-y-2">
-                      {syllabus.grammar.map((grammar, index) => (
+                      {localizedGrammar.map((grammar, index) => (
                         <div
                           key={index}
                           className="bg-surface-container-low p-3 rounded-xl border-l-4 border-primary text-sm text-on-surface"
@@ -826,7 +864,20 @@ export default function ResultsPage() {
                 const rubricItem = exam.rubric.find(
                   (item) => item.id === question.id
                 );
-                const correct = rubricItem?.answer || "";
+                const correct =
+                  question.type === "mcq"
+                    ? getOptionLabel(
+                        question,
+                        String(rubricItem?.answer ?? "")
+                      )
+                    : getLocalizedRubricAnswer(
+                        rubricItem,
+                        instructionLanguage
+                      );
+                const yourAnswer =
+                  question.type === "mcq"
+                    ? getOptionLabel(question, myAnswer)
+                    : myAnswer;
                 const maxPoints = Number(rubricItem?.points ?? 0);
                 const isCorrect = score === maxPoints && maxPoints > 0;
 
@@ -856,7 +907,7 @@ export default function ResultsPage() {
                     </div>
 
                     <p className="text-on-surface font-medium mb-3">
-                      {question.prompt}
+                      {getQuestionPromptLabel(question)}
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -875,7 +926,7 @@ export default function ResultsPage() {
                             isCorrect ? "text-green-700" : "text-red-700"
                           }`}
                         >
-                          {myAnswer}
+                          {yourAnswer}
                         </div>
                       </div>
 

@@ -108,6 +108,8 @@ export interface TranslationDictionary {
     weeklyLoungeRhythmHint: string;
     websiteLanguage: string;
     websiteLanguageHint: string;
+    instructionLanguage: string;
+    instructionLanguageHint: string;
     saved: string;
     saveFailed: string;
     saveSharedSyncFailed: string;
