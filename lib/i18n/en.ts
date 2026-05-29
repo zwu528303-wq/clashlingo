@@ -122,11 +122,13 @@ export const en = {
   },
   sidebar: {
     items: {
-      lounge: "Lounge",
+      scenarios: "Scenario Quests",
+      lounge: "Battle Hub",
       rivalries: "Rivalries",
-      scopes: "Scopes",
+      scopes: "Battle Scope",
       settings: "Settings",
     },
+    friendsGroupLabel: "With Friends",
     guideTitle: "How It Works",
     guideDescription: "Quick product guide and FAQ",
     loungeRhythmTitle: "Lounge rhythm",
@@ -620,6 +622,190 @@ export const en = {
           "Only active rivalries stay in Lounge. If a rivalry was left, it moves out of Lounge and remains in Rivalries as history.",
       },
     ],
+  },
+  scenarios: {
+    pageEyebrow: "Scenario Map",
+    pageTitle: "Pick a real situation, then level up inside it.",
+    pageDescription:
+      "ClashLingo vNext grows around real scenarios instead of generic weekly topics. Day one shows the whole map, then depth unlocks in layers.",
+    pageHint:
+      "Every scenario follows the same four-stage ladder: survive, react, compete, then dominate.",
+    domainTabsLabel: "Domains",
+    statusCountLabel: (count: number) => `${count} scenarios`,
+    domainStartedScenarios: (count: number) => `${count} started`,
+    domainClearedStages: (count: number) => `${count} stages cleared`,
+    launchStatuses: {
+      full: "Full",
+      partial: "Partial",
+      coming_soon: "Coming Soon",
+    },
+    launchStatusDescriptions: {
+      full: "Playable now with the first battle path open.",
+      partial: "Visible and partly open, with deeper stages still rolling in.",
+      coming_soon: "On the map already, but not battle-ready yet.",
+    },
+    backToMap: "Back to Scenarios",
+    domainLabel: "Domain",
+    templateLabel: "Template",
+    openScenario: "Open Scenario",
+    startScenario: "Start",
+    continueScenario: "Continue",
+    previewScenario: "Preview",
+    chooseStageTitle: "Choose your stage",
+    chooseStageDescription:
+      "Every scenario uses the same four-stage ladder so users get stronger inside one real situation, not just across random topics.",
+    stageLabel: (stage: number) => `Stage ${stage}`,
+    stageNames: {
+      survive: "Survive",
+      react: "React",
+      compete: "Compete",
+      dominate: "Dominate",
+    },
+    stageReady: "Open for launch",
+    stageLocked: "Locked for the next rollout",
+    stageComingSoon: "Scenario not live yet",
+    stageNodeLabels: {
+      completed: "Cleared",
+      current: "Current",
+      open: "Open",
+      locked: "Locked",
+    },
+    openStageBriefing: "Open Briefing",
+    briefingNext: "Briefing route lands next",
+    noOpenStages: "No stages open yet",
+    progressCleared: (completed: number, total: number) =>
+      `Cleared ${completed}/${total}`,
+    progressCurrentStage: (stage: number) => `Current: Stage ${stage}`,
+    progressStartAt: (stage: number) => `Start at Stage ${stage}`,
+    progressPreviewOnly: "Preview only for now",
+    scopeFirstTitle: "Scope first, battle second",
+    scopeFirstDescription:
+      "The player flow still starts with a battle briefing. Users review the scenario, can-do goals, and language moves first, then choose Clash or Exam mode.",
+    modePreviewTitle: "Modes after the briefing",
+    modePreviewDescription:
+      "Clash Mode becomes the new core battle loop, while Exam Mode stays available as a more structured checkpoint.",
+    modes: {
+      clash: "Clash Mode",
+      exam: "Exam Mode",
+      practice: "Practice Mode",
+    },
+    comingSoonTitle: "World first, depth next",
+    comingSoonDescription:
+      "The full scenario universe is visible from day one. Some scenarios ship deep immediately, some open one stage first, and some stay visible as future targets.",
+    playableNowTitle: "Playable now",
+    previewLaneTitle: "Preview lane",
+    backToScenario: "Back to Scenario",
+    briefingEyebrow: "Battle Briefing",
+    briefingDescription:
+      "Review the scenario scope first, then choose whether to enter the new Clash loop or the more structured Exam lane.",
+    briefingSummaryTitle: "What this battle is training",
+    briefingCanDoTitle: "Can-do goals",
+    briefingVocabularyTitle: "Vocabulary groups",
+    briefingPatternsTitle: "Sentence patterns",
+    briefingFollowUpsTitle: "Common follow-ups",
+    briefingBattleRulesTitle: "Battle rules",
+    briefingHowBattleWorksTitle: "How this battle works",
+    briefingTargetLanguageLabel: "Target Language",
+    briefingLevelLabel: "Level",
+    briefingQuestionMixLabel: "Question Mix",
+    briefingQuestionMixValue: (quickCount: number, freeCount: number) =>
+      `${quickCount} quick · ${freeCount} free response`,
+    briefingTimerLabel: "Per-question timers",
+    briefingTimerValue: (
+      multipleChoiceSec: number,
+      fillBlankSec: number,
+      freeResponseSec: number
+    ) =>
+      `MCQ ${multipleChoiceSec}s · Fill ${fillBlankSec}s · Free ${freeResponseSec}s`,
+    briefingChooseModeTitle: "Choose your lane",
+    briefingChooseModeDescription:
+      "Clash Mode is the fast battle path. Exam Mode stays here as a more structured checkpoint.",
+    startClashMode: "Start Clash Mode",
+    startExamMode: "Start Exam Mode",
+    openExamMode: "Open Exam Mode",
+    practiceLater: "Practice Later",
+    unavailableStageTitle: "This stage is not live yet",
+    unavailableStageDescription:
+      "The scenario is visible on the map, but this stage still belongs to a later rollout layer.",
+    battleGenerating: "Generating this battle pack...",
+    battleGenerateError:
+      "Couldn't generate this battle pack. Go back and try again.",
+    battlePlaceholderEyebrow: "Clash Mode Shell",
+    battlePlaceholderTitle: "The battle route lands here next",
+    battlePlaceholderDescription:
+      "This is the new Clash Mode handoff point. We already know the scenario, stage, pack, and opponent lane, so the next build step is the real timed battle.",
+    battlePlaceholderNext:
+      "Next slice: question pacing, timers, AI pressure, and score flow.",
+    battlePlaceholderSessionLabel: "Mock Session",
+    examPlaceholderEyebrow: "Exam Mode Shell",
+    examPlaceholderTitle: "Exam Mode reconnects here",
+    examPlaceholderDescription:
+      "Exam Mode stays parallel to Clash Mode after the same scope briefing. This shell keeps the route and framing ready while the real exam connection comes next.",
+    examPlaceholderNext:
+      "Next slice: reconnect the scenario-stage path to the structured exam experience.",
+    examLaneEyebrow: "Structured Checkpoint",
+    examLaneTitle: "Take the stage exam before you climb",
+    examLaneDescription:
+      "Exam Mode uses the same scenario scope but removes the live opponent pressure. The goal here is cleaner recall, steadier phrasing, and a more structured mastery check.",
+    examStartHint:
+      "Start when you're ready for a quieter run. You still answer against the clock, but the report focuses on your own control instead of a score race.",
+    examStructuredNote:
+      "Use this lane when you want a cleaner checkpoint before the next rematch.",
+    examCurrentScoreLabel: "Current checkpoint score",
+    examProgressLabel: "Questions graded",
+    battleLiveEyebrow: "Live Clash",
+    battleLiveTitle: "Café battle is now in play",
+    battleLiveDescription:
+      "The new battle loop is running on the Café mock pack first: timer pressure, mixed question types, AI score pressure, and a real battle report at the end.",
+    battleStart: "Start Battle",
+    battleStartHint:
+      "Start when you're ready. The timer and score race begin on the first question.",
+    battleQuestionCounter: (current: number, total: number) =>
+      `Question ${current} / ${total}`,
+    battleTimerLabel: "Time left",
+    battleScoreLabel: "Current score",
+    battleReactionLabel: "Pressure feed",
+    battleCurrentPackLabel: "Current pack",
+    battleSkillLabel: "Skill tags",
+    battleSubmit: "Lock Answer",
+    battleTimeout: "Time's up",
+    battleFillBlankPlaceholder: "Type the missing word or phrase...",
+    battleFreeResponsePlaceholder: "Type your short answer...",
+    battleQuestionTypes: {
+      multiple_choice: "Multiple Choice",
+      fill_blank: "Fill in the Blank",
+      short_free_response: "Short Free Response",
+    },
+    battleReportEyebrow: "Battle Report",
+    battleReportTitle: "The clash is scored",
+    battleReportDescription:
+      "This is the first local battle report for the new scenario flow: one score race, one clean breakdown, and an obvious next move.",
+    battleReportMissingTitle: "No battle report yet",
+    battleReportMissingDescription:
+      "Finish a battle first, then the report will land here with your score race and practice cue.",
+    examReportEyebrow: "Exam Report",
+    examReportTitle: "The checkpoint is graded",
+    examReportDescription:
+      "This exam report focuses on your own control: total score, strongest answers, and the exact skill that should be tightened before the next battle.",
+    examReportMissingTitle: "No exam report yet",
+    examReportMissingDescription:
+      "Finish an exam run first, then the checkpoint report will land here with your score and practice cue.",
+    battleWinnerLabels: {
+      user: "You win",
+      opponent: "AI wins",
+      tie: "Tie game",
+    },
+    battleScoreBreakdownTitle: "Score breakdown",
+    battleFastestAnswerTitle: "Fastest answer",
+    battleBestSentenceTitle: "Best sentence",
+    battleWeakPointTitle: "Weak point",
+    battleQuestionReviewTitle: "Question review",
+    battleQuestionReviewEmpty: "No answered questions yet.",
+    battleRematch: "Rematch",
+    examRetry: "Retake Exam",
+    battleBackToBriefing: "Back to Briefing",
+    battleBackToScenarios: "Back to Scenarios",
+    battleNoAnswer: "No answer",
   },
   results: {
     loading: "Loading results...",

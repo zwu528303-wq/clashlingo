@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, CircleHelp, Home, LogOut, Settings2, Swords } from "lucide-react";
+import {
+  BookOpen,
+  CircleHelp,
+  Compass,
+  Home,
+  LogOut,
+  Settings2,
+  Swords,
+} from "lucide-react";
 import {
   formatWebsiteTime,
   getDictionary,
@@ -15,7 +23,13 @@ import {
   normalizeAvatarLetter,
 } from "@/lib/profile";
 
-type SidebarKey = "lounge" | "rivalries" | "scopes" | "settings" | "guide";
+type SidebarKey =
+  | "scenarios"
+  | "lounge"
+  | "rivalries"
+  | "scopes"
+  | "settings"
+  | "guide";
 type SidebarNavKey = Exclude<SidebarKey, "guide">;
 
 interface SidebarItem {
@@ -24,12 +38,23 @@ interface SidebarItem {
   icon: typeof Home;
 }
 
-const SIDEBAR_ITEMS: SidebarItem[] = [
+const SCENARIO_ITEM: SidebarItem = {
+  key: "scenarios",
+  href: "/scenarios",
+  icon: Compass,
+};
+
+const FRIEND_ITEMS: SidebarItem[] = [
   { key: "lounge", href: "/lounge", icon: Home },
   { key: "rivalries", href: "/rivalries", icon: Swords },
   { key: "scopes", href: "/scopes", icon: BookOpen },
-  { key: "settings", href: "/settings", icon: Settings2 },
 ];
+
+const SETTINGS_ITEM: SidebarItem = {
+  key: "settings",
+  href: "/settings",
+  icon: Settings2,
+};
 
 interface AppSidebarProps {
   active?: SidebarKey;
@@ -81,27 +106,45 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
           </div>
         </div>
 
-        <nav className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-          {SIDEBAR_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.key === active;
+        <nav className="space-y-6">
+          <Link
+            href={SCENARIO_ITEM.href}
+            data-testid="sidebar-link-scenarios"
+            className={`flex items-center gap-3 rounded-[1.6rem] px-4 py-4 text-base font-black transition-all ${
+              active === "scenarios"
+                ? "bg-primary text-on-primary shadow-[0_14px_30px_rgba(149,63,77,0.22)]"
+                : "border border-primary/20 bg-primary-container/40 text-primary hover:bg-primary-container/60"
+            }`}
+          >
+            <Compass size={20} />
+            <span>{dictionary.sidebar.items.scenarios}</span>
+          </Link>
 
-            return (
-              <Link
-                key={item.key}
-                href={item.href}
-                data-testid={`sidebar-link-${item.key}`}
-                className={`flex items-center justify-center gap-3 rounded-[1.4rem] px-4 py-3.5 text-sm font-black transition-all lg:justify-start ${
-                  isActive
-                    ? "bg-primary text-on-primary shadow-[0_14px_30px_rgba(149,63,77,0.22)]"
-                    : "text-on-surface-variant hover:text-primary hover:bg-white/80"
-                }`}
-              >
-                <Icon size={18} />
-                <span>{dictionary.sidebar.items[item.key]}</span>
-              </Link>
-            );
-          })}
+          <div className="space-y-2">
+            <p className="px-2 text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant/70">
+              {dictionary.sidebar.friendsGroupLabel}
+            </p>
+            {FRIEND_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.key === active;
+
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  data-testid={`sidebar-link-${item.key}`}
+                  className={`flex items-center gap-3 rounded-[1.4rem] px-4 py-3 text-sm font-bold transition-all ${
+                    isActive
+                      ? "bg-primary text-on-primary shadow-[0_14px_30px_rgba(149,63,77,0.22)]"
+                      : "text-on-surface-variant hover:text-primary hover:bg-white/80"
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span>{dictionary.sidebar.items[item.key]}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="rounded-[1.8rem] border border-white/80 bg-white/80 p-4 space-y-1 shadow-sm">
@@ -118,6 +161,19 @@ export default function AppSidebar({ active, profile }: AppSidebarProps) {
             {dictionary.sidebar.loungeRhythmHint}
           </p>
         </div>
+
+        <Link
+          href={SETTINGS_ITEM.href}
+          data-testid="sidebar-link-settings"
+          className={`flex items-center gap-3 rounded-[1.4rem] px-4 py-3 text-sm font-bold transition-all ${
+            active === "settings"
+              ? "bg-primary text-on-primary shadow-[0_14px_30px_rgba(149,63,77,0.22)]"
+              : "text-on-surface-variant hover:text-primary hover:bg-white/80"
+          }`}
+        >
+          <Settings2 size={18} />
+          <span>{dictionary.sidebar.items.settings}</span>
+        </Link>
 
         <Link
           href="/how-it-works"

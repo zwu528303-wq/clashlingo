@@ -84,11 +84,13 @@ export interface TranslationDictionary {
   };
   sidebar: {
     items: {
+      scenarios: string;
       lounge: string;
       rivalries: string;
       scopes: string;
       settings: string;
     };
+    friendsGroupLabel: string;
     guideTitle: string;
     guideDescription: string;
     loungeRhythmTitle: string;
@@ -435,6 +437,163 @@ export interface TranslationDictionary {
       question: string;
       answer: string;
     }>;
+  };
+  scenarios: {
+    pageEyebrow: string;
+    pageTitle: string;
+    pageDescription: string;
+    pageHint: string;
+    domainTabsLabel: string;
+    statusCountLabel: (count: number) => string;
+    domainStartedScenarios: (count: number) => string;
+    domainClearedStages: (count: number) => string;
+    launchStatuses: {
+      full: string;
+      partial: string;
+      coming_soon: string;
+    };
+    launchStatusDescriptions: {
+      full: string;
+      partial: string;
+      coming_soon: string;
+    };
+    backToMap: string;
+    domainLabel: string;
+    templateLabel: string;
+    openScenario: string;
+    startScenario: string;
+    continueScenario: string;
+    previewScenario: string;
+    chooseStageTitle: string;
+    chooseStageDescription: string;
+    stageLabel: (stage: number) => string;
+    stageNames: {
+      survive: string;
+      react: string;
+      compete: string;
+      dominate: string;
+    };
+    stageReady: string;
+    stageLocked: string;
+    stageComingSoon: string;
+    stageNodeLabels: {
+      completed: string;
+      current: string;
+      open: string;
+      locked: string;
+    };
+    openStageBriefing: string;
+    briefingNext: string;
+    noOpenStages: string;
+    progressCleared: (completed: number, total: number) => string;
+    progressCurrentStage: (stage: number) => string;
+    progressStartAt: (stage: number) => string;
+    progressPreviewOnly: string;
+    scopeFirstTitle: string;
+    scopeFirstDescription: string;
+    modePreviewTitle: string;
+    modePreviewDescription: string;
+    modes: {
+      clash: string;
+      exam: string;
+      practice: string;
+    };
+    comingSoonTitle: string;
+    comingSoonDescription: string;
+    playableNowTitle: string;
+    previewLaneTitle: string;
+    backToScenario: string;
+    briefingEyebrow: string;
+    briefingDescription: string;
+    briefingSummaryTitle: string;
+    briefingCanDoTitle: string;
+    briefingVocabularyTitle: string;
+    briefingPatternsTitle: string;
+    briefingFollowUpsTitle: string;
+    briefingBattleRulesTitle: string;
+    briefingHowBattleWorksTitle: string;
+    briefingTargetLanguageLabel: string;
+    briefingLevelLabel: string;
+    briefingQuestionMixLabel: string;
+    briefingQuestionMixValue: (quickCount: number, freeCount: number) => string;
+    briefingTimerLabel: string;
+    briefingTimerValue: (
+      multipleChoiceSec: number,
+      fillBlankSec: number,
+      freeResponseSec: number
+    ) => string;
+    briefingChooseModeTitle: string;
+    briefingChooseModeDescription: string;
+    startClashMode: string;
+    startExamMode: string;
+    openExamMode: string;
+    practiceLater: string;
+    unavailableStageTitle: string;
+    unavailableStageDescription: string;
+    battleGenerating: string;
+    battleGenerateError: string;
+    battlePlaceholderEyebrow: string;
+    battlePlaceholderTitle: string;
+    battlePlaceholderDescription: string;
+    battlePlaceholderNext: string;
+    battlePlaceholderSessionLabel: string;
+    examPlaceholderEyebrow: string;
+    examPlaceholderTitle: string;
+    examPlaceholderDescription: string;
+    examPlaceholderNext: string;
+    examLaneEyebrow: string;
+    examLaneTitle: string;
+    examLaneDescription: string;
+    examStartHint: string;
+    examStructuredNote: string;
+    examCurrentScoreLabel: string;
+    examProgressLabel: string;
+    battleLiveEyebrow: string;
+    battleLiveTitle: string;
+    battleLiveDescription: string;
+    battleStart: string;
+    battleStartHint: string;
+    battleQuestionCounter: (current: number, total: number) => string;
+    battleTimerLabel: string;
+    battleScoreLabel: string;
+    battleReactionLabel: string;
+    battleCurrentPackLabel: string;
+    battleSkillLabel: string;
+    battleSubmit: string;
+    battleTimeout: string;
+    battleFillBlankPlaceholder: string;
+    battleFreeResponsePlaceholder: string;
+    battleQuestionTypes: {
+      multiple_choice: string;
+      fill_blank: string;
+      short_free_response: string;
+    };
+    battleReportEyebrow: string;
+    battleReportTitle: string;
+    battleReportDescription: string;
+    battleReportMissingTitle: string;
+    battleReportMissingDescription: string;
+    examReportEyebrow: string;
+    examReportTitle: string;
+    examReportDescription: string;
+    examReportMissingTitle: string;
+    examReportMissingDescription: string;
+    battleWinnerLabels: {
+      user: string;
+      opponent: string;
+      tie: string;
+    };
+    battleScoreBreakdownTitle: string;
+    battleFastestAnswerTitle: string;
+    battleBestSentenceTitle: string;
+    battleWeakPointTitle: string;
+    battleQuestionReviewTitle: string;
+    battleQuestionReviewEmpty: string;
+    battleRematch: string;
+    examRetry: string;
+    battleBackToBriefing: string;
+    battleBackToScenarios: string;
+    battleNoAnswer: string;
   };
   results: {
     loading: string;
