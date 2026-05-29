@@ -508,10 +508,11 @@ export interface TranslationDictionary {
     briefingSummaryTitle: string;
     briefingCanDoTitle: string;
     briefingVocabularyTitle: string;
-    briefingPatternsTitle: string;
+    briefingGrammarTitle: string;
+    briefingExpressionsTitle: string;
     briefingFollowUpsTitle: string;
     briefingBattleRulesTitle: string;
-    briefingHowBattleWorksTitle: string;
+    briefingHowTestedTitle: string;
     briefingTargetLanguageLabel: string;
     briefingLevelLabel: string;
     briefingQuestionMixLabel: string;

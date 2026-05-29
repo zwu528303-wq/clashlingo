@@ -1,9 +1,18 @@
 # Task Queue
 
-Last updated: 2026-03-25
+Last updated: 2026-05-30
 
 ## Recently Completed
 
+- Aligned `ScopeBriefing` to the rivalry Syllabus field shape (uncommitted, pending review).
+  - `vocabularyGroups` now uses an exported `VocabularyGroup`; `sentencePatterns` split into `grammar` + `expressions`; `howBattleWorks` renamed `howTested`.
+  - Propagated through `lib/battle-pack.ts`, `app/api/generate-battle-pack/route.ts`, `components/StageBriefingPage.tsx`, and i18n (`briefingGrammarTitle` / `briefingExpressionsTitle` / `briefingHowTestedTitle`).
+- Added a battle-pack pre-generation seed script (uncommitted, pending review).
+  - `scripts/seed-battle-packs.ts` + `npm run seed:battle-packs` cover full scenarios × open stages × {French, English, Spanish} × 4 levels (144 packs), idempotent via the cache, with `--dry-run`.
+  - On-demand generation stays the live fallback.
+- Shipped the scenario / battle (闯关) main loop and Phase 1 AI battle-pack backend (checkpoint `c33c0dd`).
+  - Catalog, types, routes, components, `app/api/generate-battle-pack`, `lib/battle-pack.ts`, and the `battle_packs` cache migration.
+  - Restructured `AppSidebar` for clearer hierarchy (hero scenario item, "With Friends" group, settings demoted).
 - Added repository structure for smoke tests and Supabase source-of-truth.
   - Playwright is now configured for `tests/e2e/public-smoke.spec.ts` and an env-gated `tests/e2e/authenticated-smoke.spec.ts`.
   - A checked-in Supabase baseline migration now lives under `supabase/migrations/20260325_000001_baseline.sql`.

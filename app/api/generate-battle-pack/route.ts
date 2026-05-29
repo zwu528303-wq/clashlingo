@@ -132,8 +132,8 @@ QUESTION TYPE RULES:
 
 LOCALIZATION RULES:
 - Every "prompt" and every multiple_choice option "text" must be an object with BOTH "en" and "zh-CN" (Simplified Chinese) keys. These are interface instructions, not the learner's answer.
-- "expectedKeywords", "modelAnswers", scope "sentencePatterns", and vocabulary "words" must all be written in the TARGET LANGUAGE (${targetLanguage}).
-- "scope.summary", "scope.canDo", "scope.howBattleWorks", and vocabulary group "label" must be bilingual { "en", "zh-CN" } objects.
+- "expectedKeywords", "modelAnswers", scope "grammar", scope "expressions", and vocabulary "words" must all be written in the TARGET LANGUAGE (${targetLanguage}).
+- "scope.summary", "scope.canDo", "scope.howTested", and vocabulary group "label" must be bilingual { "en", "zh-CN" } objects.
 - "scope.followUpTypes" and question "skillTags" are short lowercase snake_case tags (English).
 - "aiReactions" are short trash-talk / coaching lines shown to the player, written in English.
 
@@ -145,9 +145,10 @@ Return ONLY valid JSON with exactly this shape, no markdown, no backticks, no co
     "vocabularyGroups": [
       { "id": "drinks", "label": { "en": "...", "zh-CN": "..." }, "words": ["...", "..."] }
     ],
-    "sentencePatterns": ["target-language sentence", "..."],
+    "grammar": ["target-language grammar pattern", "..."],
+    "expressions": ["target-language set expression", "..."],
     "followUpTypes": ["size", "to_go"],
-    "howBattleWorks": [ { "en": "...", "zh-CN": "..." } ]
+    "howTested": [ { "en": "...", "zh-CN": "..." } ]
   },
   "candidateQuestions": [
     {

@@ -360,15 +360,31 @@ export default function StageBriefingPage({
 
                 <section className="rounded-[2.4rem] border border-white/80 bg-white/90 p-6 shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
                   <h2 className="text-xl font-black tracking-[-0.04em] text-on-surface">
-                    {dictionary.scenarios.briefingPatternsTitle}
+                    {dictionary.scenarios.briefingGrammarTitle}
                   </h2>
                   <div className="mt-5 space-y-3">
-                    {pack.scope.sentencePatterns.map((pattern) => (
+                    {pack.scope.grammar.map((pattern) => (
                       <div
                         key={pattern}
                         className="rounded-[1.4rem] border border-primary/10 bg-surface px-4 py-3 text-sm leading-relaxed text-on-surface"
                       >
                         {pattern}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="rounded-[2.4rem] border border-white/80 bg-white/90 p-6 shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
+                  <h2 className="text-xl font-black tracking-[-0.04em] text-on-surface">
+                    {dictionary.scenarios.briefingExpressionsTitle}
+                  </h2>
+                  <div className="mt-5 space-y-3">
+                    {pack.scope.expressions.map((expression) => (
+                      <div
+                        key={expression}
+                        className="rounded-[1.4rem] border border-primary/10 bg-surface px-4 py-3 text-sm leading-relaxed text-on-surface"
+                      >
+                        {expression}
                       </div>
                     ))}
                   </div>
@@ -404,11 +420,11 @@ export default function StageBriefingPage({
                     <Clock3 size={20} />
                   </div>
                   <h2 className="text-xl font-black tracking-[-0.04em] text-on-surface">
-                    {dictionary.scenarios.briefingHowBattleWorksTitle}
+                    {dictionary.scenarios.briefingHowTestedTitle}
                   </h2>
                 </div>
                 <div className="mt-5 space-y-3">
-                  {pack.scope.howBattleWorks.map((rule) => (
+                  {pack.scope.howTested.map((rule) => (
                     <div key={rule.en} className="flex items-start gap-3">
                       <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-secondary" />
                       <p className="text-sm leading-relaxed text-on-surface">

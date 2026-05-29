@@ -46,14 +46,17 @@ export interface ScopeBriefing {
   level: LanguageLevel;
   summary: LocalizedText;
   canDo: LocalizedText[];
-  vocabularyGroups: {
-    id: string;
-    label: LocalizedText;
-    words: string[];
-  }[];
-  sentencePatterns: string[];
+  vocabularyGroups: VocabularyGroup[];
+  grammar: string[];
+  expressions: string[];
   followUpTypes: string[];
-  howBattleWorks: LocalizedText[];
+  howTested: LocalizedText[];
+}
+
+export interface VocabularyGroup {
+  id: string;
+  label: LocalizedText;
+  words: string[];
 }
 
 export interface BattleRules {

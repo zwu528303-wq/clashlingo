@@ -62,9 +62,10 @@ export interface BattlePackContent {
     | "summary"
     | "canDo"
     | "vocabularyGroups"
-    | "sentencePatterns"
+    | "grammar"
+    | "expressions"
     | "followUpTypes"
-    | "howBattleWorks"
+    | "howTested"
   >;
   candidateQuestions: RawBattleQuestion[];
   aiReactions: AIReactionPool;
@@ -167,14 +168,17 @@ export function validateBattleContent(
   ) {
     return { ok: false, error: "scope.vocabularyGroups is malformed" };
   }
-  if (!isStringArray(scope.sentencePatterns) || scope.sentencePatterns.length === 0) {
-    return { ok: false, error: "scope.sentencePatterns must be non-empty" };
+  if (!isStringArray(scope.grammar) || scope.grammar.length === 0) {
+    return { ok: false, error: "scope.grammar must be non-empty" };
+  }
+  if (!isStringArray(scope.expressions) || scope.expressions.length === 0) {
+    return { ok: false, error: "scope.expressions must be non-empty" };
   }
   if (!isStringArray(scope.followUpTypes) || scope.followUpTypes.length === 0) {
     return { ok: false, error: "scope.followUpTypes must be non-empty" };
   }
-  if (!isLocalizedTextArray(scope.howBattleWorks) || scope.howBattleWorks.length === 0) {
-    return { ok: false, error: "scope.howBattleWorks must be a non-empty bilingual list" };
+  if (!isLocalizedTextArray(scope.howTested) || scope.howTested.length === 0) {
+    return { ok: false, error: "scope.howTested must be a non-empty bilingual list" };
   }
 
   const reactions = candidate.aiReactions;
