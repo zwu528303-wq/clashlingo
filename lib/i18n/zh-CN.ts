@@ -722,14 +722,14 @@ export const zhCN = {
     battleLiveEyebrow: "Live Clash",
     battleLiveTitle: "咖啡馆 battle 已经能打起来了",
     battleLiveDescription:
-      "新的 battle 主线先从 Café mock pack 跑通：有倒计时、混合题型、AI 分数压力，以及一页真正的 battle report。",
+      "battle 主线有倒计时和混合题型，每题答完都会给出标准答案方便你自查，最后还有一页真正的 battle report。",
     battleStart: "开始 Battle",
-    battleStartHint: "准备好再开始。第一题出现时，计时和分数竞争会同时启动。",
+    battleStartHint: "准备好再开始。第一题出现时计时开始，每题答完都能对照标准答案自查。",
     battleQuestionCounter: (current: number, total: number) =>
       `第 ${current} / ${total} 题`,
     battleTimerLabel: "剩余时间",
     battleScoreLabel: "当前分数",
-    battleReactionLabel: "压力反馈",
+    battleReactionLabel: "自查反馈",
     battleCurrentPackLabel: "当前题包",
     battleSkillLabel: "技能标签",
     battleSubmit: "锁定答案",
@@ -744,7 +744,7 @@ export const zhCN = {
     battleReportEyebrow: "Battle Report",
     battleReportTitle: "这一局已经结算",
     battleReportDescription:
-      "这是新 scenario 主线的第一版本地 battle report：一场分数竞速、一份清楚拆解、再加一个很明确的下一步。",
+      "这一局的 battle report：分数拆解、每道题的标准答案，再加一个很明确的下一步。",
     battleReportMissingTitle: "还没有 battle report",
     battleReportMissingDescription:
       "先打一局 battle，分数竞速和练习建议才会落到这里。",
@@ -755,11 +755,6 @@ export const zhCN = {
     examReportMissingTitle: "还没有 exam report",
     examReportMissingDescription:
       "先完成一次 exam，checkpoint report 才会落到这里。",
-    battleWinnerLabels: {
-      user: "你赢了",
-      opponent: "AI 赢了",
-      tie: "平局",
-    },
     battleScoreBreakdownTitle: "分数拆解",
     battleFastestAnswerTitle: "最快回答",
     battleBestSentenceTitle: "最佳句子",
@@ -771,6 +766,16 @@ export const zhCN = {
     battleBackToBriefing: "返回 Briefing",
     battleBackToScenarios: "返回场景地图",
     battleNoAnswer: "未作答",
+    battleYourAnswerLabel: "你的答案",
+    battleStandardAnswerLabel: "标准答案",
+    battleOutcomeClearedTitle: "通关！",
+    battleOutcomeFailedTitle: "还没通关",
+    battleOutcomeAccuracy: (correct, total, percent) =>
+      `答对 ${correct}/${total} · 正确率 ${percent}%`,
+    battleOutcomeClearedHint: (percent) =>
+      `正确率达到了通关所需的 ${percent}%。`,
+    battleOutcomeFailedHint: (percent) =>
+      `正确率达到 ${percent}% 即可通关。对照标准答案复盘后再来一局。`,
   },
   results: {
     loading: "正在加载结果...",

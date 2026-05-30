@@ -579,11 +579,6 @@ export interface TranslationDictionary {
     examReportDescription: string;
     examReportMissingTitle: string;
     examReportMissingDescription: string;
-    battleWinnerLabels: {
-      user: string;
-      opponent: string;
-      tie: string;
-    };
     battleScoreBreakdownTitle: string;
     battleFastestAnswerTitle: string;
     battleBestSentenceTitle: string;
@@ -595,6 +590,13 @@ export interface TranslationDictionary {
     battleBackToBriefing: string;
     battleBackToScenarios: string;
     battleNoAnswer: string;
+    battleYourAnswerLabel: string;
+    battleStandardAnswerLabel: string;
+    battleOutcomeClearedTitle: string;
+    battleOutcomeFailedTitle: string;
+    battleOutcomeAccuracy: (correct: number, total: number, percent: number) => string;
+    battleOutcomeClearedHint: (percent: number) => string;
+    battleOutcomeFailedHint: (percent: number) => string;
   };
   results: {
     loading: string;

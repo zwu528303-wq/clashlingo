@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Lock } from "lucide-react";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { supabase } from "@/lib/supabase";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const [websiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const websiteLanguage = useClientWebsiteLanguage();
   const [ready, setReady] = useState(false);
   const [loadingSession, setLoadingSession] = useState(true);
   const [saving, setSaving] = useState(false);

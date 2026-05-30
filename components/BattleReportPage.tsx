@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { ArrowLeft, Flag, Gauge, Trophy } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Flag, Gauge, RotateCcw, Trophy } from "lucide-react";
+import { STAGE_CLEAR_ACCURACY } from "@/lib/battle-scoring";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppSidebar from "@/components/AppSidebar";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { loadBattleReport, type StoredBattleReport } from "@/lib/battle-session";
 import { getLocalizedText } from "@/lib/scenario-types";
 import {
@@ -43,7 +45,7 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [report, setReport] = useState<StoredBattleReport | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);
@@ -65,7 +67,6 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
   type BreakdownRow = {
     label: string;
     user: number;
-    opponent?: number;
   };
 
   useEffect(() => {
@@ -162,19 +163,9 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
   }
 
   const isExamMode = report.mode === "exam";
-  const opponentName =
-    report.opponentName ??
-    (websiteLanguage === "zh-CN" ? "AI 对手" : "AI Opponent");
-  const opponentTotals = report.opponentTotals ?? {
-    total: 0,
-    speed: 0,
-    accuracy: 0,
-    quality: 0,
-  };
-  const winnerLabel =
-    !isExamMode && report.winner
-      ? dictionary.scenarios.battleWinnerLabels[report.winner]
-      : dictionary.scenarios.examReportTitle;
+  const heroTitle = isExamMode
+    ? dictionary.scenarios.examReportTitle
+    : dictionary.scenarios.battleReportTitle;
   const heroEyebrow = isExamMode
     ? dictionary.scenarios.examReportEyebrow
     : dictionary.scenarios.battleReportEyebrow;
@@ -182,79 +173,32 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
     ? dictionary.scenarios.examReportDescription
     : dictionary.scenarios.battleReportDescription;
   const weakPoint = formatSkillTag(report.weakSkill, websiteLanguage);
-  const userLeadsBy = report.userTotals.total - opponentTotals.total;
   const latestReaction = report.results[report.results.length - 1]?.reaction ?? null;
-  const heroCards = isExamMode
-    ? [
-        {
-          label: report.playerName,
-          value: report.userTotals.total,
-          className:
-            "rounded-[1.9rem] border border-white/80 bg-primary-container/70 px-5 py-5 shadow-sm",
-          accent: "text-primary",
-        },
-        {
-          label:
-            websiteLanguage === "zh-CN" ? "已完成题目" : "Questions Finished",
-          value: report.results.length,
-          className:
-            "rounded-[1.9rem] border border-white/80 bg-white/88 px-5 py-5 shadow-sm",
-          accent: "text-on-surface-variant",
-        },
-      ]
-    : [
-        {
-          label: report.playerName,
-          value: report.userTotals.total,
-          className:
-            "rounded-[1.9rem] border border-white/80 bg-primary-container/70 px-5 py-5 shadow-sm",
-          accent: "text-primary",
-        },
-        {
-          label: opponentName,
-          value: opponentTotals.total,
-          className:
-            "rounded-[1.9rem] border border-white/80 bg-secondary-container/55 px-5 py-5 shadow-sm",
-          accent: "text-secondary",
-        },
-        {
-          label: dictionary.results.stats.delta,
-          value:
-            userLeadsBy === 0 ? "0" : userLeadsBy > 0 ? `+${userLeadsBy}` : `${userLeadsBy}`,
-          className:
-            "rounded-[1.9rem] border border-white/80 bg-white/88 px-5 py-5 shadow-sm",
-          accent: "text-on-surface-variant",
-        },
-      ];
-  const breakdownRows: BreakdownRow[] = isExamMode
-    ? [
-        { label: dictionary.results.stats.score, user: report.userTotals.total },
-        { label: scoreLabels.speed, user: report.userTotals.speed },
-        { label: scoreLabels.accuracy, user: report.userTotals.accuracy },
-        { label: scoreLabels.quality, user: report.userTotals.quality },
-      ]
-    : [
-        {
-          label: dictionary.results.stats.score,
-          user: report.userTotals.total,
-          opponent: opponentTotals.total,
-        },
-        {
-          label: scoreLabels.speed,
-          user: report.userTotals.speed,
-          opponent: opponentTotals.speed,
-        },
-        {
-          label: scoreLabels.accuracy,
-          user: report.userTotals.accuracy,
-          opponent: opponentTotals.accuracy,
-        },
-        {
-          label: scoreLabels.quality,
-          user: report.userTotals.quality,
-          opponent: opponentTotals.quality,
-        },
-      ];
+  const clearPercent = Math.round(STAGE_CLEAR_ACCURACY * 100);
+  const accuracyPercent = Math.round(report.outcome.accuracyRatio * 100);
+  const cleared = report.outcome.cleared;
+  const heroCards = [
+    {
+      label: report.playerName,
+      value: report.userTotals.total,
+      className:
+        "rounded-[1.9rem] border border-white/80 bg-primary-container/70 px-5 py-5 shadow-sm",
+      accent: "text-primary",
+    },
+    {
+      label: websiteLanguage === "zh-CN" ? "已完成题目" : "Questions Finished",
+      value: report.results.length,
+      className:
+        "rounded-[1.9rem] border border-white/80 bg-white/88 px-5 py-5 shadow-sm",
+      accent: "text-on-surface-variant",
+    },
+  ];
+  const breakdownRows: BreakdownRow[] = [
+    { label: dictionary.results.stats.score, user: report.userTotals.total },
+    { label: scoreLabels.speed, user: report.userTotals.speed },
+    { label: scoreLabels.accuracy, user: report.userTotals.accuracy },
+    { label: scoreLabels.quality, user: report.userTotals.quality },
+  ];
 
   return (
     <div className="min-h-screen bg-surface">
@@ -282,7 +226,7 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
               </div>
 
               <h1 className="text-4xl font-black tracking-[-0.06em] text-on-surface md:text-5xl">
-                {winnerLabel}
+                {heroTitle}
               </h1>
               <p className="max-w-3xl text-base leading-relaxed text-on-surface-variant md:text-lg">
                 {heroDescription}
@@ -290,8 +234,57 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
             </div>
 
             <div
-              className={`mt-8 grid grid-cols-1 gap-4 ${isExamMode ? "md:grid-cols-2" : "md:grid-cols-3"}`}
+              className={`mt-8 flex flex-col gap-3 rounded-[1.9rem] border px-5 py-5 sm:flex-row sm:items-center sm:justify-between ${
+                cleared
+                  ? "border-secondary/30 bg-secondary-container/60"
+                  : "border-amber-200 bg-amber-50"
+              }`}
             >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-[1rem] ${
+                    cleared
+                      ? "bg-secondary/15 text-secondary"
+                      : "bg-amber-100 text-amber-700"
+                  }`}
+                >
+                  {cleared ? <CheckCircle2 size={22} /> : <RotateCcw size={22} />}
+                </div>
+                <div>
+                  <p
+                    className={`text-lg font-black tracking-[-0.03em] ${
+                      cleared ? "text-secondary" : "text-amber-900"
+                    }`}
+                  >
+                    {cleared
+                      ? dictionary.scenarios.battleOutcomeClearedTitle
+                      : dictionary.scenarios.battleOutcomeFailedTitle}
+                  </p>
+                  <p
+                    className={`mt-0.5 text-sm font-medium ${
+                      cleared ? "text-secondary/80" : "text-amber-800"
+                    }`}
+                  >
+                    {cleared
+                      ? dictionary.scenarios.battleOutcomeClearedHint(clearPercent)
+                      : dictionary.scenarios.battleOutcomeFailedHint(clearPercent)}
+                  </p>
+                </div>
+              </div>
+              <p
+                className={`shrink-0 text-sm font-black ${
+                  cleared ? "text-secondary" : "text-amber-900"
+                }`}
+              >
+                {dictionary.scenarios.battleOutcomeAccuracy(
+                  report.outcome.correctCount,
+                  report.outcome.questionCount,
+                  accuracyPercent
+                )}
+              </p>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               {heroCards.map((card) => (
                 <div key={card.label} className={card.className}>
                   <p className={`text-[11px] font-black uppercase tracking-[0.22em] ${card.accent}`}>
@@ -325,35 +318,14 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
                       {row.label}
                     </p>
-                    {isExamMode ? (
-                      <div className="mt-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                          {report.playerName}
-                        </p>
-                        <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-on-surface">
-                          {row.user}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                            {report.playerName}
-                          </p>
-                          <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-on-surface">
-                            {row.user}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
-                            {opponentName}
-                          </p>
-                          <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-on-surface">
-                            {row.opponent}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    <div className="mt-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                        {report.playerName}
+                      </p>
+                      <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-on-surface">
+                        {row.user}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -470,13 +442,19 @@ export default function BattleReportPage({ sessionId }: BattleReportPageProps) {
                           {getLocalizedText(result.prompt, websiteLanguage)}
                         </p>
                         <p className="text-sm leading-relaxed text-on-surface-variant">
-                          {report.playerName}: {result.userAnswer || dictionary.scenarios.battleNoAnswer}
+                          <span className="font-bold text-on-surface">
+                            {dictionary.scenarios.battleYourAnswerLabel}:
+                          </span>{" "}
+                          {result.userAnswer || dictionary.scenarios.battleNoAnswer}
                         </p>
-                        {!isExamMode ? (
-                          <p className="text-sm leading-relaxed text-on-surface-variant">
-                            {opponentName}: {result.aiAnswer || dictionary.scenarios.battleNoAnswer}
-                          </p>
-                        ) : null}
+                        <p className="rounded-[1rem] bg-secondary-container/45 px-3 py-2 text-sm leading-relaxed text-on-surface">
+                          <span className="font-bold text-secondary">
+                            {dictionary.scenarios.battleStandardAnswerLabel}:
+                          </span>{" "}
+                          {result.correctAnswer
+                            ? getLocalizedText(result.correctAnswer, websiteLanguage)
+                            : dictionary.scenarios.battleNoAnswer}
+                        </p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 md:min-w-[16rem]">

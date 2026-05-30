@@ -9,8 +9,8 @@ import {
   getDictionary,
   getLocalizedLearningLanguageLabel,
   getLocalizedRoundStatusLabel,
-  resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import {
   ArrowRight,
   Check,
@@ -135,7 +135,7 @@ export default function Lounge() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [rivalNames, setRivalNames] = useState<Record<string, string>>({});
   const [rivalProfiles, setRivalProfiles] = useState<

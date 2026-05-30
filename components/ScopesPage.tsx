@@ -9,8 +9,8 @@ import {
   getDictionary,
   getLocalizedLearningLanguageLabel,
   getLocalizedRoundStatusLabel,
-  resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import {
   getLocalizedList,
   getLocalizedVocabularyGroups,
@@ -86,7 +86,7 @@ function groupScopesByLanguage(
 export default function ScopesPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [scopes, setScopes] = useState<ScopeRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);

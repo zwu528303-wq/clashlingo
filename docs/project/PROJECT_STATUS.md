@@ -1,11 +1,13 @@
 # Project Status
 
-Last updated: 2026-03-25
-Stage: clickable prototype / early MVP
+Last updated: 2026-05-31
+Stage: early MVP, two loops live (rivalry + scenario quests)
 
 ## Product Summary
 
-ClashLingo is a 1v1 language-learning app where two players create a rivalry, pick a topic, get an AI-generated syllabus, follow a default study window, optionally start early together, take an exam, and compare results.
+ClashLingo has two learning loops:
+- **Rivalry (1v1):** two players create a rivalry, pick a topic, get an AI-generated syllabus, follow a default study window, optionally start early together, take an exam, and compare results.
+- **Scenario quests (闯关, solo):** a learner walks a domain → scenario → 4-stage quest line. Each stage runs a timed "clash" answer run (or an exam) built from an AI-generated bilingual battle pack. A stage is **cleared at accuracy ≥ 80%**; clearing unlocks the next stage. Progress and reports persist per (user, scenario, target language, level).
 
 ## Stack
 
@@ -38,6 +40,12 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
 - `/round/[id]` - round lifecycle page (`components/RoundPage.tsx`)
 - `/round/[id]/exam` - exam experience (`components/ExamPage.tsx`)
 - `/round/[id]/results` - results review (`components/ResultsPage.tsx`)
+- `/scenarios` - scenario quest map: domains, scenario cards with per-user stage progress (`components/ScenarioMapPage.tsx`)
+- `/scenario/[slug]` - scenario detail / stage list (`components/ScenarioDetailPage.tsx`)
+- `/scenario/[slug]/stage/[stage]` - stage briefing before a clash run (`components/StageBriefingPage.tsx`)
+- `/scenario/[slug]/stage/[stage]/exam` - scenario exam landing (`components/ScenarioExamLandingPage.tsx`)
+- `/battle/[sessionId]` - timed clash answer run (`components/BattlePage.tsx`)
+- `/battle/[sessionId]/report` - clash/exam report with the cleared/failed outcome banner (`components/BattleReportPage.tsx`)
 
 ## Server Endpoints
 
@@ -62,6 +70,17 @@ ClashLingo is a 1v1 language-learning app where two players create a rivalry, pi
   - validates the signed-in user on the server
   - blocks leave if the rivalry still has any non-completed round
   - marks the rivalry inactive in `rivalries.cumulative_ledger` without deleting history
+- `/api/generate-battle-pack`
+  - uses Anthropic to generate one bilingual battle pack per (scenario, stage, target language, level)
+  - caches packs in `battle_packs` keyed by `buildBattlePackCacheKey` (template version `v1-ai`); cache hit skips the AI call
+- `/api/scenario-battle/submit`
+  - validates the signed-in user on the server (Bearer token)
+  - reads the cached pack and re-evaluates the submitted answers/timings server-side so scores cannot be forged
+  - upserts the report into `scenario_battle_reports`, then `advanceProgress` + upserts `scenario_progress` (clear = accuracy ≥ 80%)
+  - returns null-safe: if the pack is not cached, the client keeps its local fallback report
+- `/api/scenario-progress`
+  - validates the signed-in user on the server (Bearer token)
+  - returns the user's `scenario_progress` rows for a (target language, level) scope
 
 ## Expected Environment Variables
 
@@ -83,6 +102,11 @@ Observed from the app code:
 - `rounds`
 - `exams`
 - `submissions`
+- `battle_packs` (AI battle-pack cache; migration `20260529_000002_battle_packs.sql`)
+- `scenario_progress` (per-user, per scope stage progress; migration `20260531_000001_scenario_persistence.sql`)
+- `scenario_battle_reports` (per-session clash/exam reports; same migration)
+
+Migrations under `supabase/migrations/` are applied manually in the Supabase SQL Editor (no Supabase CLI in this repo). As of this writing, `20260529_000002_battle_packs.sql` and `20260531_000001_scenario_persistence.sql` must be applied by the owner before scenario progress persists server-side.
 
 Observed `users` columns from direct DB check:
 - `id`
@@ -173,13 +197,16 @@ Observed status values:
 
 ## Current Health Check
 
-Ran on 2026-03-25:
-- `npm run build` - passes
+Ran on 2026-05-31:
+- `npm run build` - passes (both scenario routes register: `/api/scenario-battle/submit`, `/api/scenario-progress`)
 - `npm run lint` - passes
 - `npm run test:e2e tests/e2e/public-smoke.spec.ts` - should be the default public smoke gate once Playwright browsers are installed locally
 
 ## Known Issues And Risks
 
+- Scenario progress only persists server-side once `20260531_000001_scenario_persistence.sql` (and `20260529_000002_battle_packs.sql`) are applied. Until then `submitScenarioRun` returns null and the scenario map shows local-only/default progress.
+- `StageBriefingPage` and `ScenarioExamLandingPage` still mint client-side `mock-...` session ids. They work with the submit route (sessionId is just a text key) but are not yet server-created.
+- Battle packs cost Anthropic credits to generate. `npm run seed:battle-packs` pre-generates them (idempotent via cache); the seed script is run by the owner, not the agent.
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
 - The repo now has a checked-in Supabase baseline migration under `supabase/migrations/`, but future schema changes still need follow-up migration files instead of one-off dashboard edits.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.

@@ -5,11 +5,11 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
 import type { Rivalry } from "@/lib/domain-types";
 import {
+  DEFAULT_WEBSITE_LANGUAGE,
   formatWebsiteDateTime,
   getDictionary,
   getLocalizedLanguageLevelLabel,
   getLocalizedLearningLanguageLabel,
-  resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
 import { getEditableProfileFromUser } from "@/lib/profile";
@@ -47,7 +47,7 @@ export default function NewRoundPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [rivalry, setRivalry] = useState<Rivalry | null>(null);
   const [websiteLanguage, setWebsiteLanguage] = useState(
-    resolveClientWebsiteLanguage()
+    DEFAULT_WEBSITE_LANGUAGE
   );
   const [latestRoundCreatedAt, setLatestRoundCreatedAt] = useState<string | null>(
     null

@@ -17,9 +17,9 @@ import {
   getLocalizedLanguageLevelLabel,
   getLocalizedLearningLanguageLabel,
   persistWebsiteLanguage,
-  resolveClientWebsiteLanguage,
   WEBSITE_LANGUAGES,
 } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { supabase } from "@/lib/supabase";
 import { LANGUAGE_LEVELS } from "@/lib/language-level";
 import {
@@ -42,7 +42,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{

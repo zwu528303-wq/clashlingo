@@ -1,8 +1,130 @@
 # ClashLingo Session Summary
 
-Date: 2026-05-30
+Date: 2026-05-31
 
-## What Changed This Session
+## What Changed This Session (2026-05-31)
+
+### Stage-clear rule: accuracy ≥ 80%
+
+Product decision (owner): a scenario stage is **cleared** when
+`correctAnswers / totalQuestions ≥ 0.80`. Speed and quality axes still display
+on the report but do NOT gate completion — picking a correct multiple-choice
+option can never earn a quality point, so gating on the 3-axis total would
+unfairly penalize MC-heavy stages.
+
+- `lib/battle-scoring.ts` — added `export const STAGE_CLEAR_ACCURACY = 0.8`, a
+  `BattleOutcome` interface (`correctCount`, `questionCount`, `accuracyRatio`,
+  `cleared`), and `getBattleOutcome(results)`.
+- `lib/battle-session.ts` — `StoredBattleReport` gained `outcome: BattleOutcome`;
+  `evaluateBattleSession` computes it; `loadBattleReport` backfills `outcome` for
+  pre-rule reports via `getBattleOutcome(parsed.results ?? [])`.
+- `components/BattleReportPage.tsx` — added a cleared/failed outcome banner
+  (green when cleared, amber when not) showing accuracy and the clear threshold.
+- i18n — `battleOutcomeClearedTitle/FailedTitle/Accuracy/ClearedHint/FailedHint`.
+
+### Scenario persistence layer (replaces MOCK_SCENARIO_PROGRESS)
+
+Clearing a stage (≥80% accuracy) now durably persists and unlocks the next
+stage. Scores are re-evaluated server-side so they cannot be forged.
+
+- `supabase/migrations/20260531_000001_scenario_persistence.sql` (CREATED, apply
+  manually) — two tables:
+  - `scenario_progress` — UNIQUE(user_id, scenario_slug, target_language, level);
+    `completed_stages smallint[]`, `current_stage`, `best_accuracy`,
+    `last_session_id`, `last_cleared_at`.
+  - `scenario_battle_reports` — `session_id` PK, `cleared`, `accuracy_ratio`,
+    full `report jsonb`.
+  - RLS: authenticated SELECT-self only; all writes go through the service role.
+- `app/api/scenario-battle/submit/route.ts` (CREATED) — Bearer auth; reads the
+  cached `battle_packs.pack`, re-evaluates answers/timings with the same pure
+  `evaluateBattleQuestion`/`evaluateBattleSession`, upserts the report, then
+  `advanceProgress` + upserts `scenario_progress`. Returns the server report.
+- `app/api/scenario-progress/route.ts` (CREATED) — GET; returns the user's
+  progress rows for a (targetLanguage, level) scope.
+- `lib/scenario-progress.ts` (REWRITTEN) — removed `MOCK_SCENARIO_PROGRESS`;
+  now map-based (`ScenarioProgressMap`). Added `resolveCurrentStage`,
+  pure `advanceProgress`, and client `fetchScenarioProgressMap`.
+- `lib/battle-session.ts` — added `submitScenarioRun` client helper (POSTs raw
+  answers/timings; returns server report or null for graceful degradation).
+- `components/BattlePage.tsx` — on completion, saves a locally-evaluated fallback
+  report, then submits the run and overwrites localStorage with the server report
+  before navigating to the report page.
+- `components/ScenarioCard.tsx` — takes a `progress` prop (default
+  `DEFAULT_PROGRESS`) instead of reading the mock.
+- `components/ScenarioMapPage.tsx` — fetches `fetchScenarioProgressMap` after
+  auth and passes real progress into the stage counters and every `ScenarioCard`.
+
+Graceful degradation: if the migration isn't applied or the pack isn't cached,
+`submitScenarioRun` returns null and the client keeps its local fallback report,
+so the app still works.
+
+## What Changed Last Session (2026-05-30)
+
+### Clash mode: removed the simulated AI opponent, added standard-answer self-check
+
+Product decision (owner): the fake AI opponent created no real competitive pull
+and blocked self-checking, so it is removed. Clash keeps the per-question timer
+and the 3-axis (speed / accuracy / quality) score, but now shows the **standard
+answer** after the run so the learner can self-check. Speed is no longer scored
+against the opponent's response time — it is scored against a par time
+(`timerLimit * 0.5`).
+
+- `lib/battle-scoring.ts`
+  - `EvaluatedQuestionResult` dropped `aiAnswer`, `aiScore`, `speedWinner`; added
+    `correctAnswer: LocalizedText | null`.
+  - Removed `getAIScore`, `getAIAnswer`, and the seeded RNG helpers
+    (`hashSeed`, `seededUnit`).
+  - Added `getStandardAnswer` (MC → correct option with its letter; fill/free →
+    `modelAnswers[0]`) and `getSelfReaction` (self-feedback, no rival framing).
+  - `userSpeed` now uses a par time (`Math.round(timerLimit * 0.5)`).
+  - `getBattleTotals` now returns a single `BattleTotals` (no `ai` column).
+- `lib/battle-session.ts` — `StoredBattleReport` dropped `opponentName`,
+  `opponentTotals`, `winner`; `userTotals` is the single totals object; removed
+  the winner derivation.
+- `components/BattlePage.tsx` — removed the opponent badge, the opponent label,
+  and the user-vs-AI side panel; the live score panel is now a single-column
+  self-score. Removed the `sessionSeed` arg.
+- `components/BattleReportPage.tsx` — removed the VS hero card / delta and the
+  opponent breakdown column; hero now shows player score + questions finished.
+  Per-question review now shows a labeled "Your answer" plus a highlighted
+  "Standard answer" block for self-check.
+- i18n (`types.ts` / `en.ts` / `zh-CN.ts`) — removed `battleWinnerLabels`; added
+  `battleYourAnswerLabel` + `battleStandardAnswerLabel`; relabeled
+  `battleReactionLabel` ("Self-check note" / "自查反馈"); refreshed clash copy
+  that implied an AI opponent / score race.
+
+Note: clash mode's AI opponent was always client-side simulated (seeded RNG), so
+removing it does NOT change Anthropic API cost — only battle-pack generation
+costs money.
+
+### Hydration fix: client-only website language read
+
+Symptom: a React hydration mismatch on `/scenario/cafe/stage/1` (server rendered
+`Loading...`, client rendered `加载中...`). Root cause: ~15 components read the
+stored/browser website language via `resolveClientWebsiteLanguage()` inside a
+`useState` initializer, which runs during the first client render. The server has
+no `window`, so it always rendered with `DEFAULT_WEBSITE_LANGUAGE` ("en"), and the
+client's first render disagreed.
+
+- Added `lib/i18n/use-client-website-language.ts` — a `useClientWebsiteLanguage()`
+  hook built on `useSyncExternalStore`. It returns `DEFAULT_WEBSITE_LANGUAGE` for
+  SSR + the first hydration render (server snapshot), then switches to the real
+  client snapshot (`resolveClientWebsiteLanguage()`), and subscribes to `storage`
+  events so cross-tab language changes propagate. No setState-in-effect, so it
+  also satisfies the `react-hooks/set-state-in-effect` lint rule.
+- Read-only components (language never mutated locally) now call the hook
+  directly: `BattlePage`, `BattleReportPage`, `ScenarioDetailPage`,
+  `ScenarioExamLandingPage`, `ScenarioMapPage`, `StageBriefingPage`,
+  `HowItWorksPage`, `Lounge`, `ScopesPage`, `RivalryDashboard`,
+  `ResetPasswordPage`, `SettingsPage`.
+- Components that mutate language from an async profile load now initialize state
+  at `DEFAULT_WEBSITE_LANGUAGE` and set the real value inside their async init
+  effect (post-await setState is not flagged): `ExamPage`, `ResultsPage`,
+  `RoundPage`, `app/rivalry/[id]/new-round/page.tsx`.
+- `components/Login.tsx` — refactored to derive `websiteLanguage` from the hook
+  plus a `pickedLanguage` override state (`pickedLanguage ?? detectedLanguage`),
+  removing the setState-in-effect that previously resolved the stored language.
+  `languageTouched` is now derived as `pickedLanguage !== null`.
 
 ### Overnight continuation — scenario audit + seed hardening
 
@@ -52,8 +174,11 @@ Date: 2026-05-30
 
 ## What Was Verified
 
-- `npm run lint` passes.
-- `npm run build` passes.
+- `npm run lint` passes (after the 80% rule + scenario persistence layer).
+- `npm run build` passes — both new routes register
+  (`/api/scenario-battle/submit`, `/api/scenario-progress`).
+- `npm run lint` / `npm run build` also passed after the prior clash-mode
+  self-check refactor and the hydration fix.
 - `npm run seed:battle-packs -- --dry-run` prints all 144 planned combos and sends no requests.
 - `npm run seed:battle-packs -- --dry-run --limit 3` prints 3 combos and sends no requests.
 - `npm run seed:battle-packs -- --dry-run --only cafe` prints 24 `cafe` combos and sends no requests.
@@ -67,12 +192,27 @@ Date: 2026-05-30
 - A benign `MODULE_TYPELESS_PACKAGE_JSON` reparse warning is expected when the seed script runs.
 - No database migration was created or applied during the overnight continuation.
 
+## Action Required From Owner
+
+1. Apply `supabase/migrations/20260531_000001_scenario_persistence.sql` in the
+   Supabase SQL Editor (no Supabase CLI in this repo). Until then, runs submit
+   but progress falls back to local-only.
+2. (Still required from before) Apply
+   `supabase/migrations/20260529_000002_battle_packs.sql` if not yet applied —
+   the submit route reads the cached pack from `battle_packs`.
+
 ## Recommended Next Task
 
-1. Review `EXAM_LOOPS_AUDIT.md` and decide whether to pursue the recommended shared answer-run layer.
-2. Decide scenario progress semantics: per language/level or global, and whether exam, clash win, score threshold, or any attempt clears a stage.
-3. Review `SCENARIO_PERSISTENCE_PLAN.md`; if approved, convert the draft schema into a real migration in a future session and have the human apply it manually.
-4. After migration and content review, the human can run a small live seed smoke such as `npm run seed:battle-packs -- --limit 3 --only cafe`, then decide whether to run the full seed.
+1. After both migrations are applied, play a stage end-to-end and confirm
+   `scenario_progress` / `scenario_battle_reports` rows are written and the next
+   stage unlocks on the scenario map.
+2. (Deferred / P1) `StageBriefingPage` and `ScenarioExamLandingPage` still mint
+   client-side mock session ids; works with the submit route (sessionId is just
+   a text key) but could move to server-created sessions later.
+3. Review `EXAM_LOOPS_AUDIT.md` and decide whether to pursue the shared
+   answer-run layer.
+4. After content review, the human can run a small live seed smoke such as
+   `npm run seed:battle-packs -- --limit 3 --only cafe`, then the full seed.
 
 ## Next Session Start Order
 

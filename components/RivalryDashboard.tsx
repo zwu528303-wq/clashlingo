@@ -26,8 +26,8 @@ import {
   getDictionary,
   getLocalizedLearningLanguageLabel,
   getLocalizedRoundStatusLabel,
-  resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { supabase } from "../lib/supabase";
 import AppSidebar from "@/components/AppSidebar";
 import type {
@@ -74,7 +74,7 @@ export default function RivalryDashboard() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [roundsByRivalry, setRoundsByRivalry] = useState<Record<string, Round[]>>(
     {}

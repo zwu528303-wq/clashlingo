@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, CircleHelp, Clock3, Sparkles } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import HowItWorksLoop from "@/components/HowItWorksLoop";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { supabase } from "@/lib/supabase";
 import { getGuideFaqs, getProductSurfaces } from "@/lib/onboarding";
 import {
@@ -16,7 +17,7 @@ import {
 
 export default function HowItWorksPage() {
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);

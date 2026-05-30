@@ -21,11 +21,9 @@ export interface EvaluatedQuestionResult {
   skillTags: string[];
   userAnswer: string;
   userScore: QuestionScoreBreakdown;
-  aiAnswer: string | null;
-  aiScore: QuestionScoreBreakdown;
+  correctAnswer: LocalizedText | null;
   wasTimeout: boolean;
   timeSpentSec: number;
-  speedWinner: "user" | "ai" | "tie";
   wasCorrect: boolean;
   reaction: string;
 }
@@ -35,6 +33,39 @@ export interface BattleTotals {
   speed: number;
   accuracy: number;
   quality: number;
+}
+
+/**
+ * A stage is "cleared" when the learner answers at least this share of the
+ * questions correctly. Product rule: 80% accuracy. Speed and expression quality
+ * still show on the report, but they do not gate stage completion (selecting the
+ * right option can never earn a quality point, so gating on the 3-axis total
+ * would be both harder and unfair to multiple-choice questions).
+ */
+export const STAGE_CLEAR_ACCURACY = 0.8;
+
+export interface BattleOutcome {
+  correctCount: number;
+  questionCount: number;
+  /** Correct answers / total questions, in the range 0..1. */
+  accuracyRatio: number;
+  /** True when `accuracyRatio` meets `STAGE_CLEAR_ACCURACY`. */
+  cleared: boolean;
+}
+
+export function getBattleOutcome(
+  results: EvaluatedQuestionResult[]
+): BattleOutcome {
+  const questionCount = results.length;
+  const correctCount = results.filter((result) => result.wasCorrect).length;
+  const accuracyRatio = questionCount === 0 ? 0 : correctCount / questionCount;
+
+  return {
+    correctCount,
+    questionCount,
+    accuracyRatio,
+    cleared: questionCount > 0 && accuracyRatio >= STAGE_CLEAR_ACCURACY,
+  };
 }
 
 function normalizeText(value: string) {
@@ -54,19 +85,6 @@ function makeTotal(score: Omit<QuestionScoreBreakdown, "total">): QuestionScoreB
     ...score,
     total: score.speed + score.accuracy + score.quality,
   };
-}
-
-function hashSeed(input: string) {
-  let hash = 0;
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
-  }
-
-  return hash;
-}
-
-function seededUnit(seed: string) {
-  return (hashSeed(seed) % 1000) / 1000;
 }
 
 export function getQuestionTimer(question: BattleQuestion, rules: BattleRules) {
@@ -152,69 +170,60 @@ function getUserQuality(question: BattleQuestion, answer: string) {
   return keywordHits >= 1 && wordCount >= 3 ? 1 : 0;
 }
 
-function getAIScore(question: BattleQuestion, seedBase: string) {
-  const speedRoll = seededUnit(`${seedBase}:speed`);
-  const accuracyRoll = seededUnit(`${seedBase}:accuracy`);
-  const qualityRoll = seededUnit(`${seedBase}:quality`);
+/**
+ * The standard answer surfaced for self-checking after each question.
+ * - Multiple choice: the correct option, prefixed with its letter.
+ * - Fill blank / free response: the first model answer (a target-language
+ *   string, so both locales show the same text).
+ */
+function getStandardAnswer(question: BattleQuestion): LocalizedText | null {
+  if (isMultipleChoiceQuestion(question)) {
+    const correct = question.options.find(
+      (option) => option.id.toLowerCase() === question.correctOption.toLowerCase()
+    );
+    if (!correct) {
+      return null;
+    }
 
-  const accuracy =
-    accuracyRoll >= (isFreeResponseQuestion(question) ? 0.28 : 0.18) ? 1 : 0;
-  const quality =
-    isMultipleChoiceQuestion(question) || accuracy === 0
-      ? 0
-      : qualityRoll >= (isFillBlankQuestion(question) ? 0.22 : 0.38)
-        ? 1
-        : 0;
+    const letter = correct.id.toUpperCase();
+    return {
+      en: `${letter}. ${correct.text.en}`,
+      "zh-CN": `${letter}. ${correct.text["zh-CN"]}`,
+    };
+  }
 
-  return {
-    speedRoll,
-    score: makeTotal({
-      speed: 0,
-      accuracy,
-      quality,
-    }),
-  };
-}
-
-function getAIAnswer(question: BattleQuestion, aiWasCorrect: boolean) {
-  if (!aiWasCorrect) {
+  const modelAnswer = question.modelAnswers[0];
+  if (!modelAnswer) {
     return null;
   }
 
-  if (isMultipleChoiceQuestion(question)) {
-    return question.correctOption.toUpperCase();
-  }
-
-  return question.modelAnswers[0] ?? null;
+  return { en: modelAnswer, "zh-CN": modelAnswer };
 }
 
-function getBattleReaction(
+function getSelfReaction(
   question: BattleQuestion,
-  speedWinner: "user" | "ai" | "tie",
   userScore: QuestionScoreBreakdown,
-  aiScore: QuestionScoreBreakdown
+  wasTimeout: boolean
 ) {
   if (userScore.total === 0) {
-    return "You froze on that one.";
+    return wasTimeout
+      ? "Time ran out on that one — check the standard answer below."
+      : "Not quite. Compare with the standard answer below.";
   }
 
-  if (speedWinner === "user" && userScore.total > aiScore.total) {
+  if (userScore.accuracy === 1 && userScore.speed === 1) {
     if (isFreeResponseQuestion(question) && userScore.quality === 1) {
-      return "Clean answer. You stole that round.";
+      return "Clean and fast. That's exactly the answer.";
     }
 
-    return "Quick and sharp. You got that one.";
+    return "Quick and correct. Nicely done.";
   }
 
-  if (speedWinner === "ai" && aiScore.total > userScore.total) {
-    return "Too slow. The rival edged ahead.";
+  if (userScore.accuracy === 1) {
+    return "Correct — try to lock it in faster next time.";
   }
 
-  if (userScore.accuracy === 1 && aiScore.accuracy === 1) {
-    return "Both landed it. Keep pushing.";
-  }
-
-  return "That one was messy. Reset fast.";
+  return "Close. Check the standard answer below to tighten it up.";
 }
 
 export function evaluateBattleQuestion({
@@ -222,48 +231,32 @@ export function evaluateBattleQuestion({
   answer,
   timeSpentSec,
   rules,
-  sessionSeed,
 }: {
   question: BattleQuestion;
   answer: string;
   timeSpentSec: number;
   rules: BattleRules;
-  sessionSeed: string;
 }): EvaluatedQuestionResult {
   const timerLimit = getQuestionTimer(question, rules);
   const clampedTime = clamp(timeSpentSec, 0, timerLimit);
   const userAccuracy = getUserAccuracy(question, answer);
   const userQuality = getUserQuality(question, answer);
-  const aiEvaluation = getAIScore(question, `${sessionSeed}:${question.id}`);
-  const aiResponseSec = Math.max(
-    1,
-    Math.round((0.28 + aiEvaluation.speedRoll * 0.6) * timerLimit)
-  );
 
+  // Speed is now scored against a par time (half the question's timer) instead
+  // of a simulated opponent's response time.
+  const parSec = Math.max(1, Math.round(timerLimit * 0.5));
   const userResponded = normalizeText(answer).length > 0;
   const userSpeed =
-    userResponded && userAccuracy === 1 && clampedTime <= aiResponseSec ? 1 : 0;
-  const aiSpeed =
-    aiEvaluation.score.accuracy === 1 &&
-    (userAccuracy === 0 || aiResponseSec < clampedTime)
-      ? 1
-      : 0;
+    userResponded && userAccuracy === 1 && clampedTime <= parSec ? 1 : 0;
 
   const userScore = makeTotal({
     speed: userSpeed,
     accuracy: userAccuracy,
     quality: userQuality,
   });
-  const aiScore = makeTotal({
-    speed: aiSpeed,
-    accuracy: aiEvaluation.score.accuracy,
-    quality: aiEvaluation.score.quality,
-  });
 
-  const speedWinner =
-    userSpeed === aiSpeed ? "tie" : userSpeed > aiSpeed ? "user" : "ai";
   const wasTimeout = !userResponded || clampedTime >= timerLimit;
-  const reaction = getBattleReaction(question, speedWinner, userScore, aiScore);
+  const reaction = getSelfReaction(question, userScore, wasTimeout);
 
   return {
     questionId: question.id,
@@ -272,37 +265,24 @@ export function evaluateBattleQuestion({
     skillTags: question.skillTags,
     userAnswer: answer.trim(),
     userScore,
-    aiAnswer: getAIAnswer(question, aiScore.accuracy === 1),
-    aiScore,
+    correctAnswer: getStandardAnswer(question),
     wasTimeout,
     timeSpentSec: clampedTime,
-    speedWinner,
     wasCorrect: userAccuracy === 1,
     reaction,
   };
 }
 
-export function getBattleTotals(results: EvaluatedQuestionResult[]): {
-  user: BattleTotals;
-  ai: BattleTotals;
-} {
-  return results.reduce(
+export function getBattleTotals(results: EvaluatedQuestionResult[]): BattleTotals {
+  return results.reduce<BattleTotals>(
     (totals, result) => {
-      totals.user.total += result.userScore.total;
-      totals.user.speed += result.userScore.speed;
-      totals.user.accuracy += result.userScore.accuracy;
-      totals.user.quality += result.userScore.quality;
-
-      totals.ai.total += result.aiScore.total;
-      totals.ai.speed += result.aiScore.speed;
-      totals.ai.accuracy += result.aiScore.accuracy;
-      totals.ai.quality += result.aiScore.quality;
+      totals.total += result.userScore.total;
+      totals.speed += result.userScore.speed;
+      totals.accuracy += result.userScore.accuracy;
+      totals.quality += result.userScore.quality;
 
       return totals;
     },
-    {
-      user: { total: 0, speed: 0, accuracy: 0, quality: 0 },
-      ai: { total: 0, speed: 0, accuracy: 0, quality: 0 },
-    }
+    { total: 0, speed: 0, accuracy: 0, quality: 0 }
   );
 }

@@ -7,7 +7,8 @@ import { ArrowLeft, Layers3, MapPinned, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AppSidebar from "@/components/AppSidebar";
 import StageCard from "@/components/StageCard";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import {
   SCENARIO_STAGE_DEFINITIONS,
   SCENARIO_TEMPLATE_LABELS,
@@ -35,7 +36,7 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
   const scenario = getScenarioBySlug(slug);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);

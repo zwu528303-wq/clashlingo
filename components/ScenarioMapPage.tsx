@@ -5,10 +5,14 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import AppSidebar from "@/components/AppSidebar";
 import ScenarioCard from "@/components/ScenarioCard";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import {
   countClearedStages,
   countStartedScenarios,
+  fetchScenarioProgressMap,
+  getScenarioProgress,
+  type ScenarioProgressMap,
 } from "@/lib/scenario-progress";
 import {
   SCENARIO_DOMAINS,
@@ -32,7 +36,8 @@ export default function ScenarioMapPage() {
   const router = useRouter();
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const [progressMap, setProgressMap] = useState<ScenarioProgressMap>({});
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const [activeDomain, setActiveDomain] = useState(SCENARIO_DOMAIN_ORDER[0]);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
@@ -64,6 +69,18 @@ export default function ScenarioMapPage() {
         displayName: resolveDisplayName(data?.display_name, authProfile.displayName),
       });
       setLoading(false);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const map = await fetchScenarioProgressMap({
+          accessToken: session.access_token,
+          targetLanguage: authProfile.preferredLanguage,
+          level: authProfile.defaultLanguageLevel,
+        });
+        setProgressMap(map);
+      }
     };
 
     void init();
@@ -94,8 +111,8 @@ export default function ScenarioMapPage() {
   const previewScenarios = activeScenarios.filter(
     (scenario) => scenario.launchStatus === "coming_soon"
   );
-  const activeDomainStarted = countStartedScenarios(activeScenarios);
-  const activeDomainCleared = countClearedStages(activeScenarios);
+  const activeDomainStarted = countStartedScenarios(activeScenarios, progressMap);
+  const activeDomainCleared = countClearedStages(activeScenarios, progressMap);
 
   if (loading || !authUser || !profile) {
     return (
@@ -246,6 +263,7 @@ export default function ScenarioMapPage() {
                           key={scenario.slug}
                           scenario={scenario}
                           websiteLanguage={websiteLanguage}
+                          progress={getScenarioProgress(scenario.slug, progressMap)}
                         />
                       ))}
                     </div>
@@ -268,6 +286,7 @@ export default function ScenarioMapPage() {
                             key={scenario.slug}
                             scenario={scenario}
                             websiteLanguage={websiteLanguage}
+                            progress={getScenarioProgress(scenario.slug, progressMap)}
                           />
                         ))}
                       </div>

@@ -17,9 +17,9 @@ import HowItWorksLoop from "@/components/HowItWorksLoop";
 import {
   getDictionary,
   persistWebsiteLanguage,
-  resolveClientWebsiteLanguage,
   type WebsiteLanguage,
 } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { supabase } from "../lib/supabase";
 import { DEFAULT_LANGUAGE_LEVEL } from "@/lib/language-level";
 import {
@@ -48,10 +48,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<MessageState>(null);
   const [pendingEmail, setPendingEmail] = useState("");
-  const [websiteLanguage, setWebsiteLanguage] = useState<WebsiteLanguage>(
-    () => resolveClientWebsiteLanguage()
+  // Hydration-safe: server + first client render use DEFAULT_WEBSITE_LANGUAGE,
+  // then the hook resolves the stored/browser language after mount. A user pick
+  // (pickedLanguage) overrides the detected value.
+  const detectedLanguage = useClientWebsiteLanguage();
+  const [pickedLanguage, setPickedLanguage] = useState<WebsiteLanguage | null>(
+    null
   );
-  const [languageTouched, setLanguageTouched] = useState(false);
+  const websiteLanguage = pickedLanguage ?? detectedLanguage;
+  const languageTouched = pickedLanguage !== null;
 
   const isSignUp = view === "sign_up";
   const isForgotPassword = view === "forgot_password";
@@ -59,8 +64,7 @@ export default function Login() {
   const dictionary = getDictionary(websiteLanguage);
 
   const setLanguagePreference = (nextLanguage: WebsiteLanguage) => {
-    setWebsiteLanguage(nextLanguage);
-    setLanguageTouched(true);
+    setPickedLanguage(nextLanguage);
     persistWebsiteLanguage(nextLanguage);
   };
 

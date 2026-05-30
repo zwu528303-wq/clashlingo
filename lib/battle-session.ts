@@ -5,8 +5,11 @@ import type {
   StageNumber,
 } from "@/lib/scenario-types";
 import type { SupportedLanguage } from "@/lib/profile";
+import type { LanguageLevel } from "@/lib/language-level";
 import {
+  getBattleOutcome,
   getBattleTotals,
+  type BattleOutcome,
   type BattleTotals,
   type EvaluatedQuestionResult,
 } from "@/lib/battle-scoring";
@@ -21,12 +24,10 @@ export interface StoredBattleReport {
   stage: StageNumber;
   targetLanguage: SupportedLanguage;
   playerName: string;
-  opponentName: string | null;
   packId: string;
   createdAt: string;
   userTotals: BattleTotals;
-  opponentTotals: BattleTotals | null;
-  winner: "user" | "opponent" | "tie" | null;
+  outcome: BattleOutcome;
   fastestAnswer: string | null;
   bestSentence: string | null;
   weakSkill: string | null;
@@ -54,24 +55,7 @@ export function evaluateBattleSession({
   questionResults: EvaluatedQuestionResult[];
 }): StoredBattleReport {
   const totals = getBattleTotals(questionResults);
-  const winner =
-    totals.user.total === totals.ai.total
-      ? totals.user.accuracy === totals.ai.accuracy
-        ? totals.user.speed === totals.ai.speed
-          ? totals.user.quality === totals.ai.quality
-            ? "tie"
-            : totals.user.quality > totals.ai.quality
-              ? "user"
-              : "opponent"
-          : totals.user.speed > totals.ai.speed
-            ? "user"
-            : "opponent"
-        : totals.user.accuracy > totals.ai.accuracy
-          ? "user"
-          : "opponent"
-      : totals.user.total > totals.ai.total
-        ? "user"
-        : "opponent";
+  const outcome = getBattleOutcome(questionResults);
 
   const fastestAnswer =
     questionResults
@@ -110,12 +94,10 @@ export function evaluateBattleSession({
     stage: pack.stage,
     targetLanguage: pack.targetLanguage,
     playerName,
-    opponentName: mode === "clash" ? "AI Opponent" : null,
     packId: pack.id,
     createdAt: new Date().toISOString(),
-    userTotals: totals.user,
-    opponentTotals: mode === "clash" ? totals.ai : null,
-    winner: mode === "clash" ? winner : null,
+    userTotals: totals,
+    outcome,
     fastestAnswer,
     bestSentence,
     weakSkill,
@@ -146,7 +128,68 @@ export function loadBattleReport(sessionId: string): StoredBattleReport | null {
   }
 
   try {
-    return JSON.parse(raw) as StoredBattleReport;
+    const parsed = JSON.parse(raw) as StoredBattleReport;
+    // Backfill the outcome for reports stored before the 80% clear rule existed.
+    if (!parsed.outcome) {
+      parsed.outcome = getBattleOutcome(parsed.results ?? []);
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Submit a finished run to the server for authoritative scoring + persistence.
+ *
+ * The server re-evaluates the answers (so scores cannot be forged), writes the
+ * report and advances scenario progress when the run clears the stage, then
+ * returns the persisted report. Returns null on any failure so the caller can
+ * fall back to its locally-evaluated report (e.g. before the migration is
+ * applied or if the battle pack is not cached yet).
+ */
+export async function submitScenarioRun(args: {
+  accessToken: string;
+  sessionId: string;
+  scenarioSlug: string;
+  stage: StageNumber;
+  mode: "clash" | "exam";
+  targetLanguage: SupportedLanguage;
+  level: LanguageLevel;
+  results: EvaluatedQuestionResult[];
+}): Promise<StoredBattleReport | null> {
+  const answers: Record<string, string> = {};
+  const timings: Record<string, number> = {};
+  for (const result of args.results) {
+    answers[result.questionId] = result.userAnswer;
+    timings[result.questionId] = result.timeSpentSec;
+  }
+
+  try {
+    const response = await fetch("/api/scenario-battle/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${args.accessToken}`,
+      },
+      body: JSON.stringify({
+        sessionId: args.sessionId,
+        scenarioSlug: args.scenarioSlug,
+        stage: args.stage,
+        mode: args.mode,
+        targetLanguage: args.targetLanguage,
+        level: args.level,
+        answers,
+        timings,
+      }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as { report?: StoredBattleReport };
+    return data.report ?? null;
   } catch {
     return null;
   }

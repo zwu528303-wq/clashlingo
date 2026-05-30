@@ -5,10 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { Rivalry, Round } from "@/lib/domain-types";
 import {
+  DEFAULT_WEBSITE_LANGUAGE,
   getDictionary,
   getLocalizedLanguageLevelLabel,
   getLocalizedLearningLanguageLabel,
-  resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
 import { getEditableProfileFromUser } from "@/lib/profile";
@@ -81,12 +81,10 @@ export default function RoundPage() {
   const [syllabusError, setSyllabusError] = useState("");
   const [actionError, setActionError] = useState("");
   const [websiteLanguage, setWebsiteLanguage] = useState(
-    resolveClientWebsiteLanguage()
+    DEFAULT_WEBSITE_LANGUAGE
   );
   const [instructionLanguage, setInstructionLanguage] =
-    useState<InstructionLanguage>(
-    resolveClientWebsiteLanguage()
-  );
+    useState<InstructionLanguage>(DEFAULT_WEBSITE_LANGUAGE);
   const examGenerationTriggered = useRef(false);
   const examLiveSyncTriggered = useRef(false);
 

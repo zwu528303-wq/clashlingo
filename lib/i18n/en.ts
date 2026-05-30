@@ -757,15 +757,15 @@ export const en = {
     battleLiveEyebrow: "Live Clash",
     battleLiveTitle: "Café battle is now in play",
     battleLiveDescription:
-      "The new battle loop is running on the Café mock pack first: timer pressure, mixed question types, AI score pressure, and a real battle report at the end.",
+      "The battle loop runs on timer pressure and mixed question types. Each question shows the standard answer afterward so you can self-check, plus a real battle report at the end.",
     battleStart: "Start Battle",
     battleStartHint:
-      "Start when you're ready. The timer and score race begin on the first question.",
+      "Start when you're ready. The timer starts on the first question, and you can check your answer against the standard one after each.",
     battleQuestionCounter: (current: number, total: number) =>
       `Question ${current} / ${total}`,
     battleTimerLabel: "Time left",
     battleScoreLabel: "Current score",
-    battleReactionLabel: "Pressure feed",
+    battleReactionLabel: "Self-check note",
     battleCurrentPackLabel: "Current pack",
     battleSkillLabel: "Skill tags",
     battleSubmit: "Lock Answer",
@@ -780,7 +780,7 @@ export const en = {
     battleReportEyebrow: "Battle Report",
     battleReportTitle: "The clash is scored",
     battleReportDescription:
-      "This is the first local battle report for the new scenario flow: one score race, one clean breakdown, and an obvious next move.",
+      "Your battle report for this scenario run: your score breakdown, the standard answer for every question, and an obvious next move.",
     battleReportMissingTitle: "No battle report yet",
     battleReportMissingDescription:
       "Finish a battle first, then the report will land here with your score race and practice cue.",
@@ -791,11 +791,6 @@ export const en = {
     examReportMissingTitle: "No exam report yet",
     examReportMissingDescription:
       "Finish an exam run first, then the checkpoint report will land here with your score and practice cue.",
-    battleWinnerLabels: {
-      user: "You win",
-      opponent: "AI wins",
-      tie: "Tie game",
-    },
     battleScoreBreakdownTitle: "Score breakdown",
     battleFastestAnswerTitle: "Fastest answer",
     battleBestSentenceTitle: "Best sentence",
@@ -807,6 +802,16 @@ export const en = {
     battleBackToBriefing: "Back to Briefing",
     battleBackToScenarios: "Back to Scenarios",
     battleNoAnswer: "No answer",
+    battleYourAnswerLabel: "Your answer",
+    battleStandardAnswerLabel: "Standard answer",
+    battleOutcomeClearedTitle: "Stage cleared!",
+    battleOutcomeFailedTitle: "Not cleared yet",
+    battleOutcomeAccuracy: (correct, total, percent) =>
+      `${correct}/${total} correct · ${percent}% accuracy`,
+    battleOutcomeClearedHint: (percent) =>
+      `You hit the ${percent}% accuracy needed to clear this stage.`,
+    battleOutcomeFailedHint: (percent) =>
+      `Reach ${percent}% accuracy to clear this stage. Review the standard answers and try again.`,
   },
   results: {
     loading: "Loading results...",

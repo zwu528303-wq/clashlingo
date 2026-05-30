@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AppSidebar from "@/components/AppSidebar";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { useBattlePack } from "@/lib/use-battle-pack";
 import {
   getScenarioBySlug,
@@ -72,7 +73,7 @@ export default function StageBriefingPage({
   const stageDefinition = getStageDefinition(stage);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);

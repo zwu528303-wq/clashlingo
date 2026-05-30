@@ -1,9 +1,26 @@
 # Task Queue
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 
 ## Recently Completed
 
+- Defined the scenario stage-clear rule and built the scenario persistence layer.
+  - Clear rule: a stage is cleared when `correctAnswers / totalQuestions ≥ 0.80` (accuracy only; speed/quality display but do not gate). `lib/battle-scoring.ts` adds `STAGE_CLEAR_ACCURACY`, `BattleOutcome`, `getBattleOutcome`; `StoredBattleReport.outcome` carries it (with backfill in `loadBattleReport`); `BattleReportPage` shows a cleared/failed banner; new i18n `battleOutcome*` keys.
+  - Persistence: `supabase/migrations/20260531_000001_scenario_persistence.sql` (apply manually) adds `scenario_progress` + `scenario_battle_reports` with SELECT-self RLS (service-role writes).
+  - Routes: `app/api/scenario-battle/submit` re-evaluates raw answers/timings server-side (anti-forgery), upserts the report, then `advanceProgress` + upserts progress; `app/api/scenario-progress` returns per-scope progress.
+  - Wiring: `lib/scenario-progress.ts` rewritten map-based (removed `MOCK_SCENARIO_PROGRESS`, added `resolveCurrentStage` / `advanceProgress` / `fetchScenarioProgressMap`); `lib/battle-session.ts` adds `submitScenarioRun`; `BattlePage` submits with local fallback; `ScenarioCard` takes a `progress` prop; `ScenarioMapPage` fetches and passes real progress. `npm run lint` + `npm run build` pass.
+- Fixed a React hydration mismatch from reading the client website language in `useState` initializers.
+  - Added `lib/i18n/use-client-website-language.ts` (`useClientWebsiteLanguage()`), a `useSyncExternalStore` hook returning `DEFAULT_WEBSITE_LANGUAGE` on the server + first hydration render, then the real stored/browser language, subscribed to cross-tab `storage` events. No setState-in-effect, so it also clears the `react-hooks/set-state-in-effect` lint rule.
+  - Read-only components now call the hook directly (`BattlePage`, `BattleReportPage`, `ScenarioDetailPage`, `ScenarioExamLandingPage`, `ScenarioMapPage`, `StageBriefingPage`, `HowItWorksPage`, `Lounge`, `ScopesPage`, `RivalryDashboard`, `ResetPasswordPage`, `SettingsPage`).
+  - Components that mutate language from an async profile load now init at `DEFAULT_WEBSITE_LANGUAGE` and set the real value post-await (`ExamPage`, `ResultsPage`, `RoundPage`, `app/rivalry/[id]/new-round/page.tsx`).
+  - `Login.tsx` derives `websiteLanguage` from the hook plus a `pickedLanguage` override; `languageTouched` is now `pickedLanguage !== null`. `npm run lint` + `npm run build` pass.
+- Replaced the clash-mode simulated AI opponent with a standard-answer self-check.
+  - Removed the client-side seeded AI opponent (`getAIScore` / `getAIAnswer` / RNG helpers) from `lib/battle-scoring.ts`; each result now carries `correctAnswer` (MC correct option + letter; fill/free `modelAnswers[0]`).
+  - `userSpeed` is now scored against a par time (`timerLimit * 0.5`) instead of the opponent's response time; `getBattleTotals` returns a single `BattleTotals`.
+  - `StoredBattleReport` dropped `opponentName` / `opponentTotals` / `winner`.
+  - `BattlePage` removed the opponent badge + VS side panel (single-column self-score); `BattleReportPage` removed the VS hero/delta + opponent column and now shows a labeled "Your answer" + highlighted "Standard answer" per question.
+  - i18n: removed `battleWinnerLabels`, added `battleYourAnswerLabel` + `battleStandardAnswerLabel`, relabeled `battleReactionLabel`, refreshed clash copy. `npm run lint` + `npm run build` pass.
+  - Note: the opponent was already client-side simulated, so this does not reduce Anthropic API cost.
 - Added scenario answer-loop audit and persistence planning docs.
   - `docs/project/EXAM_LOOPS_AUDIT.md` maps rivalry exam, scenario clash, and scenario exam with a comparison table, overlaps/conflicts, and a recommended shared answer-run layer.
   - `docs/project/SCENARIO_PERSISTENCE_PLAN.md` documents the current mock/localStorage state and includes a DRAFT non-applied SQL schema plus migration/wiring plan.
@@ -119,12 +136,13 @@ Last updated: 2026-05-30
 
 ## Highest Priority
 
-1. Decide scenario progress semantics before implementing persistence.
-   - Open questions: per-language/per-level vs global progress; exam vs clash win vs score threshold vs any attempt for stage completion.
-   - Use `docs/project/SCENARIO_PERSISTENCE_PLAN.md` as the starting point.
+1. Apply the scenario persistence migration, then verify end-to-end.
+   - Apply `supabase/migrations/20260531_000001_scenario_persistence.sql` in the Supabase SQL Editor (and `20260529_000002_battle_packs.sql` if not yet applied).
+   - Play a stage and confirm `scenario_progress` / `scenario_battle_reports` rows write and the next stage unlocks on the scenario map.
+   - Progress semantics are now per (user, scenario, target_language, level); completion = accuracy ≥ 80%.
 
 2. Keep the lint baseline clean while touching product work.
-   - `npm run lint` currently passes.
+   - `npm run lint` currently passes (incl. the new `useClientWebsiteLanguage` hook).
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
@@ -134,9 +152,8 @@ Last updated: 2026-05-30
 
 ## Engineering Follow-Up
 
-4. Convert the scenario persistence draft into a real migration only after human review.
-   - Do not apply the draft schema directly from the Markdown without review.
-   - Human still applies migrations manually in Supabase SQL Editor.
+4. (Deferred / P1) Move scenario session ids server-side.
+   - `StageBriefingPage` and `ScenarioExamLandingPage` still mint client-side `mock-...` session ids. They work with the submit route (sessionId is just a text key) but could later be server-created.
 
 5. Expand the authenticated smoke suite beyond shell navigation.
    - Add a safe non-destructive path for signed-in smoke coverage, ideally around sign-in, lounge render, and rivalry navigation.

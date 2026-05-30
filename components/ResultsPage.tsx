@@ -21,9 +21,9 @@ import {
 import { supabase } from "../lib/supabase";
 import type { Exam, Rivalry, Round, Submission } from "@/lib/domain-types";
 import {
+  DEFAULT_WEBSITE_LANGUAGE,
   getDictionary,
   getLocalizedLearningLanguageLabel,
-  resolveClientWebsiteLanguage,
 } from "@/lib/i18n";
 import {
   getEditableProfileFromUser,
@@ -145,10 +145,10 @@ export default function ResultsPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [websiteLanguage, setWebsiteLanguage] = useState(
-    resolveClientWebsiteLanguage()
+    DEFAULT_WEBSITE_LANGUAGE
   );
   const [instructionLanguage, setInstructionLanguage] =
-    useState<InstructionLanguage>(resolveClientWebsiteLanguage());
+    useState<InstructionLanguage>(DEFAULT_WEBSITE_LANGUAGE);
   const [myDisplayName, setMyDisplayName] = useState("You");
   const [rivalDisplayName, setRivalDisplayName] = useState("Rival");
   const [round, setRound] = useState<Round | null>(null);

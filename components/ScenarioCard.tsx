@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { getDictionary, type WebsiteLanguage } from "@/lib/i18n";
-import { getScenarioProgress } from "@/lib/scenario-progress";
+import { DEFAULT_PROGRESS, type ScenarioProgress } from "@/lib/scenario-progress";
 import { SCENARIO_TEMPLATE_LABELS } from "@/lib/scenario-map";
 import {
   getLocalizedText,
@@ -35,6 +35,7 @@ const STATUS_STYLES: Record<
 interface ScenarioCardProps {
   scenario: Scenario;
   websiteLanguage: WebsiteLanguage;
+  progress?: ScenarioProgress;
 }
 
 function getStageVisualState(
@@ -61,10 +62,10 @@ function getStageVisualState(
 export default function ScenarioCard({
   scenario,
   websiteLanguage,
+  progress = DEFAULT_PROGRESS,
 }: ScenarioCardProps) {
   const dictionary = getDictionary(websiteLanguage);
   const statusStyle = STATUS_STYLES[scenario.launchStatus];
-  const progress = getScenarioProgress(scenario.slug);
   const templateLabel = getLocalizedText(
     SCENARIO_TEMPLATE_LABELS[scenario.template],
     websiteLanguage

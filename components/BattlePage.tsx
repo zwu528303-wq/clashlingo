@@ -19,13 +19,15 @@ import {
   clearBattleReport,
   evaluateBattleSession,
   saveBattleReport,
+  submitScenarioRun,
 } from "@/lib/battle-session";
 import {
   evaluateBattleQuestion,
   getBattleTotals,
   getQuestionTimer,
 } from "@/lib/battle-scoring";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { useBattlePack } from "@/lib/use-battle-pack";
 import { getScenarioBySlug } from "@/lib/scenario-map";
 import { getLocalizedText, isStageNumber } from "@/lib/scenario-types";
@@ -51,7 +53,7 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
   const searchParams = useSearchParams();
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
-  const [fallbackWebsiteLanguage] = useState(resolveClientWebsiteLanguage());
+  const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const [viewState, setViewState] = useState<BattleViewState>("ready");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -69,7 +71,6 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
   const slug = searchParams.get("scenario") ?? "";
   const stageParam = Number(searchParams.get("stage"));
   const stage = isStageNumber(stageParam) ? stageParam : null;
-  const opponent = searchParams.get("opponent") ?? "ai";
   const mode = searchParams.get("mode") === "exam" ? "exam" : "clash";
   const isExamMode = mode === "exam";
   const scenario = getScenarioBySlug(slug);
@@ -163,7 +164,8 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
         !scenario ||
         !profile ||
         !currentQuestion ||
-        startedAtMs === null
+        startedAtMs === null ||
+        stage === null
       ) {
         return;
       }
@@ -181,7 +183,6 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
         answer: rawAnswer,
         timeSpentSec,
         rules: pack.rules,
-        sessionSeed: sessionId,
       });
       const nextResults = [...results, nextResult];
 
@@ -189,7 +190,9 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
       setLastReaction(nextResult.reaction);
 
       if (currentIndex >= questions.length - 1) {
-        const report = evaluateBattleSession({
+        // Locally-evaluated report is the immediate fallback so the report page
+        // always has something to show, even if the server submit fails.
+        const fallbackReport = evaluateBattleSession({
           sessionId,
           mode,
           scenarioName: scenario.name,
@@ -197,11 +200,36 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
           pack,
           questionResults: nextResults,
         });
-        saveBattleReport(report);
+        saveBattleReport(fallbackReport);
         setViewState("completed");
-        router.push(
-          `/battle/${sessionId}/report?scenario=${scenario.slug}&stage=${stage}&mode=${mode}`
-        );
+
+        const reportHref = `/battle/${sessionId}/report?scenario=${scenario.slug}&stage=${stage}&mode=${mode}`;
+
+        void (async () => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          if (session?.access_token) {
+            const serverReport = await submitScenarioRun({
+              accessToken: session.access_token,
+              sessionId,
+              scenarioSlug: scenario.slug,
+              stage,
+              mode,
+              targetLanguage: profile.preferredLanguage,
+              level: profile.defaultLanguageLevel,
+              results: nextResults,
+            });
+
+            if (serverReport) {
+              // Server score is authoritative; replace the fallback.
+              saveBattleReport(serverReport);
+            }
+          }
+
+          router.push(reportHref);
+        })();
         return;
       }
 
@@ -282,14 +310,6 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
   }
 
   const backHref = `/scenario/${scenario.slug}/stage/${stage}`;
-  const opponentLabel =
-    opponent === "friend"
-      ? websiteLanguage === "zh-CN"
-        ? "好友对手"
-        : "Friend Opponent"
-      : websiteLanguage === "zh-CN"
-        ? "AI 对手"
-        : "AI Opponent";
   const laneBadge = isExamMode
     ? dictionary.scenarios.modes.exam
     : dictionary.scenarios.modes.clash;
@@ -335,11 +355,6 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
                 <span className="rounded-full bg-surface-container px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
                   {dictionary.scenarios.stageLabel(stage)}
                 </span>
-                {!isExamMode ? (
-                  <span className="rounded-full bg-secondary-container/65 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-secondary">
-                    {opponentLabel}
-                  </span>
-                ) : null}
               </div>
 
               <div className="space-y-3">
@@ -498,34 +513,28 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
                       {sidePrimaryLabel}
                     </p>
                     <p className="text-lg font-black tracking-tight text-on-surface">
-                      {isExamMode
-                        ? `${profile.displayName} ${totals.user.total}`
-                        : `${profile.displayName} ${totals.user.total} · ${opponentLabel} ${totals.ai.total}`}
+                      {`${profile.displayName} ${totals.total}`}
                     </p>
                   </div>
                 </div>
 
-                <div className={`grid gap-3 ${isExamMode ? "grid-cols-1" : "grid-cols-2"}`}>
+                <div className="grid grid-cols-2 gap-3">
                   {[
                     {
                       label: dictionary.results.stats.score,
-                      user: totals.user.total,
-                      ai: totals.ai.total,
+                      value: totals.total,
                     },
                     {
                       label: scoreLabels.speed,
-                      user: totals.user.speed,
-                      ai: totals.ai.speed,
+                      value: totals.speed,
                     },
                     {
                       label: scoreLabels.accuracy,
-                      user: totals.user.accuracy,
-                      ai: totals.ai.accuracy,
+                      value: totals.accuracy,
                     },
                     {
                       label: scoreLabels.quality,
-                      user: totals.user.quality,
-                      ai: totals.ai.quality,
+                      value: totals.quality,
                     },
                   ].map((row) => (
                     <div
@@ -536,7 +545,7 @@ export default function BattlePage({ sessionId }: BattlePageProps) {
                         {row.label}
                       </p>
                       <p className="mt-1 text-lg font-black tracking-tight text-on-surface">
-                        {isExamMode ? row.user : `${row.user} / ${row.ai}`}
+                        {row.value}
                       </p>
                     </div>
                   ))}

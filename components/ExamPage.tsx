@@ -10,7 +10,7 @@ import type {
   RivalryLedger,
   RivalryLedgerRound,
 } from "@/lib/domain-types";
-import { getDictionary, resolveClientWebsiteLanguage } from "@/lib/i18n";
+import { DEFAULT_WEBSITE_LANGUAGE, getDictionary } from "@/lib/i18n";
 import { getEditableProfileFromUser } from "@/lib/profile";
 import {
   createLocalizedList,
@@ -38,10 +38,10 @@ export default function ExamPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [websiteLanguage, setWebsiteLanguage] = useState(
-    resolveClientWebsiteLanguage()
+    DEFAULT_WEBSITE_LANGUAGE
   );
   const [instructionLanguage, setInstructionLanguage] =
-    useState<InstructionLanguage>(resolveClientWebsiteLanguage());
+    useState<InstructionLanguage>(DEFAULT_WEBSITE_LANGUAGE);
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [ready, setReady] = useState(false); // Only true when exam + questions are loaded
