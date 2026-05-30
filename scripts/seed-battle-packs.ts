@@ -20,15 +20,22 @@
  * Node 24 strips the TypeScript types natively; scenario-map.ts uses only
  * type-only imports, so it loads here without the "@/" path alias.
  */
+// @ts-expect-error -- Node 24 runs this script directly and needs .ts imports.
 import { SCENARIOS } from "../lib/scenario-map.ts";
+// @ts-expect-error -- Node 24 runs this script directly and needs .ts imports.
 import { LANGUAGE_LEVELS } from "../lib/language-level.ts";
 
 const BASE_URL = process.env.SEED_BASE_URL ?? "http://localhost:3000";
 const DELAY_MS = Number(process.env.SEED_DELAY_MS ?? 750);
-const DRY_RUN = process.argv.includes("--dry-run");
 
 // User-confirmed slimmed coverage: French / English / Spanish only.
 const TARGET_LANGUAGES = ["French", "English", "Spanish"] as const;
+
+interface CliOptions {
+  dryRun: boolean;
+  limit: number | null;
+  onlySlug: string | null;
+}
 
 interface Job {
   scenarioSlug: string;
@@ -38,9 +45,102 @@ interface Job {
   level: string;
 }
 
-function buildJobs(): Job[] {
+function parseArgs(argv: string[]): CliOptions {
+  const options: CliOptions = {
+    dryRun: false,
+    limit: null,
+    onlySlug: null,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === "--dry-run") {
+      options.dryRun = true;
+      continue;
+    }
+
+    if (arg === "--limit") {
+      const rawLimit = argv[index + 1];
+      const parsedLimit = Number(rawLimit);
+      if (
+        !rawLimit ||
+        !Number.isInteger(parsedLimit) ||
+        parsedLimit < 0
+      ) {
+        throw new Error("--limit requires a non-negative integer");
+      }
+      options.limit = parsedLimit;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--limit=")) {
+      const rawLimit = arg.slice("--limit=".length);
+      const parsedLimit = Number(rawLimit);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 0) {
+        throw new Error("--limit requires a non-negative integer");
+      }
+      options.limit = parsedLimit;
+      continue;
+    }
+
+    if (arg === "--only") {
+      const onlySlug = argv[index + 1];
+      if (!onlySlug) {
+        throw new Error("--only requires a scenario slug");
+      }
+      options.onlySlug = onlySlug;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--only=")) {
+      const onlySlug = arg.slice("--only=".length);
+      if (!onlySlug) {
+        throw new Error("--only requires a scenario slug");
+      }
+      options.onlySlug = onlySlug;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return options;
+}
+
+function getFullScenarios() {
+  return SCENARIOS.filter((scenario) => scenario.launchStatus === "full");
+}
+
+function getFullScenarioSlugs() {
+  return getFullScenarios().map((scenario) => scenario.slug);
+}
+
+function buildJobs(options: CliOptions): Job[] {
   const jobs: Job[] = [];
-  const fullScenarios = SCENARIOS.filter((s) => s.launchStatus === "full");
+  let fullScenarios = getFullScenarios();
+
+  if (options.onlySlug) {
+    const matchingScenario = SCENARIOS.find(
+      (scenario) => scenario.slug === options.onlySlug
+    );
+
+    if (!matchingScenario) {
+      throw new Error(
+        `Unknown scenario slug "${options.onlySlug}". Available full scenario slugs: ${getFullScenarioSlugs().join(", ")}`
+      );
+    }
+
+    if (matchingScenario.launchStatus !== "full") {
+      throw new Error(
+        `Scenario "${options.onlySlug}" is not full-launch. Available full scenario slugs: ${getFullScenarioSlugs().join(", ")}`
+      );
+    }
+
+    fullScenarios = [matchingScenario];
+  }
 
   for (const scenario of fullScenarios) {
     for (const stage of scenario.availableStages) {
@@ -58,7 +158,7 @@ function buildJobs(): Job[] {
     }
   }
 
-  return jobs;
+  return options.limit === null ? jobs : jobs.slice(0, options.limit);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -101,7 +201,23 @@ function describe(job: Job): string {
 }
 
 async function main() {
-  const jobs = buildJobs();
+  let options: CliOptions;
+  try {
+    options = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error((error as Error).message);
+    process.exitCode = 1;
+    return;
+  }
+
+  let jobs: Job[];
+  try {
+    jobs = buildJobs(options);
+  } catch (error) {
+    console.error((error as Error).message);
+    process.exitCode = 1;
+    return;
+  }
 
   console.log(
     `Battle-pack seed plan: ${jobs.length} packs ` +
@@ -110,7 +226,7 @@ async function main() {
   );
   console.log(`Target: ${BASE_URL}`);
 
-  if (DRY_RUN) {
+  if (options.dryRun) {
     for (const job of jobs) {
       console.log(`  • ${describe(job)}`);
     }
