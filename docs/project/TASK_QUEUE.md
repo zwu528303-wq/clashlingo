@@ -4,10 +4,17 @@ Last updated: 2026-05-30
 
 ## Recently Completed
 
-- Aligned `ScopeBriefing` to the rivalry Syllabus field shape (uncommitted, pending review).
+- Added scenario answer-loop audit and persistence planning docs.
+  - `docs/project/EXAM_LOOPS_AUDIT.md` maps rivalry exam, scenario clash, and scenario exam with a comparison table, overlaps/conflicts, and a recommended shared answer-run layer.
+  - `docs/project/SCENARIO_PERSISTENCE_PLAN.md` documents the current mock/localStorage state and includes a DRAFT non-applied SQL schema plus migration/wiring plan.
+- Hardened the battle-pack seed script for cheap future smoke runs.
+  - `scripts/seed-battle-packs.ts` now supports `--limit N` and `--only <slug>` in addition to `--dry-run`.
+  - Unknown or non-full scenario slugs exit non-zero with available full-launch slugs.
+  - Verified dry-run plans for all 144 combos, `--limit 3`, `--only cafe`, and bad slug behavior; no live seed was run.
+- Aligned `ScopeBriefing` to the rivalry Syllabus field shape.
   - `vocabularyGroups` now uses an exported `VocabularyGroup`; `sentencePatterns` split into `grammar` + `expressions`; `howBattleWorks` renamed `howTested`.
   - Propagated through `lib/battle-pack.ts`, `app/api/generate-battle-pack/route.ts`, `components/StageBriefingPage.tsx`, and i18n (`briefingGrammarTitle` / `briefingExpressionsTitle` / `briefingHowTestedTitle`).
-- Added a battle-pack pre-generation seed script (uncommitted, pending review).
+- Added a battle-pack pre-generation seed script.
   - `scripts/seed-battle-packs.ts` + `npm run seed:battle-packs` cover full scenarios × open stages × {French, English, Spanish} × 4 levels (144 packs), idempotent via the cache, with `--dry-run`.
   - On-demand generation stays the live fallback.
 - Shipped the scenario / battle (闯关) main loop and Phase 1 AI battle-pack backend (checkpoint `c33c0dd`).
@@ -112,25 +119,29 @@ Last updated: 2026-05-30
 
 ## Highest Priority
 
-1. Decide whether the new results battle-report screen needs one more visual polish round.
-   - The core report / share / review structure is now in place.
-   - Any follow-up should stay visual-only and preserve the current page behavior.
+1. Decide scenario progress semantics before implementing persistence.
+   - Open questions: per-language/per-level vs global progress; exam vs clash win vs score threshold vs any attempt for stage completion.
+   - Use `docs/project/SCENARIO_PERSISTENCE_PLAN.md` as the starting point.
 
 2. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes.
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
-3. Decide whether the bilingual rollout now needs one final wording pass.
-   - Core user-facing routes are translated.
-   - Any follow-up should focus on phrasing polish, not a new i18n architecture.
+3. Decide whether to pursue the recommended shared answer-run layer.
+   - Use `docs/project/EXAM_LOOPS_AUDIT.md`.
+   - The current recommendation is to persist scenario sessions/attempts/reports first and keep the mature rivalry exam as a legacy adapter.
 
 ## Engineering Follow-Up
 
-4. Expand the authenticated smoke suite beyond shell navigation.
+4. Convert the scenario persistence draft into a real migration only after human review.
+   - Do not apply the draft schema directly from the Markdown without review.
+   - Human still applies migrations manually in Supabase SQL Editor.
+
+5. Expand the authenticated smoke suite beyond shell navigation.
    - Add a safe non-destructive path for signed-in smoke coverage, ideally around sign-in, lounge render, and rivalry navigation.
 
-5. Review AI prompt robustness.
+6. Review AI prompt robustness.
    - Validate JSON shape more strictly in both API routes.
    - Decide whether fallback parsing should stay permissive or become stricter.
 
