@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { LockKeyhole, Sparkles } from "lucide-react";
+import { CheckCircle2, LockKeyhole, PlayCircle, Sparkles } from "lucide-react";
 import { getDictionary, type WebsiteLanguage } from "@/lib/i18n";
 import { getLocalizedText, type StageDefinition } from "@/lib/scenario-types";
+
+export type StageVisualState = "completed" | "current" | "open" | "locked";
 
 interface StageCardProps {
   stage: StageDefinition;
@@ -11,6 +13,8 @@ interface StageCardProps {
   available: boolean;
   scenarioLive: boolean;
   href?: string;
+  /** Per-user progress state. Defaults to open/locked from `available`. */
+  stageState?: StageVisualState;
 }
 
 export default function StageCard({
@@ -19,14 +23,61 @@ export default function StageCard({
   available,
   scenarioLive,
   href,
+  stageState,
 }: StageCardProps) {
   const dictionary = getDictionary(websiteLanguage);
   const stageName = dictionary.scenarios.stageNames[stage.name];
+  const state: StageVisualState =
+    stageState ?? (available ? "open" : "locked");
+
   const cardClasses = `rounded-[2rem] border px-5 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)] ${
-    available
-      ? "border-primary/10 bg-white/92"
-      : "border-surface-container bg-white/78"
+    state === "completed"
+      ? "border-primary/25 bg-primary-container/24"
+      : state === "current"
+        ? "border-primary/30 bg-white/92 ring-2 ring-primary/15"
+        : available
+          ? "border-primary/10 bg-white/92"
+          : "border-surface-container bg-white/78"
   }`;
+
+  const badgeClasses =
+    state === "completed"
+      ? "bg-primary text-on-primary"
+      : state === "current"
+        ? "bg-primary-container text-primary"
+        : available
+          ? "bg-primary-container text-primary"
+          : "bg-surface-container text-on-surface-variant";
+
+  const badgeIcon =
+    state === "completed" ? (
+      <CheckCircle2 size={14} />
+    ) : state === "current" ? (
+      <PlayCircle size={14} />
+    ) : available ? (
+      <Sparkles size={14} />
+    ) : (
+      <LockKeyhole size={14} />
+    );
+
+  const badgeLabel =
+    state === "completed"
+      ? dictionary.scenarios.stageNodeLabels.completed
+      : state === "current"
+        ? dictionary.scenarios.stageNodeLabels.current
+        : available
+          ? dictionary.scenarios.stageReady
+          : scenarioLive
+            ? dictionary.scenarios.stageLocked
+            : dictionary.scenarios.stageComingSoon;
+
+  const footerHint =
+    state === "completed"
+      ? dictionary.scenarios.stageNodeLabels.completed
+      : available
+        ? dictionary.scenarios.briefingNext
+        : dictionary.scenarios.launchStatusDescriptions.coming_soon;
+
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -40,18 +91,10 @@ export default function StageCard({
         </div>
 
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${
-            available
-              ? "bg-primary-container text-primary"
-              : "bg-surface-container text-on-surface-variant"
-          }`}
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${badgeClasses}`}
         >
-          {available ? <Sparkles size={14} /> : <LockKeyhole size={14} />}
-          {available
-            ? dictionary.scenarios.stageReady
-            : scenarioLive
-              ? dictionary.scenarios.stageLocked
-              : dictionary.scenarios.stageComingSoon}
+          {badgeIcon}
+          {badgeLabel}
         </span>
       </div>
 
@@ -71,9 +114,7 @@ export default function StageCard({
       </div>
 
       <div className="mt-6 rounded-[1.4rem] border border-dashed border-surface-container-high bg-surface-container-low px-4 py-3 text-sm leading-relaxed text-on-surface-variant">
-        {available
-          ? dictionary.scenarios.briefingNext
-          : dictionary.scenarios.launchStatusDescriptions.coming_soon}
+        {footerHint}
       </div>
     </>
   );

@@ -17,6 +17,12 @@ import {
 } from "@/lib/scenario-map";
 import { getLocalizedText } from "@/lib/scenario-types";
 import {
+  DEFAULT_PROGRESS,
+  fetchScenarioProgressMap,
+  getScenarioProgress,
+  type ScenarioProgressMap,
+} from "@/lib/scenario-progress";
+import {
   type EditableProfile,
   getEditableProfileFromUser,
   resolveDisplayName,
@@ -36,6 +42,7 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
   const scenario = getScenarioBySlug(slug);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [progressMap, setProgressMap] = useState<ScenarioProgressMap>({});
   const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
@@ -67,6 +74,18 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
         displayName: resolveDisplayName(data?.display_name, authProfile.displayName),
       });
       setLoading(false);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const map = await fetchScenarioProgressMap({
+          accessToken: session.access_token,
+          targetLanguage: authProfile.preferredLanguage,
+          level: authProfile.defaultLanguageLevel,
+        });
+        setProgressMap(map);
+      }
     };
 
     void init();
@@ -91,6 +110,9 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
     SCENARIO_TEMPLATE_LABELS[scenario.template],
     websiteLanguage
   );
+  const progress = scenario
+    ? getScenarioProgress(scenario.slug, progressMap)
+    : DEFAULT_PROGRESS;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -204,6 +226,14 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
                     scenario.launchStatus !== "coming_soon" &&
                     scenario.availableStages.includes(stage.stage);
 
+                  const stageState = !available
+                    ? "locked"
+                    : progress.completedStages.includes(stage.stage)
+                      ? "completed"
+                      : progress.currentStage === stage.stage
+                        ? "current"
+                        : "open";
+
                   return (
                   <StageCard
                     key={stage.stage}
@@ -211,6 +241,7 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
                     websiteLanguage={websiteLanguage}
                     available={available}
                     scenarioLive={scenario.launchStatus !== "coming_soon"}
+                    stageState={stageState}
                     href={
                       available
                         ? `/scenario/${scenario.slug}/stage/${stage.stage}`
