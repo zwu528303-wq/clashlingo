@@ -17,11 +17,14 @@ import {
 } from "@/lib/instruction-content";
 import {
   BookOpen,
+  Check,
   ChevronDown,
   ChevronUp,
   ArrowRight,
+  Copy,
 } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
+import { buildRivalryPracticePrompt } from "@/lib/rivalry-practice-prompt";
 import {
   SUPPORTED_LANGUAGES,
   type EditableProfile,
@@ -90,6 +93,9 @@ export default function ScopesPage() {
   const [scopes, setScopes] = useState<ScopeRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [copiedPracticePromptId, setCopiedPracticePromptId] = useState<
+    string | null
+  >(null);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const instructionLanguage =
     profile?.instructionLanguage ?? fallbackWebsiteLanguage;
@@ -197,6 +203,30 @@ export default function ScopesPage() {
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
+  };
+
+  const handleCopyPracticePrompt = async (scope: ScopeRound) => {
+    if (!scope.syllabus) {
+      return;
+    }
+
+    const practicePrompt = buildRivalryPracticePrompt({
+      syllabus: scope.syllabus,
+      topic: scope.topic ?? scope.syllabus.topic ?? "",
+      targetLanguage: getLocalizedLearningLanguageLabel(
+        scope.target_lang,
+        websiteLanguage
+      ),
+      instructionLanguage,
+    });
+
+    await navigator.clipboard.writeText(practicePrompt);
+    setCopiedPracticePromptId(scope.id);
+    window.setTimeout(() => {
+      setCopiedPracticePromptId((current) =>
+        current === scope.id ? null : current
+      );
+    }, 1800);
   };
 
   const renderSyllabus = (syllabus: Syllabus | null) => {
@@ -404,7 +434,7 @@ export default function ScopesPage() {
                             </span>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => toggleExpand(scope.id)}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#953f4d] text-white text-sm font-medium hover:bg-[#7d3440] transition-colors"
@@ -420,6 +450,19 @@ export default function ScopesPage() {
                               className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
                             >
                               {dictionary.scopes.goToRound} <ArrowRight className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleCopyPracticePrompt(scope)}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#0c693d]/20 bg-[#0c693d]/10 text-[#0c693d] text-sm font-medium hover:bg-[#0c693d]/15 transition-colors"
+                            >
+                              {copiedPracticePromptId === scope.id ? (
+                                <Check className="w-4 h-4" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                              {copiedPracticePromptId === scope.id
+                                ? dictionary.common.practicePromptCopied
+                                : dictionary.common.copyPracticePrompt}
                             </button>
                           </div>
 
@@ -487,7 +530,7 @@ export default function ScopesPage() {
                             </span>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => toggleExpand(scope.id)}
                             className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
@@ -504,6 +547,20 @@ export default function ScopesPage() {
                               className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#953f4d] transition-colors"
                             >
                               {dictionary.scopes.results} <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-gray-200">·</span>
+                            <button
+                              onClick={() => handleCopyPracticePrompt(scope)}
+                              className="flex items-center gap-1 text-xs text-[#0c693d] hover:text-[#084b2c] transition-colors"
+                            >
+                              {copiedPracticePromptId === scope.id ? (
+                                <Check className="w-3.5 h-3.5" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                              {copiedPracticePromptId === scope.id
+                                ? dictionary.common.practicePromptCopied
+                                : dictionary.common.copyPracticePrompt}
                             </button>
                           </div>
 

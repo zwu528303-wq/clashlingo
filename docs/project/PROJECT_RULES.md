@@ -1,6 +1,6 @@
 # Project Rules
 
-Last updated: 2026-03-25
+Last updated: 2026-05-31
 Status: approved product rules + shipped MVP notes
 
 ## Product Intent
@@ -163,6 +163,18 @@ Rules:
 - Live opponent exam-progress UI is not part of the current MVP.
 - For now, realtime competition should stop at results updates instead of showing in-exam progress.
 
+### 8. Scope Practice Prompt Rules
+
+- Scenario scopes and rivalry scopes should be reusable outside the in-app timed battle/exam.
+- A generated scenario battle pack or rivalry syllabus can be converted into a user-facing practice prompt.
+- The practice prompt should:
+  - carry the current context, target language, level when available, and scope
+  - keep the external AI strictly inside that scope
+  - ask one practice prompt at a time
+  - give short correction and a standard or more natural answer after each user response
+  - start the practice immediately instead of explaining the product first
+- This is a learner-facing practice prompt, not a developer prompt for debugging AI generation.
+
 ## Shipped Changes Already In Code
 
 As of the latest reviewed state, the following product changes are already in the codebase:
@@ -201,6 +213,8 @@ As of the latest reviewed state, the following product changes are already in th
 - rivalry dashboard shows cumulative rivalry stats and round outcome context
 - scopes page exists
 - scopes now read from `rounds.syllabus`, so they can appear before exam creation
+- scenario stage briefing can copy a practice prompt generated from the current battle-pack scope
+- rivalry scopes can copy a practice prompt from both `/scopes` and the round scope-confirmation page
 - shared views no longer fall back to email-style public display names
 - lounge and rivalry surfaces now read rival avatar letter/color from shared public identity data
 - weekly rhythm is now stored per rivalry as a shared countdown pulse, seeded from the creator's default settings value

@@ -19,13 +19,16 @@ import {
 } from "@/lib/instruction-content";
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
   Circle,
   BookOpen,
+  Copy,
   Swords,
   Trophy,
   Loader2,
 } from "lucide-react";
+import { buildRivalryPracticePrompt } from "@/lib/rivalry-practice-prompt";
 
 interface ApiErrorPayload {
   error?: string;
@@ -80,6 +83,7 @@ export default function RoundPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [syllabusError, setSyllabusError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [practicePromptCopied, setPracticePromptCopied] = useState(false);
   const [websiteLanguage, setWebsiteLanguage] = useState(
     DEFAULT_WEBSITE_LANGUAGE
   );
@@ -397,6 +401,23 @@ export default function RoundPage() {
     websiteLanguage
   );
   const studyDaysValue = dictionary.round.daysValue(round.study_days || 0);
+  const handleCopyPracticePrompt = async () => {
+    if (!syllabus) {
+      return;
+    }
+
+    const practicePrompt = buildRivalryPracticePrompt({
+      syllabus,
+      topic: round.topic ?? syllabus.topic ?? "",
+      targetLanguage: localizedTargetLanguage,
+      level: localizedRoundLevel,
+      instructionLanguage,
+    });
+
+    await navigator.clipboard.writeText(practicePrompt);
+    setPracticePromptCopied(true);
+    window.setTimeout(() => setPracticePromptCopied(false), 1800);
+  };
 
   return (
     <div className="min-h-screen bg-surface">
@@ -532,11 +553,23 @@ export default function RoundPage() {
             {/* Syllabus Preview */}
             {syllabus && (
               <div className="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <BookOpen size={20} className="text-primary" />
-                  <h2 className="text-xl font-black text-on-surface">
-                    {dictionary.round.examScope}
-                  </h2>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={20} className="text-primary" />
+                    <h2 className="text-xl font-black text-on-surface">
+                      {dictionary.round.examScope}
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyPracticePrompt}
+                    className="inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-secondary-container/70 px-4 py-2 text-sm font-black text-secondary transition-transform duration-200 hover:-translate-y-0.5"
+                  >
+                    {practicePromptCopied ? <Check size={16} /> : <Copy size={16} />}
+                    {practicePromptCopied
+                      ? dictionary.common.practicePromptCopied
+                      : dictionary.common.copyPracticePrompt}
+                  </button>
                 </div>
 
                 {/* Can Do */}

@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   assembleBattlePack,
   BATTLE_TEMPLATE_VERSION,
+  isCurrentBattlePack,
   STAGE_RULES,
   validateBattleContent,
 } from "@/lib/battle-pack";
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
       .eq("cache_key", cacheKey)
       .maybeSingle<{ pack: BattlePack }>();
 
-    if (cached?.pack) {
+    if (isCurrentBattlePack(cached?.pack)) {
       return NextResponse.json({ pack: cached.pack, cached: true });
     }
 

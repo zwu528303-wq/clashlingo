@@ -14,7 +14,7 @@ import type {
   StageNumber,
 } from "@/lib/scenario-types";
 
-export const BATTLE_TEMPLATE_VERSION = "v1-ai";
+export const BATTLE_TEMPLATE_VERSION = "v2-scope-briefing";
 export const BATTLE_INSTRUCTION_LANGUAGES = ["en", "zh-CN"] as const;
 
 // Timers and question counts are product decisions, not AI content, so they are
@@ -224,6 +224,40 @@ export function validateBattleContent(
   }
 
   return { ok: true, content: candidate as BattlePackContent };
+}
+
+export function isCurrentBattlePack(pack: unknown): pack is BattlePack {
+  if (typeof pack !== "object" || pack === null) {
+    return false;
+  }
+
+  const candidate = pack as Partial<BattlePack>;
+  const scope = candidate.scope;
+  const rules = candidate.rules;
+
+  return (
+    typeof candidate.id === "string" &&
+    candidate.templateVersion === BATTLE_TEMPLATE_VERSION &&
+    typeof scope === "object" &&
+    scope !== null &&
+    isLocalizedText(scope.summary) &&
+    isLocalizedTextArray(scope.canDo) &&
+    Array.isArray(scope.vocabularyGroups) &&
+    scope.vocabularyGroups.every(
+      (group) =>
+        typeof group?.id === "string" &&
+        isLocalizedText(group?.label) &&
+        isStringArray(group?.words)
+    ) &&
+    isStringArray(scope.grammar) &&
+    isStringArray(scope.expressions) &&
+    isStringArray(scope.followUpTypes) &&
+    isLocalizedTextArray(scope.howTested) &&
+    typeof rules === "object" &&
+    rules !== null &&
+    typeof rules.battleQuestionCount === "number" &&
+    Array.isArray(candidate.candidateQuestions)
+  );
 }
 
 export function assembleBattlePack(input: {

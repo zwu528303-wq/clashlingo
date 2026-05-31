@@ -16,6 +16,8 @@ export interface TranslationDictionary {
     cancel: string;
     copyCode: string;
     copied: string;
+    copyPracticePrompt: string;
+    practicePromptCopied: string;
     saveSettings: string;
     saving: string;
     goToLounge: string;

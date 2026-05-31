@@ -36,6 +36,8 @@ export const zhCN = {
     cancel: "取消",
     copyCode: "复制邀请码",
     copied: "已复制",
+    copyPracticePrompt: "复制练习 Prompt",
+    practicePromptCopied: "练习 Prompt 已复制",
     saveSettings: "保存设置",
     saving: "保存中...",
     goToLounge: "前往大厅",

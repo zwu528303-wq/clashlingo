@@ -36,6 +36,8 @@ export const en = {
     cancel: "Cancel",
     copyCode: "Copy Code",
     copied: "Copied!",
+    copyPracticePrompt: "Copy Practice Prompt",
+    practicePromptCopied: "Practice Prompt Copied",
     saveSettings: "Save Settings",
     saving: "Saving...",
     goToLounge: "Go to Lounge",

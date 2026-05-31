@@ -2,7 +2,81 @@
 
 Date: 2026-05-31
 
+## OWNER ACTION REQUIRED
+
+These items are owner-controlled and must not be marked as verified by an agent
+unless the owner has actually completed or provided access to them:
+
+Completed by owner and verified by table existence:
+
+1. `supabase/migrations/20260529_000002_battle_packs.sql` — verified via
+   `to_regclass('public.battle_packs')`.
+2. `supabase/migrations/20260531_000001_scenario_persistence.sql` — verified via
+   `to_regclass('public.scenario_progress')` and
+   `to_regclass('public.scenario_battle_reports')`.
+3. Scenario persistence smoke test — owner completed a real scenario run and
+   verified rows in `battle_packs`, `scenario_battle_reports`, and
+   `scenario_progress`.
+
+Still owner-controlled / not fully verified:
+
+4. Run battle-pack seeding only after reviewing cost/data impact. The agent must
+   not run `npm run seed:battle-packs` except dry-runs.
+5. Provide `E2E_EMAIL` and `E2E_PASSWORD` before authenticated Playwright smoke
+   coverage can be fully verified.
+6. Provide or confirm a deployed/staging URL before any deployment or shared-link
+   preview claim is marked verified.
+7. Review all `OWNER-REVIEW` items in `docs/project/SOFT_LAUNCH_WORKLOG.md`.
+
+Verification rule: if migrations, seed data, Anthropic credits, deployment, or
+E2E credentials block a soft-launch acceptance item, preserve the fallback and
+document the exact blocker in `SOFT_LAUNCH_WORKLOG.md` and this section instead
+of claiming completion.
+
 ## What Changed This Session (2026-05-31)
+
+### Battle-pack cache schema guard
+
+The stage briefing runtime error on `/scenario/cafe/stage/1` was caused by a
+stale cached battle pack: `cafe-stage-1-french-beginner-v1-ai` had legacy scope
+fields (`sentencePatterns`, `howBattleWorks`) while the current UI expects
+`grammar`, `expressions`, and `howTested`.
+
+- `lib/battle-pack.ts` — bumped `BATTLE_TEMPLATE_VERSION` to
+  `v2-scope-briefing` and added `isCurrentBattlePack(pack)`.
+- `app/api/generate-battle-pack/route.ts` — only returns cached packs that match
+  the current template version and scope shape; stale records are treated as a
+  cache miss.
+- `app/api/scenario-battle/submit/route.ts` — also rejects non-current cached
+  packs so server-side scoring does not use stale content.
+- Result: old `v1-ai` rows can remain in `battle_packs`, but new stage visits use
+  a fresh `v2-scope-briefing` cache key and no longer crash on missing fields.
+
+### Scope -> practice prompt
+
+The new `Copy Practice Prompt` action is learner-facing, not a developer prompt
+debugger. It turns the current scenario battle-pack scope or rivalry syllabus
+scope into a prompt the user can paste into an external AI chat to start scoped
+practice immediately.
+
+- `lib/scenario-practice-prompt.ts` (CREATED) — builds English or Chinese
+  practice prompts from `BattlePack.scope`.
+- `lib/rivalry-practice-prompt.ts` (CREATED) — builds English or Chinese
+  practice prompts from rivalry `Syllabus`.
+- `components/StageBriefingPage.tsx` — replaces the inert `Practice Later` chip
+  with a copy button that writes the generated practice prompt to the clipboard
+  and shows a copied state.
+- `components/ScopesPage.tsx` — adds `Copy Practice Prompt` on current and past
+  rivalry scope cards.
+- `components/RoundPage.tsx` — adds `Copy Practice Prompt` on the scope
+  confirmation page.
+- i18n — added `copyPracticePrompt` and `practicePromptCopied`.
+- The prompt includes context, target language, level when available, can-do
+  goals, vocabulary, grammar, expressions, follow-up/listening directions, and
+  testing rules.
+- The prompt tells the external AI to ask one item at a time, stay inside scope,
+  give short corrections, provide a standard/natural answer, and start question 1
+  immediately.
 
 ### Stage-clear rule: accuracy ≥ 80%
 

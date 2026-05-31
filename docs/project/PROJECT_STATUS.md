@@ -72,7 +72,9 @@ ClashLingo has two learning loops:
   - marks the rivalry inactive in `rivalries.cumulative_ledger` without deleting history
 - `/api/generate-battle-pack`
   - uses Anthropic to generate one bilingual battle pack per (scenario, stage, target language, level)
-  - caches packs in `battle_packs` keyed by `buildBattlePackCacheKey` (template version `v1-ai`); cache hit skips the AI call
+  - caches packs in `battle_packs` keyed by `buildBattlePackCacheKey` (template version `v2-scope-briefing`); cache hit skips the AI call
+  - ignores stale cached packs whose stored shape does not match the current battle-pack schema
+  - generated scope content also feeds the learner-facing copy-practice-prompt action on stage briefing; rivalry syllabi use the same product pattern from their own syllabus data
 - `/api/scenario-battle/submit`
   - validates the signed-in user on the server (Bearer token)
   - reads the cached pack and re-evaluates the submitted answers/timings server-side so scores cannot be forged
@@ -106,7 +108,7 @@ Observed from the app code:
 - `scenario_progress` (per-user, per scope stage progress; migration `20260531_000001_scenario_persistence.sql`)
 - `scenario_battle_reports` (per-session clash/exam reports; same migration)
 
-Migrations under `supabase/migrations/` are applied manually in the Supabase SQL Editor (no Supabase CLI in this repo). As of this writing, `20260529_000002_battle_packs.sql` and `20260531_000001_scenario_persistence.sql` must be applied by the owner before scenario progress persists server-side.
+Migrations under `supabase/migrations/` are applied manually in the Supabase SQL Editor (no Supabase CLI in this repo). On 2026-05-31, the owner verified that `battle_packs`, `scenario_progress`, and `scenario_battle_reports` exist in Supabase via `to_regclass(...)`, then completed a real scenario test and confirmed the relevant `battle_packs`, `scenario_battle_reports`, and `scenario_progress` rows.
 
 Observed `users` columns from direct DB check:
 - `id`
@@ -189,6 +191,8 @@ Observed status values:
 - Results now includes a richer share card preview, a copy-caption action, and SVG card download
 - Results is now part of the translated website-language batch
 - Scopes now group current and past scope cards by target language
+- Scenario stage briefing now offers `Copy Practice Prompt`, generated from the current battle-pack scope so the learner can paste it into an external AI chat and start scoped practice immediately
+- Rivalry scopes now offer `Copy Practice Prompt` from `/scopes` cards and the `/round/[id]` scope-confirmation page
 - `npm run lint` currently passes
 - Production build currently passes
 - The repo now includes a real README, an `.env.example`, and Supabase schema notes
@@ -204,7 +208,7 @@ Ran on 2026-05-31:
 
 ## Known Issues And Risks
 
-- Scenario progress only persists server-side once `20260531_000001_scenario_persistence.sql` (and `20260529_000002_battle_packs.sql`) are applied. Until then `submitScenarioRun` returns null and the scenario map shows local-only/default progress.
+- Scenario persistence has been owner-verified once in Supabase. If a future environment does not have `20260529_000002_battle_packs.sql` and `20260531_000001_scenario_persistence.sql` applied, `submitScenarioRun` returns null and the scenario map shows local-only/default progress.
 - `StageBriefingPage` and `ScenarioExamLandingPage` still mint client-side `mock-...` session ids. They work with the submit route (sessionId is just a text key) but are not yet server-created.
 - Battle packs cost Anthropic credits to generate. `npm run seed:battle-packs` pre-generates them (idempotent via cache); the seed script is run by the owner, not the agent.
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.

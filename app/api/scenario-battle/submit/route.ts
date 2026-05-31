@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { BATTLE_TEMPLATE_VERSION } from "@/lib/battle-pack";
+import { BATTLE_TEMPLATE_VERSION, isCurrentBattlePack } from "@/lib/battle-pack";
 import {
   buildBattlePackCacheKey,
   getScenarioBySlug,
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       .eq("cache_key", cacheKey)
       .maybeSingle<{ pack: BattlePack }>();
 
-    if (!cached?.pack) {
+    if (!isCurrentBattlePack(cached?.pack)) {
       // The pack should already be cached (the client generated it before the
       // run). If not, the client keeps its own fallback report.
       return NextResponse.json(

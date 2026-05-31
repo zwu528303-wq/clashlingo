@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   ArrowLeft,
+  Check,
   ChevronRight,
   Clock3,
+  Copy,
   Layers3,
   ScrollText,
   Sparkles,
@@ -29,6 +31,7 @@ import {
   getEditableProfileFromUser,
   resolveDisplayName,
 } from "@/lib/profile";
+import { buildScenarioPracticePrompt } from "@/lib/scenario-practice-prompt";
 import { supabase } from "@/lib/supabase";
 
 interface PublicUserRow {
@@ -75,6 +78,7 @@ export default function StageBriefingPage({
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const fallbackWebsiteLanguage = useClientWebsiteLanguage();
   const [loading, setLoading] = useState(true);
+  const [practicePromptCopied, setPracticePromptCopied] = useState(false);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);
 
@@ -145,6 +149,22 @@ export default function StageBriefingPage({
     websiteLanguage === "zh-CN"
       ? `共 ${pack?.rules.battleQuestionCount ?? 0} 题`
       : `${pack?.rules.battleQuestionCount ?? 0} total questions`;
+  const handleCopyPracticePrompt = async () => {
+    if (!pack) {
+      return;
+    }
+
+    const practicePrompt = buildScenarioPracticePrompt({
+      pack,
+      scenarioName: getLocalizedText(scenario.name, websiteLanguage),
+      stageName,
+      websiteLanguage,
+    });
+
+    await navigator.clipboard.writeText(practicePrompt);
+    setPracticePromptCopied(true);
+    window.setTimeout(() => setPracticePromptCopied(false), 1800);
+  };
 
   if (!stageAvailable) {
     return (
@@ -470,10 +490,19 @@ export default function StageBriefingPage({
                     <ChevronRight size={18} />
                   </Link>
 
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-bold text-on-surface-variant">
-                    <Sparkles size={14} />
-                    {dictionary.scenarios.practiceLater}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyPracticePrompt}
+                    className="inline-flex items-center justify-between rounded-full border border-secondary/20 bg-secondary-container/70 px-5 py-3 text-sm font-black text-secondary transition-transform duration-200 hover:-translate-y-0.5"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {practicePromptCopied ? <Check size={16} /> : <Copy size={16} />}
+                      {practicePromptCopied
+                        ? dictionary.common.practicePromptCopied
+                        : dictionary.common.copyPracticePrompt}
+                    </span>
+                    <Sparkles size={16} />
+                  </button>
                 </div>
               </section>
             </div>

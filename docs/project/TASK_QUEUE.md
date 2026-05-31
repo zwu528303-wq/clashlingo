@@ -4,6 +4,18 @@ Last updated: 2026-05-31
 
 ## Recently Completed
 
+- Added learner-facing copy-practice-prompt actions for scenario and rivalry scopes.
+  - `lib/scenario-practice-prompt.ts` converts a `BattlePack.scope` into a prompt that can be pasted into an external AI chat.
+  - `lib/rivalry-practice-prompt.ts` converts a rivalry `Syllabus` into the same kind of scoped external-AI practice prompt.
+  - The prompt carries scenario, stage, target language, level, can-do goals, vocabulary, grammar, expressions, follow-up directions, and testing rules.
+  - `StageBriefingPage` now replaces the inert `Practice Later` chip with `Copy Practice Prompt` / `复制练习 Prompt`.
+  - `/scopes` cards and `/round/[id]` scope confirmation now also expose `Copy Practice Prompt`.
+  - The copied prompt tells the external AI to start practice immediately, stay inside scope, ask one item at a time, and give short correction plus a standard/natural answer.
+  - `npm run lint` and `npm run build` pass.
+- Owner-verified the scenario persistence smoke path in Supabase.
+  - `battle_packs`, `scenario_progress`, and `scenario_battle_reports` exist in the production Supabase project.
+  - A real scenario test wrote a battle-pack row, a battle report row, and a progress row.
+  - The stale-cache runtime crash on `/scenario/cafe/stage/1` was fixed by moving battle-pack cache reads to `v2-scope-briefing` and rejecting stale cached pack shapes.
 - Defined the scenario stage-clear rule and built the scenario persistence layer.
   - Clear rule: a stage is cleared when `correctAnswers / totalQuestions ≥ 0.80` (accuracy only; speed/quality display but do not gate). `lib/battle-scoring.ts` adds `STAGE_CLEAR_ACCURACY`, `BattleOutcome`, `getBattleOutcome`; `StoredBattleReport.outcome` carries it (with backfill in `loadBattleReport`); `BattleReportPage` shows a cleared/failed banner; new i18n `battleOutcome*` keys.
   - Persistence: `supabase/migrations/20260531_000001_scenario_persistence.sql` (apply manually) adds `scenario_progress` + `scenario_battle_reports` with SELECT-self RLS (service-role writes).
@@ -136,17 +148,72 @@ Last updated: 2026-05-31
 
 ## Highest Priority
 
-1. Apply the scenario persistence migration, then verify end-to-end.
-   - Apply `supabase/migrations/20260531_000001_scenario_persistence.sql` in the Supabase SQL Editor (and `20260529_000002_battle_packs.sql` if not yet applied).
-   - Play a stage and confirm `scenario_progress` / `scenario_battle_reports` rows write and the next stage unlocks on the scenario map.
-   - Progress semantics are now per (user, scenario, target_language, level); completion = accuracy ≥ 80%.
+0. SOFT-LAUNCH READINESS (build-in-public). Goal: not new features, but
+   completeness + robustness + public-facing readiness. This is the brief handed
+   to the autonomous (Codex goal-mode) pass. Acceptance checklist:
+   - A. Public landing: logged-out visitors to `/` get a real bilingual
+     marketing/landing page explaining both loops with sign-up / log-in CTAs.
+     Signed-in users still redirect to `/lounge`.
+   - B. Shareable metadata: app-wide + per-route Next metadata (title,
+     description, Open Graph + Twitter card, favicon/icons) so shared links
+     preview cleanly. Use the installed Next version's metadata API.
+   - C. No raw failure leakage: audit error/empty/loading states across login,
+     lounge, rivalries, round/exam/results, scenarios map/detail/stage, battle,
+     report. Friendly bilingual copy; no unmapped raw English server strings.
+   - D. Responsive pass: core surfaces usable at >=360px without overflow.
+   - E. Graceful degradation verified: scenario submit/progress degrade safely
+     when migrations aren't applied or a pack isn't cached (keep the local
+     fallback report). Gate/label ExamPage's client mock-exam and scenario
+     `mock-` session ids so they can't mislead real users; do not delete working
+     fallbacks.
+   - F. Smoke coverage: Playwright covers the logged-out landing + public shell;
+     env-gated authenticated suite asserts sign-in -> lounge -> open scenario ->
+     stage list. Keep auth suite gated on `E2E_EMAIL` / `E2E_PASSWORD`.
+   - G. Green: `npm run lint` + `npm run build` pass after every increment.
+   - H. How-it-works / 玩法说明 is current: `components/HowItWorksPage.tsx`
+     (`/how-it-works`) is STALE — it only documents the rivalry loop. Update it
+     (bilingual, via `lib/i18n`) to also explain the scenario quest loop AS IT
+     ACTUALLY WORKS: domain -> scenario -> 4 stages, the timed clash run and the
+     exam lane, the standard-answer self-check (NO live AI opponent), the
+     "stage clears at accuracy >= 80%" rule, how clearing advances/unlocks the
+     next stage, and the `Copy Practice Prompt` action on stage briefing and
+     rivalry scopes. Keep
+     the rivalry / weekly-rhythm / language-level / page-map sections accurate,
+     and reconcile the onboarding copy reused on Login / empty-lounge so the two
+     stay consistent. Match real behavior, not aspirational behavior.
+   - I. WORK LOG (detailed, owner-editable). Maintain a running, granular work
+     journal at `docs/project/SOFT_LAUNCH_WORKLOG.md` so the owner can review and
+     later tweak anything without re-reading every diff. Rules:
+     - One dated, numbered entry PER meaningful increment (not one giant dump at
+       the end). Append as you go; never silently overwrite earlier entries.
+     - Each entry must include: (1) what changed in plain language; (2) WHY /
+       what problem it solves; (3) exact files + key functions/components touched
+       (with paths); (4) any new i18n keys added (en + zh-CN); (5) how to change
+       or undo it later (where to edit the copy/threshold/layout, which knob to
+       turn) — written for a non-author who wants to adjust it; (6) the lint +
+       build result for that increment; (7) anything deferred or left as a TODO.
+     - Flag every decision that is a judgment call (copy wording, landing-page
+       structure, metadata text, responsive breakpoints) explicitly as
+       "OWNER-REVIEW" so the owner knows what to sanity-check first.
+     - Keep this separate from `SESSION_SUMMARY.md` (which stays the short
+       baton-pass). The work log is the detailed, chronological record.
+   - Hard limits for this pass: do NOT run `seed:battle-packs` or any live
+     Anthropic generation in a loop; do NOT apply/run migrations or mutate the
+     production Supabase (new migration FILES ok, never executed); never commit
+     secrets; no deploy / no force-push / no git config changes; no net-new
+     features beyond PROJECT_RULES (propose into this file instead).
+   - Verification rule: if an acceptance item cannot be fully verified because
+     migrations, seed data, Anthropic credits, deployment, or E2E credentials are
+     owner-controlled, do not fake completion. Preserve the fallback, document
+     the exact blocker in `docs/project/SOFT_LAUNCH_WORKLOG.md` and
+     `docs/project/SESSION_SUMMARY.md`, and add it to `OWNER ACTION REQUIRED`.
 
-2. Keep the lint baseline clean while touching product work.
+1. Keep the lint baseline clean while touching product work.
    - `npm run lint` currently passes (incl. the new `useClientWebsiteLanguage` hook).
    - Do not allow page-level lint debt to pile up again.
    - When a screen is changed, fix that screen's lint issues in the same batch.
 
-3. Decide whether to pursue the recommended shared answer-run layer.
+2. Decide whether to pursue the recommended shared answer-run layer.
    - Use `docs/project/EXAM_LOOPS_AUDIT.md`.
    - The current recommendation is to persist scenario sessions/attempts/reports first and keep the mature rivalry exam as a legacy adapter.
 
