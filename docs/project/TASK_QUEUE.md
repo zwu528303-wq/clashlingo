@@ -4,6 +4,14 @@ Last updated: 2026-05-31
 
 ## Recently Completed
 
+- Completed the first soft-launch hardening pass for the public shell.
+  - `/` now renders a bilingual logged-out landing page that points first to Scenario Map and second to friend rivalries.
+  - App-wide share metadata now includes a title template, Open Graph / Twitter metadata, and generated `/opengraph-image`.
+  - `NEXT_PUBLIC_SITE_URL` is documented for deployed share previews.
+  - `/how-it-works` now explains both scenario quests and friend rivalries, including timed clash, standard-answer self-check, stage clear at 80% accuracy, durable progress, and `Copy Practice Prompt`.
+  - Public pages no longer block first render on Supabase session/profile checks; they render public content first and redirect/enhance after session detection.
+  - Added root `error.tsx` and `not-found.tsx` fallbacks.
+  - Public smoke now covers `/`, `/login -> /how-it-works`, and `/reset-password`. `git diff --check`, `npm run lint`, `npm run build`, and `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` pass.
 - Added learner-facing copy-practice-prompt actions for scenario and rivalry scopes.
   - `lib/scenario-practice-prompt.ts` converts a `BattlePack.scope` into a prompt that can be pasted into an external AI chat.
   - `lib/rivalry-practice-prompt.ts` converts a rivalry `Syllabus` into the same kind of scoped external-AI practice prompt.

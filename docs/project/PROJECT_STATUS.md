@@ -28,7 +28,7 @@ ClashLingo has two learning loops:
 
 ## Main Routes
 
-- `/` - checks Supabase auth, redirects to `/login` or `/lounge`
+- `/` - public bilingual soft-launch landing page for logged-out visitors; signed-in users are redirected to `/lounge` when the local session is detected
 - `/login` - auth UI plus first-time onboarding guidance and a website-language toggle for first-time visitors (`components/Login.tsx`)
 - `/reset-password` - recovery screen for choosing a new password from an email link (`components/ResetPasswordPage.tsx`)
 - `/how-it-works` - full product guide with the rivalry loop, page map, rhythm rules, level rules, and FAQs (`components/HowItWorksPage.tsx`)
@@ -88,6 +88,7 @@ ClashLingo has two learning loops:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL` (recommended for correct shared-link metadata)
 - `ANTHROPIC_API_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -193,6 +194,10 @@ Observed status values:
 - Scopes now group current and past scope cards by target language
 - Scenario stage briefing now offers `Copy Practice Prompt`, generated from the current battle-pack scope so the learner can paste it into an external AI chat and start scoped practice immediately
 - Rivalry scopes now offer `Copy Practice Prompt` from `/scopes` cards and the `/round/[id]` scope-confirmation page
+- Logged-out `/` now renders a bilingual soft-launch landing page instead of immediately redirecting to login
+- App-wide metadata now includes Open Graph / Twitter fields plus a generated `/opengraph-image`; deployed environments should set `NEXT_PUBLIC_SITE_URL`
+- `/how-it-works` now explains both scenario quests and friend rivalries, including the 80% stage-clear rule, standard-answer self-check, and `Copy Practice Prompt`
+- Root-level `error.tsx` and `not-found.tsx` now provide user-facing fallback screens instead of exposing a bare runtime overlay in production
 - `npm run lint` currently passes
 - Production build currently passes
 - The repo now includes a real README, an `.env.example`, and Supabase schema notes
@@ -204,7 +209,7 @@ Observed status values:
 Ran on 2026-05-31:
 - `npm run build` - passes (both scenario routes register: `/api/scenario-battle/submit`, `/api/scenario-progress`)
 - `npm run lint` - passes
-- `npm run test:e2e tests/e2e/public-smoke.spec.ts` - should be the default public smoke gate once Playwright browsers are installed locally
+- `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` - passes (logged-out landing, login -> guide, reset-password)
 
 ## Known Issues And Risks
 

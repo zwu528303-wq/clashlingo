@@ -52,6 +52,51 @@ export const zhCN = {
     rivalFallback: "对手",
     learnerSuffix: "学习者",
     unassignedLanguage: "未指定",
+    somethingWentWrongTitle: "页面出了点问题",
+    somethingWentWrongDescription:
+      "应用遇到了一个临时问题。可以重试，或者先回到首页重新进入。",
+    tryAgain: "重试",
+    goHome: "回到首页",
+    pageNotFoundTitle: "这个页面暂时不可用",
+    pageNotFoundDescription:
+      "这个链接可能已经过期，或者页面位置变了。可以从场景地图重新开始，或重新登录。",
+  },
+  landing: {
+    languageToggleLabel: "网站语言",
+    eyebrow: "从真实场景开始的语言练习",
+    title: "ClashLingo",
+    description:
+      "先自己在场景里闯关升级；想要竞争感时，再保留和朋友对战的轻量循环。",
+    primaryCta: "开始学习",
+    secondaryCta: "登录",
+    guideCta: "玩法说明",
+    scenarioSignalTitle: "主线：场景地图",
+    scenarioSignalDescription:
+      "选择真实生活场景，先看本关 Scope，再完成限时题；正确率达到 80% 就通关。",
+    friendSignalTitle: "次级：和朋友对战",
+    friendSignalDescription:
+      "创建对战、生成共享 Scope、参加考试，然后长期对比分数和战绩。",
+    mapPreviewTitle: "咖啡店 Stage 1",
+    mapPreviewStage: "限时 Clash",
+    mapPreviewScope: "Scope 已就绪",
+    mapPreviewReport: "每轮结束后看标准答案",
+    pathsEyebrow: "两条学习循环",
+    pathsTitle: "先做单人闯关，再保留朋友对战。",
+    pathsDescription:
+      "初次发布时，用户第一步必须明确：从场景地图开始。朋友对战继续保留给想要每周竞争的人。",
+    scenarioPathTitle: "场景闯关",
+    scenarioPathDescription:
+      "大类地图、四阶段场景、AI 生成的双语 Scope、限时练习，以及可持久保存的进度。",
+    rivalryPathTitle: "朋友对战",
+    rivalryPathDescription:
+      "共享 syllabus、每周节奏、可提前开赛、考试结果和长期对战历史。",
+    readinessEyebrow: "Soft launch 的标准",
+    readinessTitle: "用户不靠解释，也能完整走完一条真实学习循环。",
+    readinessItems: [
+      "第一屏明确指向场景地图。",
+      "每个 Scope 都能复制成外部练习 Prompt。",
+      "刷新和重新登录后，进度仍然存在。",
+    ],
   },
   login: {
     brandTagline:
@@ -470,26 +515,74 @@ export const zhCN = {
   },
   guide: {
     loginEyebrow: "玩法说明",
-    loginTitle: "用对战来学习",
+    loginTitle: "先用场景学习，再和朋友竞争",
     loginDescription:
-      "想最快看懂 ClashLingo，看一遍这个循环就够了。这是速览版。",
+      "先从单人场景主线开始；想要每周比分和竞争感时，再加入朋友对战循环。",
     pageEyebrow: "玩法说明",
     pageTitle: "一次看懂 ClashLingo",
     pageDescription:
-      "ClashLingo 是一个每周进行的 1v1 语言对战。你和朋友会围绕同一轮内容一起学习、参加考试、对比分数，并把这段对战一直打下去。",
+      "ClashLingo 现在有两条循环：主线是围绕真实生活场景的单人闯关；次级功能是保留和朋友一起每周对战。",
     shortVersionTitle: "超简版",
     shortVersionDescription:
-      "一段对战就是和一个朋友的长期较量。你们会在这段关系里反复重复同样的轮次循环：开始新一轮、生成 Scope、一起确认、学习或提前开始、参加考试，然后对比结果。",
+      "想马上学习，就从场景地图开始。想和朋友一起竞争，就使用对战循环：共享 Scope、跟随每周节奏、考试后对比分数。",
     bestFirstStepEyebrow: "最适合的新手起点",
-    bestFirstStepTitle: "先开始一段对战。",
+    bestFirstStepTitle: "先打开场景地图。",
     bestFirstStepDescription:
-      "等你打完第一轮以后，整个产品会一下子变得很好懂。",
-    loopEyebrow: "核心循环",
-    loopTitle: "一段对战是怎么运作的",
+      "选一个真实场景，先通关 stage 1，整个产品会更容易理解。",
+    loopEyebrow: "朋友对战循环",
+    loopTitle: "和朋友对战怎么运作",
     loopDescription:
-      "创建或加入对战只是起点。真正的产品核心，是下面这个每周循环。",
+      "朋友对战仍然保留，但它是次级循环。适合你和朋友想要共享 Scope、每周竞争时使用。",
     productMapEyebrow: "页面地图",
     productMapTitle: "每个页面到底做什么",
+    pathOverviewEyebrow: "学习路径",
+    pathOverviewTitle: "两条循环，但第一步要明确",
+    pathOverviewDescription:
+      "场景地图是主线。朋友对战保留原来的 1v1 学习流程，但不再抢新用户的第一点击。",
+    pathCards: [
+      {
+        title: "场景地图",
+        description:
+          "主线入口。选择真实场景，学习本关 Scope，完成限时题，并靠正确率通关。",
+      },
+      {
+        title: "和朋友对战",
+        description:
+          "次级入口。和朋友共享 syllabus，跟随每周节奏，完成考试后对比分数。",
+      },
+    ],
+    scenarioQuestEyebrow: "场景闯关",
+    scenarioQuestTitle: "单人 Stage 怎么运作",
+    scenarioQuestDescription:
+      "每个场景有四个 stage。AI 生成的 battle pack 会提供双语 Scope、限时练习内容和报告材料。",
+    scenarioQuestSteps: [
+      {
+        key: "choose_scene",
+        title: "选择场景",
+        description: "从咖啡店、机场、职场等真实生活场景开始。",
+      },
+      {
+        key: "read_scope",
+        title: "查看 Scope",
+        description:
+          "先看本关能做什么、词汇、语法、表达方式，以及这一关会怎么考你。",
+      },
+      {
+        key: "run_clash",
+        title: "完成限时题",
+        description:
+          "Clash 会展示限时题，并从速度、正确率、表达质量三个维度评分；结束后会给标准答案用于自查。",
+      },
+      {
+        key: "clear_stage",
+        title: "80% 正确率通关",
+        description:
+          "正确率达到 80% 就能通关。通关会保存到账号里，并解锁下一 stage。",
+      },
+    ],
+    practicePromptTitle: "复制练习 Prompt",
+    practicePromptDescription:
+      "场景 Scope 和朋友对战 Scope 都可以复制到外部 AI 聊天里。Prompt 会立刻开始练习，严格限定在当前 Scope 内，一次只问一题，并给简短纠错。",
     weeklyRhythmEyebrow: "每周节奏",
     weeklyRhythmTitle: "倒计时是节奏，不是硬锁",
     weeklyRhythmParagraphs: [
@@ -505,14 +598,14 @@ export const zhCN = {
     faqEyebrow: "常见问题",
     faqTitle: "常见问题",
     firstTimeSetup: {
-      eyebrow: "仅第一次需要",
-      title: "创建 / 加入对战",
+      eyebrow: "最适合的第一步",
+      title: "打开场景地图",
       description:
-        "只有当你和一个新朋友开始对战时，才需要做这一步。之后，这段对战就会变成你们每周重复的循环。",
+        "不需要先找朋友也能开始练习。等你想要共享竞争时，再创建或加入朋友对战。",
     },
-    weeklyLoopCenterCompact: "每段对战里，都会反复重复这一轮循环。",
-    weeklyLoopCenterFull: "每一轮结束后，这个循环都会再次开始。",
-    weeklyLoopEyebrow: "每周循环",
+    weeklyLoopCenterCompact: "朋友对战使用这条独立的每周循环。",
+    weeklyLoopCenterFull: "每一轮朋友对战结束后，这个循环会再次开始。",
+    weeklyLoopEyebrow: "朋友循环",
     weeklyLoopSteps: [
       {
         key: "start_round",
@@ -547,16 +640,21 @@ export const zhCN = {
     ],
     productSurfaces: [
       {
-        title: "大厅",
-        description: "看倒计时、看就绪状态，并进入当前对战。",
+        title: "场景地图",
+        description:
+          "主线单人闯关地图：真实场景、四阶段进度、限时练习和解锁。",
       },
       {
-        title: "对战档案",
+        title: "大厅",
+        description: "看倒计时、看就绪状态，并进入当前朋友对战。",
+      },
+      {
+        title: "我的对战",
         description: "查看胜负、连胜、里程碑和历史对战。",
       },
       {
-        title: "学习范围",
-        description: "按语言和轮次整理好的学习材料。",
+        title: "出题范围",
+        description: "按语言、场景或轮次整理好的可复用学习材料。",
       },
       {
         title: "设置",
@@ -565,7 +663,17 @@ export const zhCN = {
     ],
     faqs: [
       {
-        question: "一定要等倒计时结束吗？",
+        question: "新用户应该从哪里开始？",
+        answer:
+          "从场景地图开始。它不需要先找到朋友，能直接进入一条清晰的学习路径。",
+      },
+      {
+        question: "一个场景 stage 怎么算通关？",
+        answer:
+          "正确率达到 80% 就通关。速度和表达质量仍然会显示在报告里，但解锁进度只看正确率。",
+      },
+      {
+        question: "朋友对战一定要等倒计时结束吗？",
         answer:
           "不用。每周节奏只是一个引导，不是硬锁。如果双方都准备好了，这一轮可以提前开始。",
       },
@@ -575,9 +683,14 @@ export const zhCN = {
           "大厅看的是“现在正在发生什么”：倒计时、就绪状态、进入当前比赛。对战档案页看的是长期故事和战绩。",
       },
       {
-        question: "什么时候会出现 Scope？",
+        question: "朋友对战的 Scope 什么时候出现？",
         answer:
           "只要某一轮已经生成了 syllabus，Scope 就会出现。你不需要等考试记录被创建之后才看到它。",
+      },
+      {
+        question: "复制练习 Prompt 是做什么的？",
+        answer:
+          "它会把当前 Scope 变成一段可粘贴到外部 AI 聊天里的 Prompt，让 AI 立刻按这个范围一题一题带你练。",
       },
       {
         question: "语言水平到底会改变什么？",

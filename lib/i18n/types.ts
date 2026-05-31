@@ -32,6 +32,39 @@ export interface TranslationDictionary {
     rivalFallback: string;
     learnerSuffix: string;
     unassignedLanguage: string;
+    somethingWentWrongTitle: string;
+    somethingWentWrongDescription: string;
+    tryAgain: string;
+    goHome: string;
+    pageNotFoundTitle: string;
+    pageNotFoundDescription: string;
+  };
+  landing: {
+    languageToggleLabel: string;
+    eyebrow: string;
+    title: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    guideCta: string;
+    scenarioSignalTitle: string;
+    scenarioSignalDescription: string;
+    friendSignalTitle: string;
+    friendSignalDescription: string;
+    mapPreviewTitle: string;
+    mapPreviewStage: string;
+    mapPreviewScope: string;
+    mapPreviewReport: string;
+    pathsEyebrow: string;
+    pathsTitle: string;
+    pathsDescription: string;
+    scenarioPathTitle: string;
+    scenarioPathDescription: string;
+    rivalryPathTitle: string;
+    rivalryPathDescription: string;
+    readinessEyebrow: string;
+    readinessTitle: string;
+    readinessItems: [string, string, string];
   };
   login: {
     brandTagline: string;
@@ -410,6 +443,23 @@ export interface TranslationDictionary {
     loopDescription: string;
     productMapEyebrow: string;
     productMapTitle: string;
+    pathOverviewEyebrow: string;
+    pathOverviewTitle: string;
+    pathOverviewDescription: string;
+    pathCards: Array<{
+      title: string;
+      description: string;
+    }>;
+    scenarioQuestEyebrow: string;
+    scenarioQuestTitle: string;
+    scenarioQuestDescription: string;
+    scenarioQuestSteps: Array<{
+      key: string;
+      title: string;
+      description: string;
+    }>;
+    practicePromptTitle: string;
+    practicePromptDescription: string;
     weeklyRhythmEyebrow: string;
     weeklyRhythmTitle: string;
     weeklyRhythmParagraphs: [string, string];

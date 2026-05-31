@@ -162,3 +162,110 @@ None.
 
 - OWNER-REVIEW: Confirm the map UI after re-login still shows the persisted
   completed/unlocked state for the tested scenario.
+
+## 4. 2026-05-31 — Public Shell Soft-Launch Hardening
+
+### What changed
+
+- Replaced the logged-out `/` redirect/loading screen with a bilingual public
+  landing page.
+- The landing page presents Scenarios as the primary path and friend rivalries as
+  the secondary path.
+- Added app-wide metadata: title template, description, Open Graph, Twitter card,
+  and generated `/opengraph-image`.
+- Added `NEXT_PUBLIC_SITE_URL` to `.env.example`, README, and project status so
+  deployed metadata resolves against the real public URL.
+- Updated `/how-it-works` to explain both current loops:
+  - scenario quest loop: domain -> scenario -> four stages
+  - stage briefing scope
+  - timed clash
+  - standard-answer self-check
+  - stage clear at 80% accuracy
+  - durable progress / unlocks
+  - `Copy Practice Prompt`
+  - friend rivalry weekly loop
+- Added root-level `app/error.tsx` and `app/not-found.tsx` fallbacks.
+- Changed public session/profile checks on `/`, `/how-it-works`, and
+  `/reset-password` so public content renders first instead of blocking on
+  Supabase auth calls.
+- Extended public Playwright smoke coverage to include the logged-out landing
+  page.
+
+### Why / what this solves
+
+This turns the public shell from an internal app redirect into something that can
+be shared for a private beta / soft launch. A new visitor can now understand the
+product, see that Scenario Map is the main path, reach auth, and open the full
+guide without needing owner explanation.
+
+It also prevents public pages from appearing stuck when Supabase session/profile
+checks are slow or unavailable in local/dev smoke runs.
+
+### Files touched
+
+- `app/page.tsx`
+- `app/layout.tsx`
+- `app/opengraph-image.tsx`
+- `app/error.tsx`
+- `app/not-found.tsx`
+- `components/LandingPage.tsx`
+- `components/HowItWorksPage.tsx`
+- `components/Login.tsx`
+- `components/ResetPasswordPage.tsx`
+- `lib/i18n/types.ts`
+- `lib/i18n/en.ts`
+- `lib/i18n/zh-CN.ts`
+- `tests/e2e/public-smoke.spec.ts`
+- `.env.example`
+- `README.md`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+- `common.somethingWentWrongTitle`
+- `common.somethingWentWrongDescription`
+- `common.tryAgain`
+- `common.goHome`
+- `common.pageNotFoundTitle`
+- `common.pageNotFoundDescription`
+- `landing.*`
+- `guide.pathOverview*`
+- `guide.pathCards`
+- `guide.scenarioQuest*`
+- `guide.practicePrompt*`
+
+English and Simplified Chinese strings were added in `lib/i18n/en.ts` and
+`lib/i18n/zh-CN.ts`.
+
+### How to change or undo later
+
+- Landing copy/layout: edit `components/LandingPage.tsx` and `landing.*` in the
+  i18n files.
+- Public guide copy: edit `components/HowItWorksPage.tsx` plus `guide.*` i18n
+  keys.
+- Share metadata: edit `app/layout.tsx`; change the generated card in
+  `app/opengraph-image.tsx`.
+- Public smoke assertions: edit `tests/e2e/public-smoke.spec.ts`.
+- Deployment URL: set `NEXT_PUBLIC_SITE_URL` in the hosting provider.
+
+### Verification result
+
+- `git diff --check` — passed.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — passed.
+- Playwright screenshots were inspected at 1440px desktop and 390px mobile for
+  the landing page; the initial overlap found on mobile was fixed by hiding the
+  large product preview on mobile.
+
+### Deferred / TODO
+
+- OWNER-REVIEW: Landing-page positioning and copy are product/brand judgment
+  calls; review before sending a broad invite link.
+- OWNER-REVIEW: Set the real deployed URL in `NEXT_PUBLIC_SITE_URL`; fallback is
+  `http://localhost:3000` for local builds only.
+- Authenticated Playwright smoke remains gated on owner-provided `E2E_EMAIL` and
+  `E2E_PASSWORD`.

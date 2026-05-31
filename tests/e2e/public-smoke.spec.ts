@@ -1,6 +1,22 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("public smoke", () => {
+  test("logged-out home page renders the soft-launch landing page", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await expect(
+      page.getByRole("heading", { name: "ClashLingo", exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Start learning", exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Main path: Scenario Map", { exact: true }).first()
+    ).toBeVisible();
+  });
+
   test("login page renders and lets a visitor reach the guide", async ({
     page,
   }) => {
@@ -20,7 +36,7 @@ test.describe("public smoke", () => {
     ).toBeVisible();
 
     await page
-      .getByRole("button", { name: "Open Full Guide", exact: true })
+      .getByRole("link", { name: "Open Full Guide", exact: true })
       .click();
 
     await expect(page).toHaveURL(/\/how-it-works$/);

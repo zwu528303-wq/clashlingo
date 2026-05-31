@@ -52,6 +52,51 @@ export const en = {
     rivalFallback: "Rival",
     learnerSuffix: "learner",
     unassignedLanguage: "Unassigned",
+    somethingWentWrongTitle: "Something went wrong",
+    somethingWentWrongDescription:
+      "The app hit a temporary issue. Try again, or go back to the start page.",
+    tryAgain: "Try again",
+    goHome: "Go home",
+    pageNotFoundTitle: "This page is not available",
+    pageNotFoundDescription:
+      "The link may be old, or the page may have moved. Start from the scenario map or sign in again.",
+  },
+  landing: {
+    languageToggleLabel: "Website Language",
+    eyebrow: "Language practice that starts in real situations",
+    title: "ClashLingo",
+    description:
+      "Clear scenario stages on your own, then keep a lighter friend rivalry loop when you want competition.",
+    primaryCta: "Start learning",
+    secondaryCta: "Sign in",
+    guideCta: "How it works",
+    scenarioSignalTitle: "Main path: Scenario Map",
+    scenarioSignalDescription:
+      "Pick a real-life situation, read the scope, answer timed questions, and clear the stage at 80% accuracy.",
+    friendSignalTitle: "Secondary path: with friends",
+    friendSignalDescription:
+      "Create a rivalry, generate a shared scope, take the exam, and compare results over time.",
+    mapPreviewTitle: "Cafe stage 1",
+    mapPreviewStage: "Timed clash",
+    mapPreviewScope: "Scope ready",
+    mapPreviewReport: "Standard answers after every run",
+    pathsEyebrow: "Two loops",
+    pathsTitle: "Solo progress first, friend rivalry second.",
+    pathsDescription:
+      "The first launch should make the next action obvious: start from Scenarios. Rivalries remain available for people who want the older weekly competition loop.",
+    scenarioPathTitle: "Scenario quests",
+    scenarioPathDescription:
+      "A domain map, four-stage scenarios, AI-generated bilingual scope, timed practice, and durable progress.",
+    rivalryPathTitle: "Friend rivalries",
+    rivalryPathDescription:
+      "A shared syllabus, weekly rhythm, optional early start, exam results, and long-term match history.",
+    readinessEyebrow: "Soft launch ready means",
+    readinessTitle: "A learner can complete one real loop without handholding.",
+    readinessItems: [
+      "The first screen points to Scenarios.",
+      "Every scope can become an external practice prompt.",
+      "Progress survives refresh and re-login.",
+    ],
   },
   login: {
     brandTagline:
@@ -498,26 +543,75 @@ export const en = {
   },
   guide: {
     loginEyebrow: "How It Works",
-    loginTitle: "Learn by dueling",
+    loginTitle: "Learn by scenarios, compete with friends",
     loginDescription:
-      "The easiest way to understand ClashLingo is to see the loop once. This is the fast version.",
+      "Start with the solo scenario path. Add the friend loop when you want a weekly score comparison.",
     pageEyebrow: "How It Works",
     pageTitle: "ClashLingo, explained simply",
     pageDescription:
-      "ClashLingo is a weekly 1v1 language duel. You and a friend study the same round, take the exam, compare scores, and keep the rivalry going over time.",
+      "ClashLingo now has two loops: a solo Scenario Map for real-life practice, and a lighter friend rivalry loop for weekly competition.",
     shortVersionTitle: "The short version",
     shortVersionDescription:
-      "One rivalry is one friend. Inside that rivalry, you keep repeating the same round loop: start the round, get the scope, confirm it, study or start early, take the exam, then compare results.",
+      "Start from Scenarios when you want to learn now. Use Rivalries when you and a friend want a shared scope, a weekly rhythm, and a score comparison.",
     bestFirstStepEyebrow: "Best first step",
-    bestFirstStepTitle: "Start one rivalry first.",
+    bestFirstStepTitle: "Open the Scenario Map first.",
     bestFirstStepDescription:
-      "Once you finish your first round, the rest of the app becomes much easier to understand.",
-    loopEyebrow: "The Loop",
-    loopTitle: "How a rivalry actually works",
+      "Pick one real situation, clear stage 1, and the rest of the product becomes easier to understand.",
+    loopEyebrow: "Friend loop",
+    loopTitle: "How a friend rivalry works",
     loopDescription:
-      "Creating or joining a rivalry is just the setup. The real product is the weekly loop below.",
+      "Rivalries are still available, but they are the secondary loop. Use them when you want a shared weekly challenge with a friend.",
     productMapEyebrow: "Product Map",
     productMapTitle: "What each page is for",
+    pathOverviewEyebrow: "Learning paths",
+    pathOverviewTitle: "Two loops, one clear starting point",
+    pathOverviewDescription:
+      "Scenarios are the main product path. Rivalries preserve the friend-vs-friend workflow without competing for the first click.",
+    pathCards: [
+      {
+        title: "Scenario Map",
+        description:
+          "The main path. Choose a real situation, learn the scoped material, answer timed questions, and clear stages by accuracy.",
+      },
+      {
+        title: "With Friends",
+        description:
+          "The secondary path. Share a syllabus with a friend, follow a weekly rhythm, take the exam, and compare results.",
+      },
+    ],
+    scenarioQuestEyebrow: "Scenario quests",
+    scenarioQuestTitle: "How solo stages work",
+    scenarioQuestDescription:
+      "Each scenario has four stages. A generated battle pack gives you the bilingual scope, the timed run, and the report material.",
+    scenarioQuestSteps: [
+      {
+        key: "choose_scene",
+        title: "Choose a scene",
+        description:
+          "Start from a real situation such as a cafe, airport, or workplace.",
+      },
+      {
+        key: "read_scope",
+        title: "Read the scope",
+        description:
+          "Review can-do goals, vocabulary, grammar, expressions, and how the stage will test you.",
+      },
+      {
+        key: "run_clash",
+        title: "Answer timed prompts",
+        description:
+          "The clash run scores speed, accuracy, and expression quality, then shows standard answers for self-check.",
+      },
+      {
+        key: "clear_stage",
+        title: "Clear at 80%",
+        description:
+          "A stage clears when accuracy is at least 80%. Clearing advances your durable progress and unlocks the next stage.",
+      },
+    ],
+    practicePromptTitle: "Copy Practice Prompt",
+    practicePromptDescription:
+      "Scenario scopes and rivalry scopes can be copied into an external AI chat. The prompt starts practice immediately, stays inside the scope, asks one item at a time, and gives short corrections.",
     weeklyRhythmEyebrow: "Weekly Rhythm",
     weeklyRhythmTitle: "The countdown is a rhythm, not a lock",
     weeklyRhythmParagraphs: [
@@ -533,14 +627,14 @@ export const en = {
     faqEyebrow: "FAQ",
     faqTitle: "Common questions",
     firstTimeSetup: {
-      eyebrow: "First time only",
-      title: "Create / Join Rivalry",
+      eyebrow: "Best first click",
+      title: "Open Scenario Map",
       description:
-        "You only do this when starting with a new friend. After that, the same rivalry becomes your weekly loop.",
+        "Practice can start without a friend. Create or join a rivalry later when you want shared competition.",
     },
-    weeklyLoopCenterCompact: "This same round cycle repeats inside each rivalry.",
-    weeklyLoopCenterFull: "The same cycle keeps repeating after each round ends.",
-    weeklyLoopEyebrow: "Weekly Loop",
+    weeklyLoopCenterCompact: "Friend rivalries use this separate weekly loop.",
+    weeklyLoopCenterFull: "This friend loop repeats after each rivalry round ends.",
+    weeklyLoopEyebrow: "Friend Loop",
     weeklyLoopSteps: [
       {
         key: "start_round",
@@ -579,9 +673,14 @@ export const en = {
     ],
     productSurfaces: [
       {
+        title: "Scenarios",
+        description:
+          "The main solo quest map: real situations, four-stage progress, timed runs, and unlocks.",
+      },
+      {
         title: "Lounge",
         description:
-          "Countdowns, readiness, and entering the current match.",
+          "Countdowns, readiness, and entering the current friend match.",
       },
       {
         title: "Rivalries",
@@ -589,7 +688,8 @@ export const en = {
       },
       {
         title: "Scopes",
-        description: "Study material grouped by language and round.",
+        description:
+          "Reusable study material grouped by language, scenario, or round.",
       },
       {
         title: "Settings",
@@ -599,7 +699,17 @@ export const en = {
     ],
     faqs: [
       {
-        question: "Do we have to wait for the countdown to finish?",
+        question: "Where should a new learner start?",
+        answer:
+          "Start from Scenarios. The map gives a direct learning path without needing a friend first.",
+      },
+      {
+        question: "How does a scenario stage clear?",
+        answer:
+          "A stage clears when your run reaches at least 80% accuracy. Speed and quality still show in the report, but accuracy unlocks progress.",
+      },
+      {
+        question: "Do friend rivalries have to wait for the countdown?",
         answer:
           "No. The weekly rhythm is a guide, not a hard lock. If both players are ready, the round can start early.",
       },
@@ -609,9 +719,14 @@ export const en = {
           "Lounge is for what is happening now: countdowns, readiness, and entering the match. Rivalries is the long-term history and stats view.",
       },
       {
-        question: "When do scopes appear?",
+        question: "When do rivalry scopes appear?",
         answer:
           "A scope appears as soon as the syllabus exists for a round. You do not need to wait for the exam to be created.",
+      },
+      {
+        question: "What is Copy Practice Prompt for?",
+        answer:
+          "It turns the current scope into a prompt you can paste into an external AI chat for immediate, one-question-at-a-time practice.",
       },
       {
         question: "What does language level actually change?",

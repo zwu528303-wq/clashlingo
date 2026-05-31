@@ -60,6 +60,10 @@ Required keys:
 - `ANTHROPIC_API_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+Optional but recommended for deployed previews:
+
+- `NEXT_PUBLIC_SITE_URL` - the public app URL used by Open Graph / Twitter metadata.
+
 Notes:
 
 - `NEXT_PUBLIC_*` variables are intentionally exposed to the browser.

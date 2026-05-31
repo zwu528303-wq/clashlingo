@@ -35,6 +35,23 @@ of claiming completion.
 
 ## What Changed This Session (2026-05-31)
 
+### Soft-launch public shell hardening
+
+- `/` now renders a bilingual logged-out landing page with Scenarios as the
+  primary path and friend rivalries as the secondary path. Signed-in users are
+  still redirected to `/lounge` when the local session resolves.
+- App metadata now includes title templates, Open Graph / Twitter fields, and a
+  generated `/opengraph-image`. `NEXT_PUBLIC_SITE_URL` was added to
+  `.env.example`, README, and project status for deployed share previews.
+- `/how-it-works` now explains both learning loops: scenario quests and friend
+  rivalries. It documents timed clash, standard-answer self-check, stage clear at
+  80% accuracy, durable progress, and `Copy Practice Prompt`.
+- Public pages no longer block first paint on Supabase session/profile checks;
+  they render public content first and enhance/redirect after session detection.
+- Added root `app/error.tsx` and `app/not-found.tsx` user-facing fallbacks.
+- Public smoke coverage now includes `/`, `/login -> /how-it-works`, and
+  `/reset-password`.
+
 ### Battle-pack cache schema guard
 
 The stage briefing runtime error on `/scenario/cafe/stage/1` was caused by a

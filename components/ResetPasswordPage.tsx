@@ -7,11 +7,24 @@ import { getDictionary } from "@/lib/i18n";
 import { useClientWebsiteLanguage } from "@/lib/i18n/use-client-website-language";
 import { supabase } from "@/lib/supabase";
 
+const SESSION_CHECK_TIMEOUT_MS = 1200;
+
+async function getSessionWithTimeout() {
+  return Promise.race([
+    supabase.auth
+      .getSession()
+      .then(({ data }) => data.session)
+      .catch(() => null),
+    new Promise<null>((resolve) => {
+      window.setTimeout(() => resolve(null), SESSION_CHECK_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const websiteLanguage = useClientWebsiteLanguage();
   const [ready, setReady] = useState(false);
-  const [loadingSession, setLoadingSession] = useState(true);
   const [saving, setSaving] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,14 +38,11 @@ export default function ResetPasswordPage() {
     let mounted = true;
 
     const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await getSessionWithTimeout();
 
       if (!mounted) return;
 
       setReady(Boolean(session));
-      setLoadingSession(false);
     };
 
     checkSession();
@@ -44,7 +54,6 @@ export default function ResetPasswordPage() {
 
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setReady(Boolean(session));
-        setLoadingSession(false);
       }
     });
 
@@ -94,16 +103,6 @@ export default function ResetPasswordPage() {
     });
     setSaving(false);
   };
-
-  if (loadingSession) {
-    return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-on-surface-variant font-medium">
-          {dictionary.common.loadingResetLink}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-surface p-4 md:p-6 relative overflow-hidden">

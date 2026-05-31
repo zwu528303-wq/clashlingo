@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -608,13 +609,13 @@ export default function Login() {
 
           <HowItWorksLoop compact websiteLanguage={websiteLanguage} />
 
-          <button
-            onClick={() => router.push("/how-it-works")}
+          <Link
+            href="/how-it-works"
             className="w-full rounded-[1.6rem] border border-white/80 bg-white/85 px-5 py-4 font-black text-on-surface transition-all hover:text-primary hover:translate-y-[-1px] flex items-center justify-center gap-2"
           >
             <CircleHelp size={18} />
             {dictionary.common.openFullGuide}
-          </button>
+          </Link>
         </section>
       </div>
     </div>

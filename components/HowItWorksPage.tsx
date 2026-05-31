@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CircleHelp, Clock3, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  CircleHelp,
+  Clock3,
+  Copy,
+  Sparkles,
+} from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import HowItWorksLoop from "@/components/HowItWorksLoop";
 import { getDictionary } from "@/lib/i18n";
@@ -15,10 +21,23 @@ import {
   resolveDisplayName,
 } from "@/lib/profile";
 
+const PROFILE_CHECK_TIMEOUT_MS = 1200;
+
+async function getSessionWithTimeout() {
+  return Promise.race([
+    supabase.auth
+      .getSession()
+      .then(({ data }) => data.session)
+      .catch(() => null),
+    new Promise<null>((resolve) => {
+      window.setTimeout(() => resolve(null), PROFILE_CHECK_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 export default function HowItWorksPage() {
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const fallbackWebsiteLanguage = useClientWebsiteLanguage();
-  const [loading, setLoading] = useState(true);
   const websiteLanguage = profile?.websiteLanguage ?? fallbackWebsiteLanguage;
   const dictionary = getDictionary(websiteLanguage);
   const guideFaqs = getGuideFaqs(websiteLanguage);
@@ -26,12 +45,10 @@ export default function HowItWorksPage() {
 
   useEffect(() => {
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const session = await getSessionWithTimeout();
+      const user = session?.user;
 
       if (!user) {
-        setLoading(false);
         return;
       }
 
@@ -49,7 +66,6 @@ export default function HowItWorksPage() {
           authProfile.displayName
         ),
       });
-      setLoading(false);
     };
 
     init();
@@ -90,6 +106,98 @@ export default function HowItWorksPage() {
             <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
               {dictionary.guide.bestFirstStepDescription}
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[3rem] bg-surface-container-low p-8 md:p-10 shadow-[0_24px_60px_rgba(149,63,77,0.08)] border border-white/80 space-y-6">
+        <div className="space-y-2">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+            {dictionary.guide.pathOverviewEyebrow}
+          </p>
+          <h2 className="text-4xl font-black tracking-[-0.06em] text-on-surface">
+            {dictionary.guide.pathOverviewTitle}
+          </h2>
+          <p className="text-on-surface-variant leading-relaxed max-w-3xl">
+            {dictionary.guide.pathOverviewDescription}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {dictionary.guide.pathCards.map((path, index) => (
+            <div
+              key={path.title}
+              className={`rounded-[2rem] border px-6 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)] ${
+                index === 0
+                  ? "border-primary/18 bg-primary-container/22"
+                  : "border-secondary/18 bg-secondary-container/20"
+              }`}
+            >
+              <div
+                className={`mb-4 flex h-11 w-11 items-center justify-center rounded-[1rem] ${
+                  index === 0
+                    ? "bg-primary text-on-primary"
+                    : "bg-secondary text-on-secondary"
+                }`}
+              >
+                {index === 0 ? <Sparkles size={20} /> : <Clock3 size={20} />}
+              </div>
+              <p className="text-2xl font-black text-on-surface">
+                {path.title}
+              </p>
+              <p className="mt-3 leading-relaxed text-on-surface-variant">
+                {path.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[3rem] bg-surface-container-low p-8 md:p-10 shadow-[0_24px_60px_rgba(149,63,77,0.08)] border border-white/80 space-y-6">
+        <div className="space-y-2">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-on-surface-variant">
+            {dictionary.guide.scenarioQuestEyebrow}
+          </p>
+          <h2 className="text-4xl font-black tracking-[-0.06em] text-on-surface">
+            {dictionary.guide.scenarioQuestTitle}
+          </h2>
+          <p className="text-on-surface-variant leading-relaxed max-w-3xl">
+            {dictionary.guide.scenarioQuestDescription}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {dictionary.guide.scenarioQuestSteps.map((step, index) => (
+            <div
+              key={step.key}
+              className="rounded-[2rem] bg-white/88 border border-surface-container px-5 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]"
+            >
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-sm font-black text-primary">
+                {index + 1}
+              </div>
+              <p className="mt-4 text-xl font-black text-on-surface">
+                {step.title}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">
+                {step.description}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-[2rem] border border-secondary/18 bg-secondary-container/20 px-6 py-5 shadow-[0_16px_30px_rgba(48,46,43,0.05)]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] bg-secondary text-on-secondary">
+              <Copy size={20} />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-on-surface">
+                {dictionary.guide.practicePromptTitle}
+              </p>
+              <p className="mt-2 leading-relaxed text-on-surface-variant">
+                {dictionary.guide.practicePromptDescription}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -210,16 +318,6 @@ export default function HowItWorksPage() {
       </section>
     </main>
   );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-on-surface-variant font-medium">
-          {dictionary.common.loadingGuide}
-        </div>
-      </div>
-    );
-  }
 
   if (!profile) {
     return (
