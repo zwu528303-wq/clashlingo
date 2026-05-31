@@ -66,36 +66,36 @@ export const en = {
     eyebrow: "Language practice that starts in real situations",
     title: "ClashLingo",
     description:
-      "Clear scenario stages on your own, then keep a lighter friend rivalry loop when you want competition.",
+      "Clear scenario stages on your own, then challenge a friend whenever you want some competition.",
     primaryCta: "Start learning",
     secondaryCta: "Sign in",
     guideCta: "How it works",
-    scenarioSignalTitle: "Main path: Scenario Map",
+    scenarioSignalTitle: "Scenario Map",
     scenarioSignalDescription:
       "Pick a real-life situation, read the scope, answer timed questions, and clear the stage at 80% accuracy.",
-    friendSignalTitle: "Secondary path: with friends",
+    friendSignalTitle: "Play with friends",
     friendSignalDescription:
       "Create a rivalry, generate a shared scope, take the exam, and compare results over time.",
     mapPreviewTitle: "Cafe stage 1",
     mapPreviewStage: "Timed clash",
     mapPreviewScope: "Scope ready",
     mapPreviewReport: "Standard answers after every run",
-    pathsEyebrow: "Two loops",
-    pathsTitle: "Solo progress first, friend rivalry second.",
+    pathsEyebrow: "Two ways to practice",
+    pathsTitle: "Practice solo first, challenge a friend when you want.",
     pathsDescription:
-      "The first launch should make the next action obvious: start from Scenarios. Rivalries remain available for people who want the older weekly competition loop.",
+      "Start from Scenarios to practice on your own. Rivalries are there whenever you want a weekly competition with a friend.",
     scenarioPathTitle: "Scenario quests",
     scenarioPathDescription:
       "A domain map, four-stage scenarios, AI-generated bilingual scope, timed practice, and durable progress.",
     rivalryPathTitle: "Friend rivalries",
     rivalryPathDescription:
       "A shared syllabus, weekly rhythm, optional early start, exam results, and long-term match history.",
-    readinessEyebrow: "Soft launch ready means",
-    readinessTitle: "A learner can complete one real loop without handholding.",
+    readinessEyebrow: "What you get",
+    readinessTitle: "Everything you need to start practicing today.",
     readinessItems: [
-      "The first screen points to Scenarios.",
-      "Every scope can become an external practice prompt.",
-      "Progress survives refresh and re-login.",
+      "Jump straight into a real-life scenario.",
+      "Turn any scope into a practice prompt for your favorite AI chat.",
+      "Your progress is saved and waiting when you come back.",
     ],
   },
   login: {
@@ -221,7 +221,7 @@ export const en = {
     joinWithCode: "Join With Code",
     howItWorksTitle: "How ClashLingo Works",
     howItWorksDescription:
-      "Start with one rivalry first. The real product is a weekly loop you keep repeating together.",
+      "Start a rivalry with a friend and keep coming back each week to see who is learning faster.",
     readyToDuel: "Ready to Duel",
     inviteReady: "Invite Ready",
     matchUnlocksIn: "Match unlocks in",
@@ -545,11 +545,11 @@ export const en = {
     loginEyebrow: "How It Works",
     loginTitle: "Learn by scenarios, compete with friends",
     loginDescription:
-      "Start with the solo scenario path. Add the friend loop when you want a weekly score comparison.",
+      "Start with solo scenarios. Add friend rivalries when you want a weekly score comparison.",
     pageEyebrow: "How It Works",
     pageTitle: "ClashLingo, explained simply",
     pageDescription:
-      "ClashLingo now has two loops: a solo Scenario Map for real-life practice, and a lighter friend rivalry loop for weekly competition.",
+      "ClashLingo has two ways to practice: a solo Scenario Map for real-life situations, and friend rivalries for weekly competition.",
     shortVersionTitle: "The short version",
     shortVersionDescription:
       "Start from Scenarios when you want to learn now. Use Rivalries when you and a friend want a shared scope, a weekly rhythm, and a score comparison.",
@@ -557,26 +557,26 @@ export const en = {
     bestFirstStepTitle: "Open the Scenario Map first.",
     bestFirstStepDescription:
       "Pick one real situation, clear stage 1, and the rest of the product becomes easier to understand.",
-    loopEyebrow: "Friend loop",
+    loopEyebrow: "Friend rivalries",
     loopTitle: "How a friend rivalry works",
     loopDescription:
-      "Rivalries are still available, but they are the secondary loop. Use them when you want a shared weekly challenge with a friend.",
+      "Rivalries are there whenever you want a shared weekly challenge with a friend.",
     productMapEyebrow: "Product Map",
     productMapTitle: "What each page is for",
     pathOverviewEyebrow: "Learning paths",
-    pathOverviewTitle: "Two loops, one clear starting point",
+    pathOverviewTitle: "Two ways to practice, one clear starting point",
     pathOverviewDescription:
-      "Scenarios are the main product path. Rivalries preserve the friend-vs-friend workflow without competing for the first click.",
+      "Start from Scenarios to practice on your own. Rivalries keep the friend-vs-friend workflow for when you want to compete.",
     pathCards: [
       {
         title: "Scenario Map",
         description:
-          "The main path. Choose a real situation, learn the scoped material, answer timed questions, and clear stages by accuracy.",
+          "Choose a real situation, learn the scoped material, answer timed questions, and clear stages by accuracy.",
       },
       {
         title: "With Friends",
         description:
-          "The secondary path. Share a syllabus with a friend, follow a weekly rhythm, take the exam, and compare results.",
+          "Share a syllabus with a friend, follow a weekly rhythm, take the exam, and compare results.",
       },
     ],
     scenarioQuestEyebrow: "Scenario quests",
@@ -627,14 +627,14 @@ export const en = {
     faqEyebrow: "FAQ",
     faqTitle: "Common questions",
     firstTimeSetup: {
-      eyebrow: "Best first click",
+      eyebrow: "Where to start",
       title: "Open Scenario Map",
       description:
         "Practice can start without a friend. Create or join a rivalry later when you want shared competition.",
     },
-    weeklyLoopCenterCompact: "Friend rivalries use this separate weekly loop.",
-    weeklyLoopCenterFull: "This friend loop repeats after each rivalry round ends.",
-    weeklyLoopEyebrow: "Friend Loop",
+    weeklyLoopCenterCompact: "Friend rivalries follow this weekly rhythm.",
+    weeklyLoopCenterFull: "This weekly rhythm repeats after each rivalry round ends.",
+    weeklyLoopEyebrow: "Weekly Rhythm",
     weeklyLoopSteps: [
       {
         key: "start_round",
@@ -757,9 +757,9 @@ export const en = {
       coming_soon: "Coming Soon",
     },
     launchStatusDescriptions: {
-      full: "Playable now with the first battle path open.",
-      partial: "Visible and partly open, with deeper stages still rolling in.",
-      coming_soon: "On the map already, but not battle-ready yet.",
+      full: "Fully playable from start to finish.",
+      partial: "Open to play, with deeper stages still on the way.",
+      coming_soon: "On the map already, but not open yet.",
     },
     backToMap: "Back to Scenarios",
     domainLabel: "Domain",
@@ -778,9 +778,9 @@ export const en = {
       compete: "Compete",
       dominate: "Dominate",
     },
-    stageReady: "Open for launch",
-    stageLocked: "Locked for the next rollout",
-    stageComingSoon: "Scenario not live yet",
+    stageReady: "Ready to play",
+    stageLocked: "Coming soon",
+    stageComingSoon: "Coming soon",
     stageNodeLabels: {
       completed: "Cleared",
       current: "Current",
@@ -788,7 +788,7 @@ export const en = {
       locked: "Locked",
     },
     openStageBriefing: "Open Briefing",
-    briefingNext: "Briefing route lands next",
+    briefingNext: "Open to see the briefing",
     noOpenStages: "No stages open yet",
     progressCleared: (completed: number, total: number) =>
       `Cleared ${completed}/${total}`,
@@ -797,24 +797,24 @@ export const en = {
     progressPreviewOnly: "Preview only for now",
     scopeFirstTitle: "Scope first, battle second",
     scopeFirstDescription:
-      "The player flow still starts with a battle briefing. Users review the scenario, can-do goals, and language moves first, then choose Clash or Exam mode.",
+      "You start with a quick briefing: review the scenario, your can-do goals, and the language moves, then choose Clash or Exam mode.",
     modePreviewTitle: "Modes after the briefing",
     modePreviewDescription:
-      "Clash Mode becomes the new core battle loop, while Exam Mode stays available as a more structured checkpoint.",
+      "Clash Mode is the fast, timed practice. Exam Mode is a calmer, more structured checkpoint.",
     modes: {
       clash: "Clash Mode",
       exam: "Exam Mode",
       practice: "Practice Mode",
     },
-    comingSoonTitle: "World first, depth next",
+    comingSoonTitle: "More scenarios on the way",
     comingSoonDescription:
-      "The full scenario universe is visible from day one. Some scenarios ship deep immediately, some open one stage first, and some stay visible as future targets.",
+      "Every scenario is visible from the start. Some are fully playable now, some open one stage first, and others are on the way.",
     playableNowTitle: "Playable now",
     previewLaneTitle: "Preview lane",
     backToScenario: "Back to Scenario",
     briefingEyebrow: "Battle Briefing",
     briefingDescription:
-      "Review the scenario scope first, then choose whether to enter the new Clash loop or the more structured Exam lane.",
+      "Review the scenario scope first, then choose whether to enter Clash Mode or the more structured Exam mode.",
     briefingSummaryTitle: "What this battle is training",
     briefingCanDoTitle: "Can-do goals",
     briefingVocabularyTitle: "Vocabulary groups",
@@ -844,23 +844,10 @@ export const en = {
     practiceLater: "Practice Later",
     unavailableStageTitle: "This stage is not live yet",
     unavailableStageDescription:
-      "The scenario is visible on the map, but this stage still belongs to a later rollout layer.",
+      "This stage isn't open yet. It's visible on the map so you can see what's coming — check back soon.",
     battleGenerating: "Generating this battle pack...",
     battleGenerateError:
       "Couldn't generate this battle pack. Go back and try again.",
-    battlePlaceholderEyebrow: "Clash Mode Shell",
-    battlePlaceholderTitle: "The battle route lands here next",
-    battlePlaceholderDescription:
-      "This is the new Clash Mode handoff point. We already know the scenario, stage, pack, and opponent lane, so the next build step is the real timed battle.",
-    battlePlaceholderNext:
-      "Next slice: question pacing, timers, AI pressure, and score flow.",
-    battlePlaceholderSessionLabel: "Mock Session",
-    examPlaceholderEyebrow: "Exam Mode Shell",
-    examPlaceholderTitle: "Exam Mode reconnects here",
-    examPlaceholderDescription:
-      "Exam Mode stays parallel to Clash Mode after the same scope briefing. This shell keeps the route and framing ready while the real exam connection comes next.",
-    examPlaceholderNext:
-      "Next slice: reconnect the scenario-stage path to the structured exam experience.",
     examLaneEyebrow: "Structured Checkpoint",
     examLaneTitle: "Take the stage exam before you climb",
     examLaneDescription:
@@ -874,7 +861,7 @@ export const en = {
     battleLiveEyebrow: "Live Clash",
     battleLiveTitle: "Café battle is now in play",
     battleLiveDescription:
-      "The battle loop runs on timer pressure and mixed question types. Each question shows the standard answer afterward so you can self-check, plus a real battle report at the end.",
+      "The battle runs on timer pressure and mixed question types. Each question shows the standard answer afterward so you can self-check, plus a real battle report at the end.",
     battleStart: "Start Battle",
     battleStartHint:
       "Start when you're ready. The timer starts on the first question, and you can check your answer against the standard one after each.",

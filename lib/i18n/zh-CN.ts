@@ -66,36 +66,36 @@ export const zhCN = {
     eyebrow: "从真实场景开始的语言练习",
     title: "ClashLingo",
     description:
-      "先自己在场景里闯关升级；想要竞争感时，再保留和朋友对战的轻量循环。",
+      "先自己在场景里闯关升级；想要竞争感时，随时叫上朋友来一局。",
     primaryCta: "开始学习",
     secondaryCta: "登录",
     guideCta: "玩法说明",
-    scenarioSignalTitle: "主线：场景地图",
+    scenarioSignalTitle: "场景地图",
     scenarioSignalDescription:
       "选择真实生活场景，先看本关 Scope，再完成限时题；正确率达到 80% 就通关。",
-    friendSignalTitle: "次级：和朋友对战",
+    friendSignalTitle: "和朋友对战",
     friendSignalDescription:
       "创建对战、生成共享 Scope、参加考试，然后长期对比分数和战绩。",
     mapPreviewTitle: "咖啡店 Stage 1",
     mapPreviewStage: "限时 Clash",
     mapPreviewScope: "Scope 已就绪",
     mapPreviewReport: "每轮结束后看标准答案",
-    pathsEyebrow: "两条学习循环",
-    pathsTitle: "先做单人闯关，再保留朋友对战。",
+    pathsEyebrow: "两种练习方式",
+    pathsTitle: "先自己闯关，想竞争时再叫上朋友。",
     pathsDescription:
-      "初次发布时，用户第一步必须明确：从场景地图开始。朋友对战继续保留给想要每周竞争的人。",
+      "想自己练习，就从场景地图开始；想和朋友每周比一比，随时都能开一场对战。",
     scenarioPathTitle: "场景闯关",
     scenarioPathDescription:
       "大类地图、四阶段场景、AI 生成的双语 Scope、限时练习，以及可持久保存的进度。",
     rivalryPathTitle: "朋友对战",
     rivalryPathDescription:
       "共享 syllabus、每周节奏、可提前开赛、考试结果和长期对战历史。",
-    readinessEyebrow: "Soft launch 的标准",
-    readinessTitle: "用户不靠解释，也能完整走完一条真实学习循环。",
+    readinessEyebrow: "你能得到什么",
+    readinessTitle: "今天就能开始练习，所需的一切都已就绪。",
     readinessItems: [
-      "第一屏明确指向场景地图。",
-      "每个 Scope 都能复制成外部练习 Prompt。",
-      "刷新和重新登录后，进度仍然存在。",
+      "直接进入一个真实生活场景。",
+      "任何 Scope 都能复制成练习 Prompt，发给你常用的 AI 对话。",
+      "进度会自动保存，下次回来继续。",
     ],
   },
   login: {
@@ -209,7 +209,7 @@ export const zhCN = {
     joinWithCode: "用邀请码加入",
     howItWorksTitle: "ClashLingo 怎么玩",
     howItWorksDescription:
-      "先开始一段对战就够了。这个产品真正的核心，是你们会不断重复的每周循环。",
+      "先和朋友开一场对战，每周都回来比一比，看谁学得更快。",
     readyToDuel: "随时开打",
     inviteReady: "邀请待加入",
     matchUnlocksIn: "开战倒计时",
@@ -517,38 +517,38 @@ export const zhCN = {
     loginEyebrow: "玩法说明",
     loginTitle: "先用场景学习，再和朋友竞争",
     loginDescription:
-      "先从单人场景主线开始；想要每周比分和竞争感时，再加入朋友对战循环。",
+      "先从单人场景开始；想要每周比分和竞争感时，再加入朋友对战。",
     pageEyebrow: "玩法说明",
     pageTitle: "一次看懂 ClashLingo",
     pageDescription:
-      "ClashLingo 现在有两条循环：主线是围绕真实生活场景的单人闯关；次级功能是保留和朋友一起每周对战。",
+      "ClashLingo 有两种练习方式：围绕真实生活场景的单人闯关，以及和朋友一起的每周对战。",
     shortVersionTitle: "超简版",
     shortVersionDescription:
-      "想马上学习，就从场景地图开始。想和朋友一起竞争，就使用对战循环：共享 Scope、跟随每周节奏、考试后对比分数。",
+      "想马上学习，就从场景地图开始。想和朋友一起竞争，就开一场对战：共享 Scope、跟随每周节奏、考试后对比分数。",
     bestFirstStepEyebrow: "最适合的新手起点",
     bestFirstStepTitle: "先打开场景地图。",
     bestFirstStepDescription:
       "选一个真实场景，先通关 stage 1，整个产品会更容易理解。",
-    loopEyebrow: "朋友对战循环",
+    loopEyebrow: "朋友对战",
     loopTitle: "和朋友对战怎么运作",
     loopDescription:
-      "朋友对战仍然保留，但它是次级循环。适合你和朋友想要共享 Scope、每周竞争时使用。",
+      "随时想和朋友来一场共享 Scope、每周比拼的挑战，都可以开一局对战。",
     productMapEyebrow: "页面地图",
     productMapTitle: "每个页面到底做什么",
     pathOverviewEyebrow: "学习路径",
-    pathOverviewTitle: "两条循环，但第一步要明确",
+    pathOverviewTitle: "两种练习方式，一个清晰的起点",
     pathOverviewDescription:
-      "场景地图是主线。朋友对战保留原来的 1v1 学习流程，但不再抢新用户的第一点击。",
+      "想自己练习，就从场景地图开始；朋友对战保留原来的 1v1 学习流程，想竞争时随时开一局。",
     pathCards: [
       {
         title: "场景地图",
         description:
-          "主线入口。选择真实场景，学习本关 Scope，完成限时题，并靠正确率通关。",
+          "选择真实场景，学习本关 Scope，完成限时题，并靠正确率通关。",
       },
       {
         title: "和朋友对战",
         description:
-          "次级入口。和朋友共享 syllabus，跟随每周节奏，完成考试后对比分数。",
+          "和朋友共享 syllabus，跟随每周节奏，完成考试后对比分数。",
       },
     ],
     scenarioQuestEyebrow: "场景闯关",
@@ -598,14 +598,14 @@ export const zhCN = {
     faqEyebrow: "常见问题",
     faqTitle: "常见问题",
     firstTimeSetup: {
-      eyebrow: "最适合的第一步",
+      eyebrow: "从哪里开始",
       title: "打开场景地图",
       description:
         "不需要先找朋友也能开始练习。等你想要共享竞争时，再创建或加入朋友对战。",
     },
-    weeklyLoopCenterCompact: "朋友对战使用这条独立的每周循环。",
-    weeklyLoopCenterFull: "每一轮朋友对战结束后，这个循环会再次开始。",
-    weeklyLoopEyebrow: "朋友循环",
+    weeklyLoopCenterCompact: "朋友对战按这个每周节奏进行。",
+    weeklyLoopCenterFull: "每一轮朋友对战结束后，这个每周节奏会再次开始。",
+    weeklyLoopEyebrow: "每周节奏",
     weeklyLoopSteps: [
       {
         key: "start_round",
@@ -642,7 +642,7 @@ export const zhCN = {
       {
         title: "场景地图",
         description:
-          "主线单人闯关地图：真实场景、四阶段进度、限时练习和解锁。",
+          "单人闯关地图：真实场景、四阶段进度、限时练习和解锁。",
       },
       {
         title: "大厅",
@@ -721,9 +721,9 @@ export const zhCN = {
       coming_soon: "即将推出",
     },
     launchStatusDescriptions: {
-      full: "现在就能完整打通第一条 battle 主线。",
-      partial: "地图已开放，但更深 stage 还在继续补上。",
-      coming_soon: "已经在地图里，但还没到可开打状态。",
+      full: "现在就能从头到尾完整打通。",
+      partial: "已开放，但更深的 stage 还在继续补上。",
+      coming_soon: "已经在地图里，但还没开放。",
     },
     backToMap: "返回场景地图",
     domainLabel: "大主题",
@@ -742,9 +742,9 @@ export const zhCN = {
       compete: "开始竞争",
       dominate: "打到碾压",
     },
-    stageReady: "首发已开放",
-    stageLocked: "留给下一轮开放",
-    stageComingSoon: "场景尚未上线",
+    stageReady: "可以开打",
+    stageLocked: "即将开放",
+    stageComingSoon: "即将开放",
     stageNodeLabels: {
       completed: "已通关",
       current: "当前",
@@ -752,7 +752,7 @@ export const zhCN = {
       locked: "未开",
     },
     openStageBriefing: "打开 Briefing",
-    briefingNext: "Briefing 下一步接上",
+    briefingNext: "打开查看 Briefing",
     noOpenStages: "还没有开放的 stage",
     progressCleared: (completed: number, total: number) =>
       `已通关 ${completed}/${total}`,
@@ -761,24 +761,24 @@ export const zhCN = {
     progressPreviewOnly: "目前先看地图预览",
     scopeFirstTitle: "先看 Scope，再上 battle",
     scopeFirstDescription:
-      "用户流程仍然先从 battle briefing 开始。先看清这个场景练什么、会怎么打，再决定进入 Clash Mode 还是 Exam Mode。",
+      "先从 briefing 开始：看清这个场景练什么、会怎么打，再决定进入 Clash Mode 还是 Exam Mode。",
     modePreviewTitle: "看完 briefing 之后的模式",
     modePreviewDescription:
-      "Clash Mode 会成为新的核心 battle 主线，Exam Mode 则继续保留，作为更结构化的检查点。",
+      "Clash Mode 是快节奏的限时练习，Exam Mode 则更安静、更结构化，作为检查点。",
     modes: {
       clash: "Clash Mode",
       exam: "Exam Mode",
       practice: "Practice Mode",
     },
-    comingSoonTitle: "先把世界亮出来，再逐层加深",
+    comingSoonTitle: "更多场景陆续上线",
     comingSoonDescription:
-      "第一天就先把完整场景宇宙展示出来。有些场景会直接做深，有些先开放一个 stage，还有些先作为未来目标挂在地图里。",
+      "所有场景一开始就都能在地图上看到。有些现在就能完整游玩，有些先开放一个 stage，还有些正在路上。",
     playableNowTitle: "现在可玩",
     previewLaneTitle: "预览区",
     backToScenario: "返回场景页",
     briefingEyebrow: "Battle Briefing",
     briefingDescription:
-      "先把这场 scenario 的 scope 看清楚，再决定进入新的 Clash Mode，还是更结构化的 Exam Mode。",
+      "先把这场 scenario 的 scope 看清楚，再决定进入 Clash Mode，还是更结构化的 Exam Mode。",
     briefingSummaryTitle: "这一战在练什么",
     briefingCanDoTitle: "这一关要做到",
     briefingVocabularyTitle: "词汇组",
@@ -808,22 +808,9 @@ export const zhCN = {
     practiceLater: "稍后再练",
     unavailableStageTitle: "这个 stage 还没正式开放",
     unavailableStageDescription:
-      "这个场景已经挂在地图里了，但这个 stage 还属于后续 rollout 的内容层。",
+      "这个 stage 还没开放。它先挂在地图里，让你看到接下来会有什么——敬请期待。",
     battleGenerating: "正在生成这一关的题包……",
     battleGenerateError: "这一关的题包暂时没生成出来，返回重试一下。",
-    battlePlaceholderEyebrow: "Clash Mode 壳子",
-    battlePlaceholderTitle: "新的 battle 入口会落在这里",
-    battlePlaceholderDescription:
-      "这里已经拿到了 scenario、stage、battle pack 和对手类型。下一步会把它接成真正计时、真正给压力的 battle 页面。",
-    battlePlaceholderNext:
-      "下一步会补上题目节奏、计时、AI 压力和分数流。",
-    battlePlaceholderSessionLabel: "Mock Session",
-    examPlaceholderEyebrow: "Exam Mode 壳子",
-    examPlaceholderTitle: "Exam Mode 会在这里重新接回主线",
-    examPlaceholderDescription:
-      "Exam Mode 仍然和 Clash Mode 平行存在，并复用同一个 scope briefing。这里先把路径和 framing 搭起来，下一步再接真实考试体验。",
-    examPlaceholderNext:
-      "下一步会把 scenario-stage 路径重新接回结构化考试体验。",
     examLaneEyebrow: "结构化检查点",
     examLaneTitle: "先把这一关的 exam 打稳",
     examLaneDescription:
@@ -837,7 +824,7 @@ export const zhCN = {
     battleLiveEyebrow: "Live Clash",
     battleLiveTitle: "咖啡馆 battle 已经能打起来了",
     battleLiveDescription:
-      "battle 主线有倒计时和混合题型，每题答完都会给出标准答案方便你自查，最后还有一页真正的 battle report。",
+      "battle 有倒计时和混合题型，每题答完都会给出标准答案方便你自查，最后还有一页真正的 battle report。",
     battleStart: "开始 Battle",
     battleStartHint: "准备好再开始。第一题出现时计时开始，每题答完都能对照标准答案自查。",
     battleQuestionCounter: (current: number, total: number) =>

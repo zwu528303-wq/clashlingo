@@ -585,15 +585,6 @@ export interface TranslationDictionary {
     unavailableStageDescription: string;
     battleGenerating: string;
     battleGenerateError: string;
-    battlePlaceholderEyebrow: string;
-    battlePlaceholderTitle: string;
-    battlePlaceholderDescription: string;
-    battlePlaceholderNext: string;
-    battlePlaceholderSessionLabel: string;
-    examPlaceholderEyebrow: string;
-    examPlaceholderTitle: string;
-    examPlaceholderDescription: string;
-    examPlaceholderNext: string;
     examLaneEyebrow: string;
     examLaneTitle: string;
     examLaneDescription: string;
