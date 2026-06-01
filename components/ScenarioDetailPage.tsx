@@ -51,8 +51,9 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
   useEffect(() => {
     const init = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
 
       if (!user) {
         router.push("/login");
@@ -75,9 +76,6 @@ export default function ScenarioDetailPage({ slug }: ScenarioDetailPageProps) {
       });
       setLoading(false);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
       if (session?.access_token) {
         const map = await fetchScenarioProgressMap({
           accessToken: session.access_token,

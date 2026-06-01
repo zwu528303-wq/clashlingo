@@ -69,7 +69,8 @@ export default function NewRoundPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) { router.push("/login"); return; }
       setUserId(user.id);
       setWebsiteLanguage(getEditableProfileFromUser(user).websiteLanguage);

@@ -35,12 +35,31 @@ interface ApiErrorPayload {
   code?: string;
 }
 
+async function getJsonAuthHeaders() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return null;
+  }
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.access_token}`,
+  };
+}
+
 function mapSyllabusErrorCode(
   code: string | undefined,
   fallback: string | undefined,
   dictionary: ReturnType<typeof getDictionary>
 ) {
   switch (code) {
+    case "MISSING_ACCESS_TOKEN":
+    case "UNAUTHORIZED":
+    case "NOT_PART_OF_RIVALRY":
+    case "RIVALRY_NOT_FOUND":
     case "MISSING_FIELDS":
     case "ROUND_NOT_FOUND":
     case "AI_NO_TEXT":
@@ -59,6 +78,10 @@ function mapExamErrorCode(
   dictionary: ReturnType<typeof getDictionary>
 ) {
   switch (code) {
+    case "MISSING_ACCESS_TOKEN":
+    case "UNAUTHORIZED":
+    case "NOT_PART_OF_RIVALRY":
+    case "RIVALRY_NOT_FOUND":
     case "MISSING_ROUND_ID":
     case "ROUND_NOT_FOUND":
     case "MISSING_SYLLABUS":
@@ -122,7 +145,8 @@ export default function RoundPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) { router.push("/login"); return; }
       const profile = getEditableProfileFromUser(user);
       setUserId(user.id);
@@ -165,20 +189,31 @@ export default function RoundPage() {
         if (!examGenerationTriggered.current) {
           examGenerationTriggered.current = true;
           setActionLoading(true);
-          fetch("/api/generate-exam", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ roundId }),
-          }).then(async (res) => {
+          void (async () => {
+            const headers = await getJsonAuthHeaders();
+
+            if (!headers) {
+              console.error("Exam generation failed: missing session");
+              setActionLoading(false);
+              return;
+            }
+
+            const res = await fetch("/api/generate-exam", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ roundId }),
+            });
+
             if (!res.ok) {
               const data = (await res.json().catch(() => null)) as
                 | ApiErrorPayload
                 | null;
               console.error("Exam generation failed:", data?.error);
             }
+
             await loadRound();
             setActionLoading(false);
-          });
+          })();
         }
         return;
       }
@@ -262,9 +297,16 @@ export default function RoundPage() {
       if (!round) return false;
 
       if (currentStatus === "countdown") {
+        const headers = await getJsonAuthHeaders();
+
+        if (!headers) {
+          setActionError(dictionary.round.errors.unlockExamFailed);
+          return false;
+        }
+
         const examResponse = await fetch("/api/generate-exam", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ roundId }),
         });
 
@@ -496,9 +538,17 @@ export default function RoundPage() {
             <button
               onClick={async () => {
                 setActionLoading(true);
+                const headers = await getJsonAuthHeaders();
+
+                if (!headers) {
+                  setSyllabusError(dictionary.round.errors.generateScopeFailed);
+                  setActionLoading(false);
+                  return;
+                }
+
                 const res = await fetch("/api/generate-syllabus", {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers,
                   body: JSON.stringify({
                     roundId: round.id,
                     topic: round.topic,
