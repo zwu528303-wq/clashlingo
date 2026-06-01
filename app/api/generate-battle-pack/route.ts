@@ -27,10 +27,18 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
+  throw new Error("Missing Supabase environment variables");
+}
+
+// Anon-key client used only to validate the caller's bearer token.
+const authClient = createClient(supabaseUrl, supabaseAnonKey);
+// Service-role client for the battle_packs cache (bypasses RLS).
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 const LEVEL_GUIDANCE = `LEVEL GUIDANCE:
 - Beginner: keep wording direct, highly scaffolded, and strictly inside the explicit scope words and patterns
@@ -40,6 +48,28 @@ const LEVEL_GUIDANCE = `LEVEL GUIDANCE:
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    const accessToken = authHeader?.replace(/^Bearer\s+/i, "");
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: "Missing access token", code: "MISSING_ACCESS_TOKEN" },
+        { status: 401 }
+      );
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser(accessToken);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Unauthorized", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const scenarioSlug = String(body?.scenarioSlug ?? "");
     const stageInput = Number(body?.stage);

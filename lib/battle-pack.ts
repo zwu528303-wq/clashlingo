@@ -311,9 +311,26 @@ export async function fetchBattlePack(params: {
   targetLanguage: SupportedLanguage;
   level: LanguageLevel;
 }): Promise<BattlePack | null> {
+  // Client-only: read the signed-in session token so the generate endpoint
+  // (the only paid Anthropic route) can require authentication. Imported
+  // dynamically to keep the browser supabase client out of any server bundle
+  // that also imports this module.
+  const { supabase } = await import("@/lib/supabase");
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+
+  if (!accessToken) {
+    return null;
+  }
+
   const response = await fetch("/api/generate-battle-pack", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
     body: JSON.stringify(params),
   });
 
