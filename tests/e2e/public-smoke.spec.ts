@@ -13,7 +13,12 @@ test.describe("public smoke", () => {
       page.getByRole("link", { name: "Start learning", exact: true })
     ).toBeVisible();
     await expect(
-      page.getByText("Main path: Scenario Map", { exact: true }).first()
+      page.getByText("Scenario Map", { exact: true }).first()
+    ).toBeVisible();
+    await expect(
+      page.getByText("Practice solo first, challenge a friend when you want.", {
+        exact: true,
+      }).first()
     ).toBeVisible();
   });
 

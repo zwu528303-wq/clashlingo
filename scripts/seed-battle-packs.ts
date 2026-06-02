@@ -16,10 +16,18 @@
  * Env:
  *   SEED_BASE_URL   base URL of the running app (default http://localhost:3000)
  *   SEED_DELAY_MS   pause between requests, ms (default 750)
+ *   SEED_ACCESS_TOKEN
+ *                   Supabase access token for the seeding user
+ *   SEED_EMAIL / SEED_PASSWORD
+ *                   Optional fallback login used to fetch an access token
+ *                   (requires NEXT_PUBLIC_SUPABASE_URL and
+ *                   NEXT_PUBLIC_SUPABASE_ANON_KEY)
  *
  * Node 24 strips the TypeScript types natively; scenario-map.ts uses only
  * type-only imports, so it loads here without the "@/" path alias.
  */
+import { createClient } from "@supabase/supabase-js";
+
 // @ts-expect-error -- Node 24 runs this script directly and needs .ts imports.
 import { SCENARIOS } from "../lib/scenario-map.ts";
 // @ts-expect-error -- Node 24 runs this script directly and needs .ts imports.
@@ -165,13 +173,60 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function resolveSeedAccessToken(): Promise<string | null> {
+  const explicitToken = process.env.SEED_ACCESS_TOKEN?.trim();
+  if (explicitToken) {
+    return explicitToken;
+  }
+
+  const email = process.env.SEED_EMAIL?.trim();
+  const password = process.env.SEED_PASSWORD;
+
+  if (!email || !password) {
+    return null;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      "SEED_EMAIL / SEED_PASSWORD requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    );
+  }
+
+  const seedClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  const { data, error } = await seedClient.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.session?.access_token) {
+    throw new Error(
+      `Failed to sign in seed user: ${error?.message || "No access token"}`
+    );
+  }
+
+  return data.session.access_token;
+}
+
 async function runJob(
-  job: Job
+  job: Job,
+  accessToken: string
 ): Promise<"cached" | "generated" | "failed"> {
   try {
     const res = await fetch(`${BASE_URL}/api/generate-battle-pack`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         scenarioSlug: job.scenarioSlug,
         stage: job.stage,
@@ -234,6 +289,23 @@ async function main() {
     return;
   }
 
+  let accessToken: string;
+  try {
+    const resolvedAccessToken = await resolveSeedAccessToken();
+    if (!resolvedAccessToken) {
+      console.error(
+        "Live seed requires SEED_ACCESS_TOKEN, or SEED_EMAIL / SEED_PASSWORD with Supabase public env."
+      );
+      process.exitCode = 1;
+      return;
+    }
+    accessToken = resolvedAccessToken;
+  } catch (error) {
+    console.error((error as Error).message);
+    process.exitCode = 1;
+    return;
+  }
+
   let cached = 0;
   let generated = 0;
   const failures: Job[] = [];
@@ -241,7 +313,7 @@ async function main() {
   for (let i = 0; i < jobs.length; i += 1) {
     const job = jobs[i];
     process.stdout.write(`[${i + 1}/${jobs.length}] ${describe(job)} ... `);
-    const result = await runJob(job);
+    const result = await runJob(job, accessToken);
 
     if (result === "cached") {
       cached += 1;

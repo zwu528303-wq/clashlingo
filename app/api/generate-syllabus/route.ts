@@ -2,24 +2,48 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import type { Rivalry, Round, Syllabus } from "@/lib/domain-types";
-import {
-  DEFAULT_LANGUAGE_LEVEL,
-  normalizeLanguageLevel,
-  resolveRoundLanguageLevel,
-} from "@/lib/language-level";
+import { resolveRoundLanguageLevel } from "@/lib/language-level";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
+  throw new Error("Missing Supabase environment variables");
+}
+
+const authClient = createClient(supabaseUrl, supabaseAnonKey);
+const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function POST(req: NextRequest) {
   try {
-    const { roundId, topic, targetLang, difficulty } = await req.json();
+    const authHeader = req.headers.get("authorization");
+    const accessToken = authHeader?.replace(/^Bearer\s+/i, "");
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: "Missing access token", code: "MISSING_ACCESS_TOKEN" },
+        { status: 401 }
+      );
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser(accessToken);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Unauthorized", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
+
+    const { roundId, topic, targetLang } = await req.json();
 
     if (!roundId || !topic || !targetLang) {
       return NextResponse.json(
@@ -28,7 +52,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: roundData, error: roundError } = await supabase
+    const { data: roundData, error: roundError } = await adminClient
       .from("rounds")
       .select("rivalry_id, topic, target_lang")
       .eq("id", roundId)
@@ -41,15 +65,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: rivalryData } = await supabase
+    const { data: rivalryData, error: rivalryError } = await adminClient
       .from("rivalries")
       .select(
-        "player_a_lang, player_b_lang, player_a_difficulty, player_b_difficulty"
+        "player_a_id, player_b_id, player_a_lang, player_b_lang, player_a_difficulty, player_b_difficulty"
       )
       .eq("id", roundData.rivalry_id)
       .maybeSingle<
         Pick<
           Rivalry,
+          | "player_a_id"
+          | "player_b_id"
           | "player_a_lang"
           | "player_b_lang"
           | "player_a_difficulty"
@@ -57,11 +83,32 @@ export async function POST(req: NextRequest) {
         >
       >();
 
+    if (rivalryError || !rivalryData) {
+      return NextResponse.json(
+        { error: "Rivalry not found", code: "RIVALRY_NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      rivalryData.player_a_id !== user.id &&
+      rivalryData.player_b_id !== user.id
+    ) {
+      return NextResponse.json(
+        {
+          error: "You are not part of this rivalry",
+          code: "NOT_PART_OF_RIVALRY",
+        },
+        { status: 403 }
+      );
+    }
+
     const resolvedTopic = roundData.topic || topic;
     const resolvedTargetLang = roundData.target_lang || targetLang;
-    const difficultyLevel = rivalryData
-      ? resolveRoundLanguageLevel(rivalryData, resolvedTargetLang)
-      : normalizeLanguageLevel(difficulty || DEFAULT_LANGUAGE_LEVEL);
+    const difficultyLevel = resolveRoundLanguageLevel(
+      rivalryData,
+      resolvedTargetLang
+    );
 
     const prompt = `You are a language learning curriculum designer for ClashLingo, a competitive language learning app.
 
@@ -187,7 +234,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks.`;
     }
 
     // Save to database and update status
-    const { error } = await supabase
+    const { error } = await adminClient
       .from("rounds")
       .update({
         syllabus: syllabus,

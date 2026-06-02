@@ -8,13 +8,41 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
+  throw new Error("Missing Supabase environment variables");
+}
+
+const authClient = createClient(supabaseUrl, supabaseAnonKey);
+const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    const accessToken = authHeader?.replace(/^Bearer\s+/i, "");
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: "Missing access token", code: "MISSING_ACCESS_TOKEN" },
+        { status: 401 }
+      );
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser(accessToken);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError?.message || "Unauthorized", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
+
     const { roundId } = await req.json();
 
     if (!roundId) {
@@ -25,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get round + syllabus
-    const { data: roundData, error: roundError } = await supabase
+    const { data: roundData, error: roundError } = await adminClient
       .from("rounds")
       .select("*")
       .eq("id", roundId)
@@ -47,15 +75,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: rivalryData } = await supabase
+    const { data: rivalryData, error: rivalryError } = await adminClient
       .from("rivalries")
       .select(
-        "player_a_lang, player_b_lang, player_a_difficulty, player_b_difficulty"
+        "player_a_id, player_b_id, player_a_lang, player_b_lang, player_a_difficulty, player_b_difficulty"
       )
       .eq("id", round.rivalry_id)
       .maybeSingle<
         Pick<
           Rivalry,
+          | "player_a_id"
+          | "player_b_id"
           | "player_a_lang"
           | "player_b_lang"
           | "player_a_difficulty"
@@ -63,15 +93,35 @@ export async function POST(req: NextRequest) {
         >
       >();
 
+    if (rivalryError || !rivalryData) {
+      return NextResponse.json(
+        { error: "Rivalry not found", code: "RIVALRY_NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      rivalryData.player_a_id !== user.id &&
+      rivalryData.player_b_id !== user.id
+    ) {
+      return NextResponse.json(
+        {
+          error: "You are not part of this rivalry",
+          code: "NOT_PART_OF_RIVALRY",
+        },
+        { status: 403 }
+      );
+    }
+
     // Idempotency: if exam already exists, skip Claude and just ensure status is exam_ready
-    const { data: existingExam } = await supabase
+    const { data: existingExam } = await adminClient
       .from("exams")
       .select("id")
       .eq("round_id", roundId)
       .maybeSingle();
 
     if (existingExam) {
-      await supabase
+      await adminClient
         .from("rounds")
         .update({ status: "exam_ready" })
         .eq("id", roundId);
@@ -227,15 +277,15 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
     }
 
     // Check for existing exam
-    const { data: existing } = await supabase
+    const { data: existing } = await adminClient
       .from("exams")
       .select("id")
       .eq("round_id", roundId)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       // Update existing
-      await supabase
+      await adminClient
         .from("exams")
         .update({
           questions: examData.questions,
@@ -245,7 +295,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
         .eq("id", existing.id);
     } else {
       // Create new
-      await supabase.from("exams").insert({
+      await adminClient.from("exams").insert({
         round_id: roundId,
         questions: examData.questions,
         rubric: examData.rubric,
@@ -254,7 +304,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
     }
 
     // Update round status
-    await supabase
+    await adminClient
       .from("rounds")
       .update({ status: "exam_ready" })
       .eq("id", roundId);

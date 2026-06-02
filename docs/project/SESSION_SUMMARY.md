@@ -1,6 +1,6 @@
 # ClashLingo Session Summary
 
-Date: 2026-05-31
+Date: 2026-06-01
 
 ## OWNER ACTION REQUIRED
 
@@ -20,8 +20,10 @@ Completed by owner and verified by table existence:
 
 Still owner-controlled / not fully verified:
 
-4. Run battle-pack seeding only after reviewing cost/data impact. The agent must
-   not run `npm run seed:battle-packs` except dry-runs.
+4. Run battle-pack seeding only after reviewing cost/data impact. Live seed now
+   requires `SEED_ACCESS_TOKEN`, or `SEED_EMAIL` / `SEED_PASSWORD` plus public
+   Supabase env vars. The agent must not run `npm run seed:battle-packs` except
+   dry-runs.
 5. Provide `E2E_EMAIL` and `E2E_PASSWORD` before authenticated Playwright smoke
    coverage can be fully verified.
 6. Provide or confirm a deployed/staging URL before any deployment or shared-link
@@ -33,7 +35,39 @@ E2E credentials block a soft-launch acceptance item, preserve the fallback and
 document the exact blocker in `SOFT_LAUNCH_WORKLOG.md` and this section instead
 of claiming completion.
 
-## What Changed This Session (2026-05-31)
+## What Changed This Session (2026-06-01)
+
+### Soft-launch paid-endpoint hardening
+
+- `/api/generate-syllabus` and `/api/generate-exam` now require a valid
+  Supabase Bearer token before reading round data or calling Anthropic.
+- Both rivalry AI endpoints now verify that the authenticated user belongs to
+  the round's rivalry before generating or updating content.
+- `components/RoundPage.tsx` now attaches the current session token when
+  generating a rivalry syllabus or exam.
+- `scripts/seed-battle-packs.ts` now supports authenticated live seeding via
+  `SEED_ACCESS_TOKEN`, or `SEED_EMAIL` / `SEED_PASSWORD`; without seed auth it
+  exits before sending any request. `--dry-run` still sends nothing and requires
+  no token.
+- `tests/e2e/public-smoke.spec.ts` now checks the current landing-page wording
+  instead of the removed `Main path: Scenario Map` copy.
+
+### Current verification
+
+- `npm run lint` — passed.
+- `npm run build` — failed locally because Next/Turbopack could not fetch Plus
+  Jakarta Sans from Google Fonts on this network; use Vercel deployment build as
+  the production build gate.
+- `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — 3 passed.
+- `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` — passed,
+  no requests sent.
+- `npm run seed:battle-packs -- --only cafe --limit 1` with no seed auth —
+  exited before any request with a clear auth requirement.
+- Local dev curl checks against `/api/generate-syllabus`, `/api/generate-exam`,
+  and `/api/generate-battle-pack` returned `401 MISSING_ACCESS_TOKEN` with no
+  token.
+
+## What Changed Previous Session (2026-05-31)
 
 ### Soft-launch public shell hardening
 

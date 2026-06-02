@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-05-31
+Last updated: 2026-06-01
 Stage: early MVP, two loops live (rivalry + scenario quests)
 
 ## Product Summary
@@ -56,10 +56,14 @@ ClashLingo has two learning loops:
   - blocks new round creation if the rivalry already started a round in the last 24 hours
   - inserts the round and updates `rivalries.current_round_num`
 - `/api/generate-syllabus`
+  - validates the signed-in user with a Supabase Bearer token
+  - verifies the user belongs to the round's rivalry before any Anthropic call
   - uses Anthropic to generate a syllabus from topic + target language
   - writes syllabus into `rounds.syllabus`
   - moves round status to `confirming`
 - `/api/generate-exam`
+  - validates the signed-in user with a Supabase Bearer token
+  - verifies the user belongs to the round's rivalry before any Anthropic call
   - uses Anthropic to generate a 24-question exam + rubric from the saved syllabus
   - upserts into `exams`
   - moves round status to `exam_ready`
@@ -71,6 +75,7 @@ ClashLingo has two learning loops:
   - blocks leave if the rivalry still has any non-completed round
   - marks the rivalry inactive in `rivalries.cumulative_ledger` without deleting history
 - `/api/generate-battle-pack`
+  - validates the signed-in user with a Supabase Bearer token before any cache read or AI work
   - uses Anthropic to generate one bilingual battle pack per (scenario, stage, target language, level)
   - caches packs in `battle_packs` keyed by `buildBattlePackCacheKey` (template version `v2-scope-briefing`); cache hit skips the AI call
   - ignores stale cached packs whose stored shape does not match the current battle-pack schema
@@ -184,6 +189,7 @@ Observed status values:
 - New round flow with topic, default study window, and optional prize/stake
 - AI syllabus generation and confirmation flow
 - AI syllabus and exam generation now resolve the effective level server-side from the rivalry plus the round target language
+- AI syllabus and exam generation now require a Supabase Bearer token and confirm the caller belongs to the round's rivalry before any Anthropic call
 - If both players study the same language at different levels, AI generation now uses the lower of the two saved levels
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Exam generation endpoint
@@ -194,28 +200,32 @@ Observed status values:
 - Scopes now group current and past scope cards by target language
 - Scenario stage briefing now offers `Copy Practice Prompt`, generated from the current battle-pack scope so the learner can paste it into an external AI chat and start scoped practice immediately
 - Rivalry scopes now offer `Copy Practice Prompt` from `/scopes` cards and the `/round/[id]` scope-confirmation page
+- The battle-pack seed script is auth-aware: live runs require `SEED_ACCESS_TOKEN` or `SEED_EMAIL` / `SEED_PASSWORD`, while `--dry-run` still sends no requests
 - Logged-out `/` now renders a bilingual soft-launch landing page instead of immediately redirecting to login
 - App-wide metadata now includes Open Graph / Twitter fields plus a generated `/opengraph-image`; deployed environments should set `NEXT_PUBLIC_SITE_URL`
 - `/how-it-works` now explains both scenario quests and friend rivalries, including the 80% stage-clear rule, standard-answer self-check, and `Copy Practice Prompt`
 - Root-level `error.tsx` and `not-found.tsx` now provide user-facing fallback screens instead of exposing a bare runtime overlay in production
 - `npm run lint` currently passes
-- Production build currently passes
+- Latest deployed production build currently passes; local `npm run build` can fail from this network when Next/Turbopack cannot fetch Google Fonts.
 - The repo now includes a real README, an `.env.example`, and Supabase schema notes
 - Shared domain types now live in `lib/domain-types.ts` and are reused across the main pages and AI routes
 - `app/rivalry/[id]/new-round/page.tsx` now uses inline error feedback instead of `alert()`
 
 ## Current Health Check
 
-Ran on 2026-05-31:
-- `npm run build` - passes (both scenario routes register: `/api/scenario-battle/submit`, `/api/scenario-progress`)
+Ran on 2026-06-01:
 - `npm run lint` - passes
+- `npm run build` - failed locally because Next/Turbopack could not fetch Plus Jakarta Sans from Google Fonts; use Vercel deployment build as the production build gate
 - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` - passes (logged-out landing, login -> guide, reset-password)
+- `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` - passes and sends no requests
+- `npm run seed:battle-packs -- --only cafe --limit 1` without seed auth - exits before any request with a clear auth requirement
+- Local dev curl checks: `/api/generate-syllabus`, `/api/generate-exam`, and `/api/generate-battle-pack` all return `401 MISSING_ACCESS_TOKEN` with no token
 
 ## Known Issues And Risks
 
 - Scenario persistence has been owner-verified once in Supabase. If a future environment does not have `20260529_000002_battle_packs.sql` and `20260531_000001_scenario_persistence.sql` applied, `submitScenarioRun` returns null and the scenario map shows local-only/default progress.
 - `StageBriefingPage` and `ScenarioExamLandingPage` still mint client-side `mock-...` session ids. They work with the submit route (sessionId is just a text key) but are not yet server-created.
-- Battle packs cost Anthropic credits to generate. `npm run seed:battle-packs` pre-generates them (idempotent via cache); the seed script is run by the owner, not the agent.
+- Battle packs cost Anthropic credits to generate. `npm run seed:battle-packs` pre-generates them (idempotent via cache); live seed now requires a seed user's access token or seed email/password and is run by the owner, not the agent.
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
 - The repo now has a checked-in Supabase baseline migration under `supabase/migrations/`, but future schema changes still need follow-up migration files instead of one-off dashboard edits.
 - `components/ExamPage.tsx` can create a mock exam client-side if no exam record exists. That is useful for fallback/demo purposes, but it can hide backend issues if left untracked.

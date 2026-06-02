@@ -1,9 +1,15 @@
 # Task Queue
 
-Last updated: 2026-05-31
+Last updated: 2026-06-01
 
 ## Recently Completed
 
+- Closed the soft-launch API/auth hardening items found during launch review.
+  - `/api/generate-syllabus` and `/api/generate-exam` now require a Supabase Bearer token and verify the caller belongs to the round's rivalry before any Anthropic call.
+  - `RoundPage` now sends the signed-in session token when generating rivalry scopes or exams.
+  - `scripts/seed-battle-packs.ts` now supports `SEED_ACCESS_TOKEN` or `SEED_EMAIL` / `SEED_PASSWORD` for live seed runs; no-token live runs stop before sending requests.
+  - `tests/e2e/public-smoke.spec.ts` now checks the current landing-page copy instead of the removed `Main path: Scenario Map` text.
+  - Verified: `git diff --check`, `npm run lint`, `npm run test:e2e -- tests/e2e/public-smoke.spec.ts`, seed dry-run, no-token seed guard, and local anonymous `401` checks on the paid endpoints. Local `npm run build` is currently blocked by Google Fonts / Turbopack font fetch from this network; Vercel deployment build remains the production build gate.
 - Completed the first soft-launch hardening pass for the public shell.
   - `/` now renders a bilingual logged-out landing page that points first to Scenario Map and second to friend rivalries.
   - App-wide share metadata now includes a title template, Open Graph / Twitter metadata, and generated `/opengraph-image`.
@@ -156,9 +162,20 @@ Last updated: 2026-05-31
 
 ## Highest Priority
 
-0. SOFT-LAUNCH READINESS (build-in-public). Goal: not new features, but
-   completeness + robustness + public-facing readiness. This is the brief handed
-   to the autonomous (Codex goal-mode) pass. Acceptance checklist:
+0. SOFT-LAUNCH CLOSEOUT.
+   - Owner-controlled: any live `npm run seed:battle-packs` run spends Anthropic
+     credits and writes to Supabase. Live seed requires `SEED_ACCESS_TOKEN`, or
+     `SEED_EMAIL` / `SEED_PASSWORD` plus the public Supabase env.
+   - Owner-controlled: provide `E2E_EMAIL` / `E2E_PASSWORD` before treating the
+     authenticated Playwright suite as launch evidence.
+   - Optional hardening: add per-user rate limits around paid AI endpoints after
+     initial soft-launch traffic is understood.
+   - Product polish: do one last visual pass on scenario briefing, battle report,
+     logged-out landing, and key rivalry screens before wider invites.
+   - Keep appending dated launch notes to
+     `docs/project/SOFT_LAUNCH_WORKLOG.md`.
+
+Archived prior readiness brief:
    - A. Public landing: logged-out visitors to `/` get a real bilingual
      marketing/landing page explaining both loops with sign-up / log-in CTAs.
      Signed-in users still redirect to `/lounge`.
@@ -178,17 +195,9 @@ Last updated: 2026-05-31
      env-gated authenticated suite asserts sign-in -> lounge -> open scenario ->
      stage list. Keep auth suite gated on `E2E_EMAIL` / `E2E_PASSWORD`.
    - G. Green: `npm run lint` + `npm run build` pass after every increment.
-   - H. How-it-works / 玩法说明 is current: `components/HowItWorksPage.tsx`
-     (`/how-it-works`) is STALE — it only documents the rivalry loop. Update it
-     (bilingual, via `lib/i18n`) to also explain the scenario quest loop AS IT
-     ACTUALLY WORKS: domain -> scenario -> 4 stages, the timed clash run and the
-     exam lane, the standard-answer self-check (NO live AI opponent), the
-     "stage clears at accuracy >= 80%" rule, how clearing advances/unlocks the
-     next stage, and the `Copy Practice Prompt` action on stage briefing and
-     rivalry scopes. Keep
-     the rivalry / weekly-rhythm / language-level / page-map sections accurate,
-     and reconcile the onboarding copy reused on Login / empty-lounge so the two
-     stay consistent. Match real behavior, not aspirational behavior.
+   - H. Historical note: the old brief called `/how-it-works` stale; that was
+     addressed in the public-shell pass. Keep it aligned if either learning loop
+     changes again.
    - I. WORK LOG (detailed, owner-editable). Maintain a running, granular work
      journal at `docs/project/SOFT_LAUNCH_WORKLOG.md` so the owner can review and
      later tweak anything without re-reading every diff. Rules:

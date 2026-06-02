@@ -53,7 +53,9 @@ None.
 
 - `git diff --check` — passed.
 - `npm run lint` — passed.
-- `npm run build` — passed.
+- `npm run build` — failed locally because Next/Turbopack could not fetch Plus
+  Jakarta Sans from Google Fonts on this network; use Vercel deployment build as
+  the production build gate.
 
 ### Deferred / TODO
 
@@ -269,3 +271,238 @@ English and Simplified Chinese strings were added in `lib/i18n/en.ts` and
   `http://localhost:3000` for local builds only.
 - Authenticated Playwright smoke remains gated on owner-provided `E2E_EMAIL` and
   `E2E_PASSWORD`.
+
+## 5. 2026-06-01 — User-Facing Copy Leak Cleanup
+
+### What changed
+
+- Rewrote landing, guide, and scenario i18n strings that leaked internal
+  product-design / strategy / roadmap language into user-facing copy.
+  - Strategy phrasing removed: "main path / secondary path", "first click",
+    "Soft launch ready means", "A learner can complete one real loop without
+    handholding" (internal acceptance criteria that were showing on the public
+    landing page).
+  - Roadmap phrasing removed: "core battle loop", "later rollout layer", "Open
+    for launch", "Briefing route lands next".
+  - "loop / 循环" jargon softened to natural phrasing ("ways to practice",
+    "weekly rhythm", "friend rivalries").
+- Deleted the dead `battlePlaceholder*` / `examPlaceholder*` i18n keys (defined
+  but never rendered by any component) from `types.ts`, `en.ts`, and `zh-CN.ts`.
+
+### Why / what this solves
+
+The owner found internal product-design language had leaked into the live UI
+(e.g. "场景地图是主线。朋友对战…但不再抢新用户的第一点击。"). This reads as
+strange/confusing to a real visitor. The cleanup keeps en and zh-CN in sync and
+removes dead keys so the dictionaries stay honest.
+
+### Files touched
+
+- `lib/i18n/en.ts`
+- `lib/i18n/zh-CN.ts`
+- `lib/i18n/types.ts`
+
+### New i18n keys
+
+None added. Removed: `scenarios.battlePlaceholderEyebrow/Title/Description/Next/
+SessionLabel`, `scenarios.examPlaceholderEyebrow/Title/Description/Next`.
+
+### How to change or undo later
+
+- Landing copy: `landing.*` in the i18n files.
+- Guide copy: `guide.*`.
+- Scenario copy: `scenarios.*`.
+- Keep en.ts and zh-CN.ts edits paired; `npm run build` type-checks key parity
+  against `types.ts`.
+
+### Verification result
+
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- Committed as `ab3c080`, pushed to `origin/main`.
+
+### Deferred / TODO
+
+- Minor: `scenarios.examLaneDescription` still says Exam Mode "removes the live
+  opponent pressure", but Clash Mode no longer has an AI opponent. Stale wording,
+  not blocking. Reword when convenient.
+
+## 6. 2026-06-01 — Auth Gate on the Paid Generate Endpoint
+
+### What changed
+
+- `app/api/generate-battle-pack/route.ts` now requires a valid Supabase Bearer
+  token before doing any work — the same check used by
+  `scenario-battle/submit` and `scenario-progress`. No token or an invalid token
+  returns `401` before any Anthropic call.
+- `lib/battle-pack.ts` `fetchBattlePack` now reads the signed-in session's
+  `access_token` and sends it as `Authorization: Bearer ...`. The browser
+  supabase client is imported dynamically so it stays out of any server bundle
+  that also imports this module. If the user is not signed in, it returns null
+  without calling the endpoint.
+
+### Why / what this solves
+
+`generate-battle-pack` is the only route that spends Anthropic credits (one
+`claude-sonnet-4` call per cache miss). It was unauthenticated, so for a public
+"build in public" launch anyone with the URL could script the uncached combos
+and burn credits. The cache bounds the worst case, but the route had zero
+gating. Requiring login closes the anonymous-spam vector.
+
+Honest limitation: signup is open, so a logged-in user could still script the
+(bounded) combo space. True per-user/IP rate limiting is a future hardening step,
+not a launch blocker.
+
+### Files touched
+
+- `app/api/generate-battle-pack/route.ts`
+- `lib/battle-pack.ts`
+
+### New i18n keys
+
+None.
+
+### How to change or undo later
+
+- The auth block mirrors the other two routes; edit/remove there if the policy
+  changes.
+- If a future flow needs anonymous generation, gate it behind a server-side
+  rate limiter instead of removing auth outright.
+
+### Verification result
+
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- Live check against dev server: no token → `401 MISSING_ACCESS_TOKEN`; invalid
+  token → `401 UNAUTHORIZED` (rejected before any Anthropic call).
+- Committed as `3d546ad`, pushed to `origin/main`.
+
+### Deferred / TODO
+
+- OPTIONAL HARDENING: add per-user/IP rate limiting on `generate-battle-pack`.
+
+## 7. 2026-06-01 — Pre-Deploy Checklist (Owner-Controlled)
+
+This is the go-live checklist. Items are owner-controlled (hosting + Supabase
+dashboards); the agent cannot verify them remotely.
+
+### Required (the site breaks without these)
+
+1. Set hosting environment variables (e.g. Vercel → Project → Environment
+   Variables):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only secret — never `NEXT_PUBLIC_*`)
+   - `ANTHROPIC_API_KEY`
+   - `NEXT_PUBLIC_SITE_URL` (production URL; without it OG/share previews point
+     to localhost)
+2. Supabase → Auth → URL Configuration: add the production domain to **Site
+   URL** and **Redirect URLs**. Otherwise password-reset and email-confirmation
+   links fail in production.
+3. Confirm both migrations are applied to the Supabase project used for the
+   deploy: `20260529_000002_battle_packs.sql` and
+   `20260531_000001_scenario_persistence.sql`. (Owner-verified on the current
+   project; re-run if the deploy uses a different project.)
+
+### Recommended (not blocking, affects cost / first impression)
+
+4. Pre-seed at least one scenario so the first visitor doesn't wait on live
+   generation:
+   - Dry run: `npm run seed:battle-packs -- --dry-run --only cafe`
+   - Live: `npm run seed:battle-packs -- --only cafe`
+   - Owner runs this (spends Anthropic credits + writes to owner Supabase). The
+     agent must not run it live.
+5. Optional second layer: per-user/IP rate limiting on the generate endpoint.
+
+### Already ready (no action)
+
+- Code: lint/build green, paid endpoint gated, scenario loop persists end to end,
+  public landing + metadata + error/not-found, bilingual copy cleaned.
+- Code pushed to `origin/main`.
+
+### Verification result
+
+- Checklist authored from a live read of the codebase, routes, and env example
+  on 2026-06-01. No code changed in this entry.
+
+### Deferred / TODO
+
+- OWNER: work through Required items 1–3 before sending the first invite link.
+- OWNER: decide on Recommended item 4 (seed scope) based on cost tolerance.
+
+## 8. 2026-06-01 — Paid Endpoint + Seed Auth Closeout
+
+### What changed
+
+- Added Supabase Bearer-token auth to the old rivalry AI endpoints:
+  `/api/generate-syllabus` and `/api/generate-exam`.
+- Both endpoints now use an anon-key Supabase client to validate the caller's
+  access token, then service-role access only after auth passes.
+- Both endpoints now verify that the caller belongs to the round's rivalry
+  before any Anthropic call.
+- `components/RoundPage.tsx` now attaches the current session token when it
+  generates a rivalry scope or exam.
+- `scripts/seed-battle-packs.ts` now supports authenticated live seeding via
+  `SEED_ACCESS_TOKEN`, or via `SEED_EMAIL` / `SEED_PASSWORD` with the public
+  Supabase env vars.
+- The seed script now exits before sending a live request when no seed auth is
+  available.
+- `tests/e2e/public-smoke.spec.ts` now checks current landing-page copy instead
+  of the deleted `Main path: Scenario Map` text.
+
+### Why / what this solves
+
+- The old rivalry AI routes can no longer spend Anthropic credits for anonymous
+  callers who discover a valid round id.
+- Live pre-seeding now matches the authenticated `/api/generate-battle-pack`
+  contract instead of failing with `401`.
+- Public smoke is usable again as a deploy-health signal because it tests the
+  landing copy that actually exists.
+
+### Files touched
+
+- `app/api/generate-syllabus/route.ts`
+- `app/api/generate-exam/route.ts`
+- `components/RoundPage.tsx`
+- `scripts/seed-battle-packs.ts`
+- `tests/e2e/public-smoke.spec.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+None.
+
+### How to change or verify later
+
+- For live seed, set `SEED_ACCESS_TOKEN`, or set `SEED_EMAIL` /
+  `SEED_PASSWORD` plus `NEXT_PUBLIC_SUPABASE_URL` /
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Keep using dry-run first:
+  `npm run seed:battle-packs -- --dry-run --only cafe --limit 1`.
+- The owner, not the agent, runs live seed because it spends Anthropic credits
+  and writes to Supabase.
+- If anonymous AI generation is ever desired, add rate limiting first rather
+  than removing the auth gate.
+
+### Verification result
+
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — passed, 3 tests.
+- `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` — passed, no
+  requests sent.
+- `npm run seed:battle-packs -- --only cafe --limit 1` with no seed auth —
+  exited before any request with a clear auth requirement.
+- Local dev curl checks against `/api/generate-syllabus`,
+  `/api/generate-exam`, and `/api/generate-battle-pack` with no token all
+  returned `401 MISSING_ACCESS_TOKEN`.
+
+### Deferred / TODO
+
+- OWNER-REVIEW: decide whether to live-seed one scenario such as `cafe` after
+  confirming seed auth env and cost tolerance.
+- Optional hardening: add per-user/IP rate limiting around paid AI endpoints
+  after initial soft-launch traffic is understood.
