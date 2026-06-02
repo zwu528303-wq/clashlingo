@@ -1,15 +1,21 @@
 # Task Queue
 
-Last updated: 2026-06-01
+Last updated: 2026-06-02
 
 ## Recently Completed
 
+- Completed the Asia database migration closeout.
+  - Vercel production deployment for commit `69dacfe` is `READY`.
+  - Production API functions now run in `hkg1`.
+  - The deployed browser bundle points to the new Supabase project `bemkskhhydlndiegcuxu.supabase.co`.
+  - Public routes return `200`, paid/API endpoints return `401 MISSING_ACCESS_TOKEN` without a token, Auth redirects are accepted, and Realtime subscribes.
+  - Supabase Auth/public table integrity checks pass with no orphaned public users or rivalry player refs.
 - Closed the soft-launch API/auth hardening items found during launch review.
   - `/api/generate-syllabus` and `/api/generate-exam` now require a Supabase Bearer token and verify the caller belongs to the round's rivalry before any Anthropic call.
   - `RoundPage` now sends the signed-in session token when generating rivalry scopes or exams.
   - `scripts/seed-battle-packs.ts` now supports `SEED_ACCESS_TOKEN` or `SEED_EMAIL` / `SEED_PASSWORD` for live seed runs; no-token live runs stop before sending requests.
   - `tests/e2e/public-smoke.spec.ts` now checks the current landing-page copy instead of the removed `Main path: Scenario Map` text.
-  - Verified: `git diff --check`, `npm run lint`, `npm run test:e2e -- tests/e2e/public-smoke.spec.ts`, seed dry-run, no-token seed guard, and local anonymous `401` checks on the paid endpoints. Local `npm run build` is currently blocked by Google Fonts / Turbopack font fetch from this network; Vercel deployment build remains the production build gate.
+  - Verified: `git diff --check`, `npm run lint`, `npm run test:e2e -- tests/e2e/public-smoke.spec.ts`, seed dry-run, no-token seed guard, and local anonymous `401` checks on the paid endpoints. Local `npm run build` is currently blocked by Google Fonts / Turbopack font fetch from this network; Vercel production deployment build passed and remains the production build gate.
 - Completed the first soft-launch hardening pass for the public shell.
   - `/` now renders a bilingual logged-out landing page that points first to Scenario Map and second to friend rivalries.
   - App-wide share metadata now includes a title template, Open Graph / Twitter metadata, and generated `/opengraph-image`.

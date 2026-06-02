@@ -53,9 +53,7 @@ None.
 
 - `git diff --check` — passed.
 - `npm run lint` — passed.
-- `npm run build` — failed locally because Next/Turbopack could not fetch Plus
-  Jakarta Sans from Google Fonts on this network; use Vercel deployment build as
-  the production build gate.
+- `npm run build` — passed.
 
 ### Deferred / TODO
 
@@ -416,8 +414,10 @@ dashboards); the agent cannot verify them remotely.
 
 ### Already ready (no action)
 
-- Code: lint/build green, paid endpoint gated, scenario loop persists end to end,
-  public landing + metadata + error/not-found, bilingual copy cleaned.
+- Code: lint green, paid endpoint gated, scenario loop persists end to end,
+  public landing + metadata + error/not-found, bilingual copy cleaned. Local
+  build can be blocked by Google Fonts fetch from this network; use Vercel
+  deployment build as the production build gate.
 - Code pushed to `origin/main`.
 
 ### Verification result
@@ -490,7 +490,9 @@ None.
 ### Verification result
 
 - `npm run lint` — passed.
-- `npm run build` — passed.
+- `npm run build` — failed locally because Next/Turbopack could not fetch Plus
+  Jakarta Sans from Google Fonts on this network; Vercel production deployment
+  build passed and is the production build gate.
 - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — passed, 3 tests.
 - `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` — passed, no
   requests sent.
@@ -506,3 +508,104 @@ None.
   confirming seed auth env and cost tolerance.
 - Optional hardening: add per-user/IP rate limiting around paid AI endpoints
   after initial soft-launch traffic is understood.
+
+## 9. 2026-06-02 — Asia Migration Production Verification
+
+### What changed
+
+- Pushed the migration-ready `main` branch to GitHub.
+- Vercel deployed commit `69dacfe` as production deployment
+  `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p`.
+- The production deployment includes `vercel.json` with `regions: ["hkg1"]`.
+- Verified that the deployed browser bundle points to the new Supabase project
+  `bemkskhhydlndiegcuxu.supabase.co`.
+- Verified that the old rivalry AI endpoints and scenario AI/progress endpoints
+  reject anonymous calls before doing paid or user-scoped work.
+
+### Why / what this solves
+
+The database had already been moved to the Asia Supabase project, but production
+API functions were still running in `iad1` because the prior deployed commit did
+not include the new Vercel region config. This closes the migration loop:
+browser env, server env, database schema/data, Auth redirects, Realtime, and
+Vercel function region are now aligned for production.
+
+### Files touched
+
+- `vercel.json`
+- `app/api/generate-syllabus/route.ts`
+- `app/api/generate-exam/route.ts`
+- `components/RoundPage.tsx`
+- `scripts/seed-battle-packs.ts`
+- `tests/e2e/public-smoke.spec.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+None.
+
+### How to change or verify later
+
+- Vercel function region: edit `vercel.json`.
+- Supabase project: update Vercel `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, then
+  redeploy.
+- Auth redirects: Supabase Dashboard → Authentication → URL Configuration.
+- Re-check deployed Supabase host by scanning the production JS bundle for the
+  `*.supabase.co` host.
+- Re-check function region by calling a live API route and reading
+  `x-vercel-id`; the function region should include `hkg1`.
+
+### Verification result
+
+- Vercel production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` — `READY`.
+- Vercel deployment metadata — function region `hkg1`.
+- Live production API headers — include `hkg1` for API execution.
+- Public production routes `/`, `/login`, `/reset-password`, `/how-it-works`,
+  and `/opengraph-image` — `200`.
+- Live anonymous API checks:
+  - `/api/generate-syllabus` — `401 MISSING_ACCESS_TOKEN`
+  - `/api/generate-exam` — `401 MISSING_ACCESS_TOKEN`
+  - `/api/generate-battle-pack` — `401 MISSING_ACCESS_TOKEN`
+  - `/api/scenario-progress` — `401 MISSING_ACCESS_TOKEN`
+- Deployed Supabase host — `bemkskhhydlndiegcuxu.supabase.co`, matching
+  `.env.local`.
+- Supabase table counts:
+  - `users=11`
+  - `rivalries=10`
+  - `rounds=8`
+  - `exams=5`
+  - `submissions=10`
+  - `battle_packs=4`
+  - `scenario_progress=1`
+  - `scenario_battle_reports=2`
+- Auth/table integrity:
+  - `auth_users=11`
+  - `public_users_missing_auth=0`
+  - `rivalry_player_refs_missing_auth=0`
+- Supabase Auth redirect probes for production, bare-domain, and localhost `/`
+  and `/reset-password` — all `ok`.
+- Supabase Realtime handshake for `rounds` updates and `submissions` inserts —
+  `SUBSCRIBED`.
+- Local verification:
+  - `git diff --check` — passed.
+  - `npm run lint` — passed.
+  - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — passed, 3 tests.
+  - `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` — passed,
+    no requests sent.
+  - `npm run seed:battle-packs -- --only cafe --limit 1` with no seed auth —
+    exited before any request.
+  - Local anonymous API checks returned `401 MISSING_ACCESS_TOKEN`.
+  - Local `npm run build` failed because this network could not fetch Google
+    Fonts for `next/font`; production build passed on Vercel.
+
+### Deferred / TODO
+
+- OWNER-REVIEW: decide whether to live-seed one scenario such as `cafe`.
+- Authenticated Playwright smoke remains gated on owner-provided
+  `E2E_EMAIL` / `E2E_PASSWORD`.
+- Optional hardening: add per-user/IP rate limiting around paid AI endpoints
+  after initial traffic is understood.

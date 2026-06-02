@@ -1,6 +1,6 @@
 # ClashLingo Session Summary
 
-Date: 2026-06-01
+Date: 2026-06-02
 
 ## OWNER ACTION REQUIRED
 
@@ -17,25 +17,86 @@ Completed by owner and verified by table existence:
 3. Scenario persistence smoke test — owner completed a real scenario run and
    verified rows in `battle_packs`, `scenario_battle_reports`, and
    `scenario_progress`.
+4. Production URL confirmed and verified:
+   - `https://www.clashlingo.com`
+   - `https://clashlingo.com`
+5. Asia migration deployment verified on Vercel:
+   - Production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` for commit
+     `69dacfe` is `READY`.
+   - Vercel reports function region `hkg1`.
+   - Live API response headers include `hkg1` for function execution.
+6. New Supabase project verified:
+   - Deployed browser bundle points to `bemkskhhydlndiegcuxu.supabase.co`.
+   - Required tables are present and readable with the service role.
+   - Auth users and public `users` rows match without orphaned references.
+   - Realtime subscription handshake returns `SUBSCRIBED`.
+   - Auth redirect probes accepted production, bare-domain, and localhost
+     redirect URLs for `/` and `/reset-password`.
 
 Still owner-controlled / not fully verified:
 
-4. Run battle-pack seeding only after reviewing cost/data impact. Live seed now
+7. Run battle-pack seeding only after reviewing cost/data impact. Live seed now
    requires `SEED_ACCESS_TOKEN`, or `SEED_EMAIL` / `SEED_PASSWORD` plus public
    Supabase env vars. The agent must not run `npm run seed:battle-packs` except
    dry-runs.
-5. Provide `E2E_EMAIL` and `E2E_PASSWORD` before authenticated Playwright smoke
+8. Provide `E2E_EMAIL` and `E2E_PASSWORD` before authenticated Playwright smoke
    coverage can be fully verified.
-6. Provide or confirm a deployed/staging URL before any deployment or shared-link
-   preview claim is marked verified.
-7. Review all `OWNER-REVIEW` items in `docs/project/SOFT_LAUNCH_WORKLOG.md`.
+9. Review all `OWNER-REVIEW` items in `docs/project/SOFT_LAUNCH_WORKLOG.md`.
 
 Verification rule: if migrations, seed data, Anthropic credits, deployment, or
 E2E credentials block a soft-launch acceptance item, preserve the fallback and
 document the exact blocker in `SOFT_LAUNCH_WORKLOG.md` and this section instead
 of claiming completion.
 
-## What Changed This Session (2026-06-01)
+## What Changed This Session (2026-06-02)
+
+### Asia migration and production deploy verification
+
+- Pushed the local `main` changes to `origin/main`, including:
+  - `vercel.json` with `regions: ["hkg1"]`
+  - rivalry AI endpoint auth hardening
+  - seed auth guard and updated smoke/docs
+- Vercel production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` for commit
+  `69dacfe` is `READY`.
+- The production deployment reports function region `hkg1`.
+- Live API checks on `https://www.clashlingo.com` returned:
+  - `/api/generate-syllabus` without token: `401 MISSING_ACCESS_TOKEN`
+  - `/api/generate-exam` without token: `401 MISSING_ACCESS_TOKEN`
+  - `/api/generate-battle-pack` without token: `401 MISSING_ACCESS_TOKEN`
+  - `/api/scenario-progress` without token: `401 MISSING_ACCESS_TOKEN`
+- Live API response headers include `hkg1` as the function execution region.
+- Public routes `/`, `/login`, `/reset-password`, `/how-it-works`, and
+  `/opengraph-image` returned `200`.
+- The deployed bundle's Supabase host matches `.env.local`:
+  `bemkskhhydlndiegcuxu.supabase.co`.
+- Supabase table counts on the new project:
+  `users=11`, `rivalries=10`, `rounds=8`, `exams=5`, `submissions=10`,
+  `battle_packs=4`, `scenario_progress=1`, `scenario_battle_reports=2`.
+- Auth/public identity integrity checks passed:
+  `auth_users=11`, `public_users_missing_auth=0`,
+  `rivalry_player_refs_missing_auth=0`.
+- Supabase Auth redirect probes for production, bare-domain, and localhost
+  `/` and `/reset-password` returned `ok`.
+- Realtime handshake for `rounds` updates and `submissions` inserts returned
+  `SUBSCRIBED`.
+
+### Current verification
+
+- `git diff --check` — passed.
+- `npm run lint` — passed.
+- `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — 3 passed.
+- `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` — passed,
+  no requests sent.
+- `npm run seed:battle-packs -- --only cafe --limit 1` with no seed auth —
+  exited before any request with a clear auth requirement.
+- Local dev checks against `/api/generate-syllabus`, `/api/generate-exam`,
+  `/api/generate-battle-pack`, and `/api/scenario-progress` returned
+  `401 MISSING_ACCESS_TOKEN` with no token.
+- Local `npm run build` — failed because Next/Turbopack could not fetch Plus
+  Jakarta Sans from Google Fonts on this network; Vercel production deployment
+  build passed and is the production build gate.
+
+## What Changed Previous Session (2026-06-01)
 
 ### Soft-launch paid-endpoint hardening
 

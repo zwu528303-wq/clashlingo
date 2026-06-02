@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-06-01
+Last updated: 2026-06-02
 Stage: early MVP, two loops live (rivalry + scenario quests)
 
 ## Product Summary
@@ -206,20 +206,27 @@ Observed status values:
 - `/how-it-works` now explains both scenario quests and friend rivalries, including the 80% stage-clear rule, standard-answer self-check, and `Copy Practice Prompt`
 - Root-level `error.tsx` and `not-found.tsx` now provide user-facing fallback screens instead of exposing a bare runtime overlay in production
 - `npm run lint` currently passes
-- Latest deployed production build currently passes; local `npm run build` can fail from this network when Next/Turbopack cannot fetch Google Fonts.
+- Latest Vercel production deployment currently passes and runs API functions in `hkg1`; local `npm run build` can fail from this network when Next/Turbopack cannot fetch Google Fonts.
 - The repo now includes a real README, an `.env.example`, and Supabase schema notes
 - Shared domain types now live in `lib/domain-types.ts` and are reused across the main pages and AI routes
 - `app/rivalry/[id]/new-round/page.tsx` now uses inline error feedback instead of `alert()`
 
 ## Current Health Check
 
-Ran on 2026-06-01:
+Ran on 2026-06-02:
 - `npm run lint` - passes
 - `npm run build` - failed locally because Next/Turbopack could not fetch Plus Jakarta Sans from Google Fonts; use Vercel deployment build as the production build gate
 - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` - passes (logged-out landing, login -> guide, reset-password)
 - `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` - passes and sends no requests
 - `npm run seed:battle-packs -- --only cafe --limit 1` without seed auth - exits before any request with a clear auth requirement
-- Local dev curl checks: `/api/generate-syllabus`, `/api/generate-exam`, and `/api/generate-battle-pack` all return `401 MISSING_ACCESS_TOKEN` with no token
+- Local dev checks: `/api/generate-syllabus`, `/api/generate-exam`, `/api/generate-battle-pack`, and `/api/scenario-progress` all return `401 MISSING_ACCESS_TOKEN` with no token
+- Vercel production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` for commit `69dacfe` is `READY`
+- Vercel reports the production function region as `hkg1`, and live API response headers include `hkg1`
+- Public production routes `/`, `/login`, `/reset-password`, `/how-it-works`, and `/opengraph-image` return `200`
+- Deployed Supabase host matches the new project: `bemkskhhydlndiegcuxu.supabase.co`
+- Supabase Auth/table integrity checks pass: 11 auth users, 11 public users, no missing auth refs in public users or rivalry player refs
+- Supabase Auth redirect probes for production, bare-domain, and localhost `/` and `/reset-password` return `ok`
+- Supabase Realtime handshake for `rounds` updates and `submissions` inserts returns `SUBSCRIBED`
 
 ## Known Issues And Risks
 
