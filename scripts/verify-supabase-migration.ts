@@ -9,20 +9,40 @@
  *   npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co
  *   npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co --require-data
  */
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 
-const DEFAULT_ENV_FILE = ".env.local";
-const EXPECTED_TABLES = [
-  "users",
-  "rivalries",
-  "rounds",
-  "exams",
-  "submissions",
-  "battle_packs",
-  "scenario_progress",
-  "scenario_battle_reports",
-] as const;
+type PublicTable<Row extends Record<string, unknown>> = {
+  Row: Row;
+  Insert: never;
+  Update: never;
+  Relationships: [];
+};
+
+interface MigrationDatabase {
+  public: {
+    Tables: {
+      users: PublicTable<{ id: string }>;
+      rivalries: PublicTable<{
+        player_a_id: string;
+        player_b_id: string | null;
+      }>;
+      rounds: PublicTable<Record<string, unknown>>;
+      exams: PublicTable<Record<string, unknown>>;
+      submissions: PublicTable<Record<string, unknown>>;
+      battle_packs: PublicTable<Record<string, unknown>>;
+      scenario_progress: PublicTable<Record<string, unknown>>;
+      scenario_battle_reports: PublicTable<Record<string, unknown>>;
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+}
+
+type MigrationClient = SupabaseClient<MigrationDatabase>;
+type PublicTableName = keyof MigrationDatabase["public"]["Tables"] & string;
 
 interface CliOptions {
   envFile: string | null;
@@ -38,6 +58,18 @@ interface RivalryRefs {
   player_a_id: string;
   player_b_id: string | null;
 }
+
+const DEFAULT_ENV_FILE = ".env.local";
+const EXPECTED_TABLES: PublicTableName[] = [
+  "users",
+  "rivalries",
+  "rounds",
+  "exams",
+  "submissions",
+  "battle_packs",
+  "scenario_progress",
+  "scenario_battle_reports",
+];
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
@@ -180,8 +212,8 @@ function projectRefFromHost(host: string): string | null {
 }
 
 async function countRows(
-  client: ReturnType<typeof createClient>,
-  table: string
+  client: MigrationClient,
+  table: PublicTableName
 ): Promise<number> {
   const { count, error } = await client
     .from(table)
@@ -195,7 +227,7 @@ async function countRows(
 }
 
 async function listAuthUsers(
-  client: ReturnType<typeof createClient>
+  client: MigrationClient
 ): Promise<AuthUserSummary[]> {
   const users: AuthUserSummary[] = [];
   const perPage = 1000;
@@ -222,17 +254,19 @@ async function listAuthUsers(
 }
 
 async function listPublicUserIds(
-  client: ReturnType<typeof createClient>
+  client: MigrationClient
 ): Promise<string[]> {
   const { data, error } = await client.from("users").select("id");
   if (error) {
     throw new Error(`users ids: ${error.message}`);
   }
-  return (data ?? []).map((row) => row.id as string);
+
+  const rows = (data ?? []) as { id: string }[];
+  return rows.map((row) => row.id);
 }
 
 async function listRivalryRefs(
-  client: ReturnType<typeof createClient>
+  client: MigrationClient
 ): Promise<RivalryRefs[]> {
   const { data, error } = await client
     .from("rivalries")
@@ -288,7 +322,14 @@ async function main(): Promise<void> {
     );
   }
 
-  warnings.push(...assertJwtProject("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey, hostRef, "anon"));
+  warnings.push(
+    ...assertJwtProject(
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      anonKey,
+      hostRef,
+      "anon"
+    )
+  );
   warnings.push(
     ...assertJwtProject(
       "SUPABASE_SERVICE_ROLE_KEY",
@@ -298,12 +339,16 @@ async function main(): Promise<void> {
     )
   );
 
-  const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
+  const serviceClient = createClient<MigrationDatabase>(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    }
+  );
 
   const authUsers = await listAuthUsers(serviceClient);
   const authUserIds = new Set(authUsers.map((user) => user.id));

@@ -682,6 +682,8 @@ None.
 - `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co`
   — failed with the expected host mismatch because `.env.local` still points to
   `bemkskhhydlndiegcuxu.supabase.co`.
+- `npx tsc --noEmit --pretty false` — passed after adding explicit minimal
+  Supabase database types for the script.
 - Supabase connector SQL on `clashlingo_asia`
   (`bwwghdhwhxuqqepgpizb`) reported:
   - `auth_users=0`
