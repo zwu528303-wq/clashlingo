@@ -9,6 +9,7 @@ Last updated: 2026-06-02
   - Current local `.env.local` and deployed production bundle still point to `bemkskhhydlndiegcuxu.supabase.co`.
   - The `clashlingo_asia` schema exists, but connector table summaries currently report `0` public rows; confirm whether data/Auth import is complete before switching production.
   - To finish: update local and Vercel `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, redeploy production, then rerun route/API/Auth/Realtime checks.
+  - Local acceptance script is now available: `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co --require-data`.
   - Owner input needed: the `clashlingo_asia` `SUPABASE_SERVICE_ROLE_KEY`, or owner must set it directly in Vercel.
 
 ## Recently Completed
@@ -18,6 +19,7 @@ Last updated: 2026-06-02
   - Production API functions now run in `hkg1`.
   - Public routes return `200`, and paid/API endpoints return `401 MISSING_ACCESS_TOKEN` without a token.
   - Read-only checks against the currently deployed Supabase host pass with no orphaned public users or rivalry player refs.
+  - Added `npm run verify:supabase-migration` for read-only Supabase host/key/table/Auth checks.
 - Closed the soft-launch API/auth hardening items found during launch review.
   - `/api/generate-syllabus` and `/api/generate-exam` now require a Supabase Bearer token and verify the caller belongs to the round's rivalry before any Anthropic call.
   - `RoundPage` now sends the signed-in session token when generating rivalry scopes or exams.

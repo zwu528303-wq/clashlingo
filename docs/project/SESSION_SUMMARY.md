@@ -47,6 +47,9 @@ Still owner-controlled / not fully verified:
 10. Provide the `clashlingo_asia` `SUPABASE_SERVICE_ROLE_KEY`, or set it
    directly in Vercel, before production can be redeployed to the Asia Supabase
    project.
+11. After the Asia key/env is set, run
+   `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co --require-data`
+   before redeploying or claiming the migration is complete.
 
 Verification rule: if migrations, seed data, Anthropic credits, deployment, or
 E2E credentials block a soft-launch acceptance item, preserve the fallback and
@@ -78,6 +81,8 @@ of claiming completion.
 - Supabase connector lists `clashlingo_asia` as `bwwghdhwhxuqqepgpizb` in
   `ap-northeast-1`, with the expected public tables but `0` public rows in the
   compact table summary.
+- Added `scripts/verify-supabase-migration.ts` plus
+  `npm run verify:supabase-migration` as the local read-only acceptance check.
 - Supabase table counts on the currently deployed host:
   `users=11`, `rivalries=10`, `rounds=8`, `exams=5`, `submissions=10`,
   `battle_packs=4`, `scenario_progress=1`, `scenario_battle_reports=2`.
@@ -94,6 +99,11 @@ of claiming completion.
 - `git diff --check` — passed.
 - `npm run lint` — passed.
 - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` — 3 passed.
+- `npm run verify:supabase-migration -- --expected-host=bemkskhhydlndiegcuxu.supabase.co --require-data`
+  — passed against the currently configured Supabase project.
+- `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co`
+  — failed with the expected host mismatch because `.env.local` is still on
+  `bemkskhhydlndiegcuxu.supabase.co`.
 - `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` — passed,
   no requests sent.
 - `npm run seed:battle-packs -- --only cafe --limit 1` with no seed auth —

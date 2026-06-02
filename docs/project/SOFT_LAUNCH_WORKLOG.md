@@ -619,3 +619,80 @@ None.
   `E2E_EMAIL` / `E2E_PASSWORD`.
 - Optional hardening: add per-user/IP rate limiting around paid AI endpoints
   after initial traffic is understood.
+
+## 10. 2026-06-02 — Supabase Migration Verification Script
+
+### What changed
+
+- Added a read-only local verification script:
+  `scripts/verify-supabase-migration.ts`.
+- Added the package command:
+  `npm run verify:supabase-migration`.
+- The script loads `.env.local` by default, validates the Supabase URL host and
+  key project refs, counts Auth users and expected public tables, and checks for
+  missing Auth references in public `users` and `rivalries`.
+- The script never prints Supabase keys and never writes to Supabase.
+
+### Why / what this solves
+
+The Asia database switch now has a repeatable acceptance check instead of a
+set of one-off shell commands. Once the `clashlingo_asia` service-role key is
+provided or Vercel/local env is updated, this script can prove whether the app
+is pointed at the intended project and whether data/Auth references are present.
+
+### Files touched
+
+- `package.json`
+- `scripts/verify-supabase-migration.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+None.
+
+### How to change or verify later
+
+- To verify the currently configured Supabase project:
+  `npm run verify:supabase-migration`.
+- To require the Asia host:
+  `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co`.
+- To require non-empty migrated Auth/public data:
+  `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co --require-data`.
+- If a fresh empty launch is intentionally accepted, omit `--require-data` but
+  still run the host/key/table check before redeploying.
+
+### Verification result
+
+- `npm run verify:supabase-migration -- --expected-host=bemkskhhydlndiegcuxu.supabase.co --require-data`
+  — passed against the currently configured Supabase project and reported:
+  - `auth_users=11`
+  - `users=11`
+  - `rivalries=10`
+  - `rounds=8`
+  - `exams=5`
+  - `submissions=10`
+  - `battle_packs=4`
+  - `scenario_progress=1`
+  - `scenario_battle_reports=2`
+  - `public_users_missing_auth=0`
+  - `rivalry_refs_missing_auth=0`
+- `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co`
+  — failed with the expected host mismatch because `.env.local` still points to
+  `bemkskhhydlndiegcuxu.supabase.co`.
+- Supabase connector SQL on `clashlingo_asia`
+  (`bwwghdhwhxuqqepgpizb`) reported:
+  - `auth_users=0`
+  - all expected public table counts are `0`
+- `npm run lint` — passed.
+
+### Deferred / TODO
+
+- Owner decision required: either migrate the existing 11 Auth users and public
+  gameplay rows, or accept `clashlingo_asia` as a fresh empty launch database.
+- Owner input required: provide the `clashlingo_asia`
+  `SUPABASE_SERVICE_ROLE_KEY`, or set it directly in Vercel.
+- After env is switched, rerun the verification script, redeploy production,
+  scan the deployed Supabase host, and rerun public/API smoke checks.

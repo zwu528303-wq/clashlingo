@@ -217,6 +217,8 @@ Ran on 2026-06-02:
 - `npm run lint` - passes
 - `npm run build` - failed locally because Next/Turbopack could not fetch Plus Jakarta Sans from Google Fonts; use Vercel deployment build as the production build gate
 - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` - passes (logged-out landing, login -> guide, reset-password)
+- `npm run verify:supabase-migration -- --expected-host=bemkskhhydlndiegcuxu.supabase.co --require-data` - passes against the currently configured Supabase project and reports 11 auth users / 11 public users / no orphan refs
+- `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co` - fails with a host mismatch because local `.env.local` still points to `bemkskhhydlndiegcuxu.supabase.co`
 - `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` - passes and sends no requests
 - `npm run seed:battle-packs -- --only cafe --limit 1` without seed auth - exits before any request with a clear auth requirement
 - Local dev checks: `/api/generate-syllabus`, `/api/generate-exam`, `/api/generate-battle-pack`, and `/api/scenario-progress` all return `401 MISSING_ACCESS_TOKEN` with no token
@@ -233,6 +235,7 @@ Ran on 2026-06-02:
 
 - Scenario persistence has been owner-verified once in Supabase. If a future environment does not have `20260529_000002_battle_packs.sql` and `20260531_000001_scenario_persistence.sql` applied, `submitScenarioRun` returns null and the scenario map shows local-only/default progress.
 - Database migration is not publish-complete until local and Vercel env vars point to `https://bwwghdhwhxuqqepgpizb.supabase.co` with the matching anon/publishable key and `SUPABASE_SERVICE_ROLE_KEY`, production is redeployed, and the live smoke checks are rerun.
+- `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co --require-data` is now available as the local read-only acceptance check after the Asia service-role key is provided or `.env.local` is switched.
 - `StageBriefingPage` and `ScenarioExamLandingPage` still mint client-side `mock-...` session ids. They work with the submit route (sessionId is just a text key) but are not yet server-created.
 - Battle packs cost Anthropic credits to generate. `npm run seed:battle-packs` pre-generates them (idempotent via cache); live seed now requires a seed user's access token or seed email/password and is run by the owner, not the agent.
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.
