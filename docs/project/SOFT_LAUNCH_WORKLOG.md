@@ -694,6 +694,12 @@ None.
 
 - Owner decision required: either migrate the existing 11 Auth users and public
   gameplay rows, or accept `clashlingo_asia` as a fresh empty launch database.
+- Supabase's official guidance says Auth users can be migrated between Supabase
+  projects, including hashed passwords, but the reliable path is a dashboard
+  backup or SQL export/import with Supabase CLI / `pg_dump` / `psql`. The
+  current agent context does not have the old project's Postgres connection
+  password or the new project's service-role key, so this cannot be completed
+  safely from the repo alone.
 - Owner input required: provide the `clashlingo_asia`
   `SUPABASE_SERVICE_ROLE_KEY`, or set it directly in Vercel.
 - After env is switched, rerun the verification script, redeploy production,

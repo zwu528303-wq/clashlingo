@@ -50,6 +50,11 @@ Still owner-controlled / not fully verified:
 11. After the Asia key/env is set, run
    `npm run verify:supabase-migration -- --expected-host=bwwghdhwhxuqqepgpizb.supabase.co --require-data`
    before redeploying or claiming the migration is complete.
+12. If the goal is to preserve existing users/passwords, use Supabase's
+   project-to-project Auth migration path (dashboard backup or SQL export/import
+   with CLI / `pg_dump` / `psql`). The current repo context does not include the
+   old project's Postgres connection password or the new project's service-role
+   key, so an agent cannot safely complete that Auth migration from code alone.
 
 Verification rule: if migrations, seed data, Anthropic credits, deployment, or
 E2E credentials block a soft-launch acceptance item, preserve the fallback and
