@@ -509,26 +509,29 @@ None.
 - Optional hardening: add per-user/IP rate limiting around paid AI endpoints
   after initial soft-launch traffic is understood.
 
-## 9. 2026-06-02 — Asia Migration Production Verification
+## 9. 2026-06-02 — Vercel Asia Region Production Verification
 
 ### What changed
 
 - Pushed the migration-ready `main` branch to GitHub.
-- Vercel deployed commit `69dacfe` as production deployment
-  `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p`.
+- Vercel deployed commit `f78b8de` as production deployment
+  `dpl_6zDAcvMqrUYyjDdXooqAeJCQteFa`.
 - The production deployment includes `vercel.json` with `regions: ["hkg1"]`.
-- Verified that the deployed browser bundle points to the new Supabase project
+- Verified that the deployed browser bundle currently points to
   `bemkskhhydlndiegcuxu.supabase.co`.
 - Verified that the old rivalry AI endpoints and scenario AI/progress endpoints
   reject anonymous calls before doing paid or user-scoped work.
 
 ### Why / what this solves
 
-The database had already been moved to the Asia Supabase project, but production
-API functions were still running in `iad1` because the prior deployed commit did
-not include the new Vercel region config. This closes the migration loop:
-browser env, server env, database schema/data, Auth redirects, Realtime, and
-Vercel function region are now aligned for production.
+Production API functions were still running in `iad1` because the prior
+deployed commit did not include the new Vercel region config. This closes the
+Vercel function-region part of the migration.
+
+This does not yet close the Supabase project swap. After the Supabase connector
+was available, it listed the Asia project as `clashlingo_asia`
+(`bwwghdhwhxuqqepgpizb`) in `ap-northeast-1`, while local `.env.local` and the
+deployed browser bundle still point to `bemkskhhydlndiegcuxu.supabase.co`.
 
 ### Files touched
 
@@ -561,7 +564,7 @@ None.
 
 ### Verification result
 
-- Vercel production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` — `READY`.
+- Vercel production deployment `dpl_6zDAcvMqrUYyjDdXooqAeJCQteFa` — `READY`.
 - Vercel deployment metadata — function region `hkg1`.
 - Live production API headers — include `hkg1` for API execution.
 - Public production routes `/`, `/login`, `/reset-password`, `/how-it-works`,
@@ -572,8 +575,12 @@ None.
   - `/api/generate-battle-pack` — `401 MISSING_ACCESS_TOKEN`
   - `/api/scenario-progress` — `401 MISSING_ACCESS_TOKEN`
 - Deployed Supabase host — `bemkskhhydlndiegcuxu.supabase.co`, matching
-  `.env.local`.
-- Supabase table counts:
+  `.env.local` but not the connector-visible `clashlingo_asia` project.
+- Supabase connector target — `clashlingo_asia`
+  (`bwwghdhwhxuqqepgpizb`), region `ap-northeast-1`, status
+  `ACTIVE_HEALTHY`; expected public tables exist, but compact table summaries
+  currently report `0` public rows.
+- Supabase table counts on the currently deployed host:
   - `users=11`
   - `rivalries=10`
   - `rounds=8`
@@ -604,6 +611,9 @@ None.
 
 ### Deferred / TODO
 
+- Switch local and Vercel Supabase env to `clashlingo_asia`
+  (`bwwghdhwhxuqqepgpizb`) after confirming data/Auth import and obtaining the
+  matching `SUPABASE_SERVICE_ROLE_KEY`; redeploy and rerun production checks.
 - OWNER-REVIEW: decide whether to live-seed one scenario such as `cafe`.
 - Authenticated Playwright smoke remains gated on owner-provided
   `E2E_EMAIL` / `E2E_PASSWORD`.

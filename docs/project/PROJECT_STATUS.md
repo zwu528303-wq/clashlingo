@@ -220,17 +220,19 @@ Ran on 2026-06-02:
 - `npm run seed:battle-packs -- --dry-run --only cafe --limit 1` - passes and sends no requests
 - `npm run seed:battle-packs -- --only cafe --limit 1` without seed auth - exits before any request with a clear auth requirement
 - Local dev checks: `/api/generate-syllabus`, `/api/generate-exam`, `/api/generate-battle-pack`, and `/api/scenario-progress` all return `401 MISSING_ACCESS_TOKEN` with no token
-- Vercel production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` for commit `69dacfe` is `READY`
+- Vercel production deployment `dpl_6zDAcvMqrUYyjDdXooqAeJCQteFa` for commit `f78b8de` is `READY`
 - Vercel reports the production function region as `hkg1`, and live API response headers include `hkg1`
 - Public production routes `/`, `/login`, `/reset-password`, `/how-it-works`, and `/opengraph-image` return `200`
-- Deployed Supabase host matches the new project: `bemkskhhydlndiegcuxu.supabase.co`
-- Supabase Auth/table integrity checks pass: 11 auth users, 11 public users, no missing auth refs in public users or rivalry player refs
-- Supabase Auth redirect probes for production, bare-domain, and localhost `/` and `/reset-password` return `ok`
-- Supabase Realtime handshake for `rounds` updates and `submissions` inserts returns `SUBSCRIBED`
+- Current local `.env.local` and deployed browser bundle point to `bemkskhhydlndiegcuxu.supabase.co`
+- Supabase connector lists the Asia project as `clashlingo_asia` / `bwwghdhwhxuqqepgpizb` in `ap-northeast-1`, so production env is not yet aligned to that project
+- The `clashlingo_asia` public schema exists with the expected tables, but the connector table summary reports `0` rows in those public tables; confirm whether data/Auth import is complete before switching production
+- Read-only checks against the currently deployed Supabase host pass: 11 auth users, 11 public users, no missing auth refs in public users or rivalry player refs
+- Auth redirect probes and Realtime handshake were verified against the currently deployed Supabase host, not yet against `clashlingo_asia`
 
 ## Known Issues And Risks
 
 - Scenario persistence has been owner-verified once in Supabase. If a future environment does not have `20260529_000002_battle_packs.sql` and `20260531_000001_scenario_persistence.sql` applied, `submitScenarioRun` returns null and the scenario map shows local-only/default progress.
+- Database migration is not publish-complete until local and Vercel env vars point to `https://bwwghdhwhxuqqepgpizb.supabase.co` with the matching anon/publishable key and `SUPABASE_SERVICE_ROLE_KEY`, production is redeployed, and the live smoke checks are rerun.
 - `StageBriefingPage` and `ScenarioExamLandingPage` still mint client-side `mock-...` session ids. They work with the submit route (sessionId is just a text key) but are not yet server-created.
 - Battle packs cost Anthropic credits to generate. `npm run seed:battle-packs` pre-generates them (idempotent via cache); live seed now requires a seed user's access token or seed email/password and is run by the owner, not the agent.
 - Live opponent exam-progress UI is intentionally out of scope for the current MVP. Results realtime remains the main competitive sync surface for now.

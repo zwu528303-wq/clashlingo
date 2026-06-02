@@ -21,17 +21,19 @@ Completed by owner and verified by table existence:
    - `https://www.clashlingo.com`
    - `https://clashlingo.com`
 5. Asia migration deployment verified on Vercel:
-   - Production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` for commit
-     `69dacfe` is `READY`.
+   - Production deployment `dpl_6zDAcvMqrUYyjDdXooqAeJCQteFa` for commit
+     `f78b8de` is `READY`.
    - Vercel reports function region `hkg1`.
    - Live API response headers include `hkg1` for function execution.
-6. New Supabase project verified:
-   - Deployed browser bundle points to `bemkskhhydlndiegcuxu.supabase.co`.
-   - Required tables are present and readable with the service role.
-   - Auth users and public `users` rows match without orphaned references.
-   - Realtime subscription handshake returns `SUBSCRIBED`.
-   - Auth redirect probes accepted production, bare-domain, and localhost
-     redirect URLs for `/` and `/reset-password`.
+6. Supabase project swap is not yet complete:
+   - Supabase connector lists the Asia project as `clashlingo_asia`
+     (`bwwghdhwhxuqqepgpizb`) in `ap-northeast-1`.
+   - Current local `.env.local` and deployed bundle still point to
+     `bemkskhhydlndiegcuxu.supabase.co`.
+   - The `clashlingo_asia` public schema exists with the expected tables, but
+     connector table summaries currently report `0` public rows.
+   - Read-only checks against the currently deployed Supabase host pass, but
+     they do not prove production has been switched to `clashlingo_asia`.
 
 Still owner-controlled / not fully verified:
 
@@ -42,6 +44,9 @@ Still owner-controlled / not fully verified:
 8. Provide `E2E_EMAIL` and `E2E_PASSWORD` before authenticated Playwright smoke
    coverage can be fully verified.
 9. Review all `OWNER-REVIEW` items in `docs/project/SOFT_LAUNCH_WORKLOG.md`.
+10. Provide the `clashlingo_asia` `SUPABASE_SERVICE_ROLE_KEY`, or set it
+   directly in Vercel, before production can be redeployed to the Asia Supabase
+   project.
 
 Verification rule: if migrations, seed data, Anthropic credits, deployment, or
 E2E credentials block a soft-launch acceptance item, preserve the fallback and
@@ -50,14 +55,14 @@ of claiming completion.
 
 ## What Changed This Session (2026-06-02)
 
-### Asia migration and production deploy verification
+### Vercel Asia deploy verification and Supabase target mismatch
 
 - Pushed the local `main` changes to `origin/main`, including:
   - `vercel.json` with `regions: ["hkg1"]`
   - rivalry AI endpoint auth hardening
   - seed auth guard and updated smoke/docs
-- Vercel production deployment `dpl_SKnAwjgdbyJmvPh1k2pAq9cL6S8p` for commit
-  `69dacfe` is `READY`.
+- Vercel production deployment `dpl_6zDAcvMqrUYyjDdXooqAeJCQteFa` for commit
+  `f78b8de` is `READY`.
 - The production deployment reports function region `hkg1`.
 - Live API checks on `https://www.clashlingo.com` returned:
   - `/api/generate-syllabus` without token: `401 MISSING_ACCESS_TOKEN`
@@ -67,9 +72,13 @@ of claiming completion.
 - Live API response headers include `hkg1` as the function execution region.
 - Public routes `/`, `/login`, `/reset-password`, `/how-it-works`, and
   `/opengraph-image` returned `200`.
-- The deployed bundle's Supabase host matches `.env.local`:
+- The deployed bundle's Supabase host matches `.env.local`, but not the
+  Supabase connector's `clashlingo_asia` project:
   `bemkskhhydlndiegcuxu.supabase.co`.
-- Supabase table counts on the new project:
+- Supabase connector lists `clashlingo_asia` as `bwwghdhwhxuqqepgpizb` in
+  `ap-northeast-1`, with the expected public tables but `0` public rows in the
+  compact table summary.
+- Supabase table counts on the currently deployed host:
   `users=11`, `rivalries=10`, `rounds=8`, `exams=5`, `submissions=10`,
   `battle_packs=4`, `scenario_progress=1`, `scenario_battle_reports=2`.
 - Auth/public identity integrity checks passed:

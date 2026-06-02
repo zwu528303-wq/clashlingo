@@ -2,14 +2,22 @@
 
 Last updated: 2026-06-02
 
+## Current Blocker
+
+- Finish the Supabase project swap to `clashlingo_asia`.
+  - Supabase connector lists `clashlingo_asia` as project ref `bwwghdhwhxuqqepgpizb` in `ap-northeast-1`.
+  - Current local `.env.local` and deployed production bundle still point to `bemkskhhydlndiegcuxu.supabase.co`.
+  - The `clashlingo_asia` schema exists, but connector table summaries currently report `0` public rows; confirm whether data/Auth import is complete before switching production.
+  - To finish: update local and Vercel `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`, redeploy production, then rerun route/API/Auth/Realtime checks.
+  - Owner input needed: the `clashlingo_asia` `SUPABASE_SERVICE_ROLE_KEY`, or owner must set it directly in Vercel.
+
 ## Recently Completed
 
-- Completed the Asia database migration closeout.
-  - Vercel production deployment for commit `69dacfe` is `READY`.
+- Completed the Vercel Asia region and API hardening closeout.
+  - Vercel production deployment for commit `f78b8de` is `READY`.
   - Production API functions now run in `hkg1`.
-  - The deployed browser bundle points to the new Supabase project `bemkskhhydlndiegcuxu.supabase.co`.
-  - Public routes return `200`, paid/API endpoints return `401 MISSING_ACCESS_TOKEN` without a token, Auth redirects are accepted, and Realtime subscribes.
-  - Supabase Auth/public table integrity checks pass with no orphaned public users or rivalry player refs.
+  - Public routes return `200`, and paid/API endpoints return `401 MISSING_ACCESS_TOKEN` without a token.
+  - Read-only checks against the currently deployed Supabase host pass with no orphaned public users or rivalry player refs.
 - Closed the soft-launch API/auth hardening items found during launch review.
   - `/api/generate-syllabus` and `/api/generate-exam` now require a Supabase Bearer token and verify the caller belongs to the round's rivalry before any Anthropic call.
   - `RoundPage` now sends the signed-in session token when generating rivalry scopes or exams.
