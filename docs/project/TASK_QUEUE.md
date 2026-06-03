@@ -14,9 +14,16 @@ Last updated: 2026-06-03
 
 ## Recently Completed
 
+- Split `/api/generate-exam` into sectioned Anthropic calls after production returned `考试生成器输出不完整，请再试一次。`.
+  - The affected stuck round is still on `bemkskhhydlndiegcuxu.supabase.co`, so this remains unrelated to a completed Asia database switch.
+  - The route now generates MCQ, fill-in-the-blank, and translation sections separately instead of asking for one large 24-question JSON payload.
+  - Each section is validated for ids, type, count, points, and required MCQ/FITB shape before the final 24-question exam is merged.
+  - The final merged exam is still validated for exactly 24 questions and 24 rubric items before writing to Supabase.
+  - Verified locally before deploy: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`.
 - Hardened `/api/generate-exam` after a stuck rivalry round still failed with `提前解锁考试失败了`.
   - Confirmed the affected round is on the current production Supabase host, has syllabus data, has both players confirmed/ready, and has no exam row.
-  - Increased the exam route duration to 60 seconds and the Anthropic output budget to 8000 tokens.
+  - Increased the exam route duration to 60 seconds and the initial single-call Anthropic output budget to 8000 tokens.
+  - Follow-up sectioned generation now supersedes the single-call output budget approach.
   - Added explicit validation for exactly 24 generated questions and 24 rubric items.
   - Added checked `exams` upsert and `rounds` status-update errors.
   - Added mapped frontend copy for incomplete AI output vs exam-save failure.

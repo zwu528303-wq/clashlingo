@@ -27,10 +27,108 @@ const authClient = createClient(supabaseUrl, supabaseAnonKey);
 const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 const EXPECTED_EXAM_ITEM_COUNT = 24;
-const EXAM_MAX_TOKENS = 8000;
+const EXAM_SECTION_MAX_TOKENS = 3500;
+
+interface ExamSectionSpec {
+  key: "mcq" | "fitb" | "translation";
+  type: ExamQuestion["type"];
+  title: string;
+  startId: number;
+  endId: number;
+  points: number;
+  instructions: string;
+  outputNotes: string;
+}
+
+interface ExamSectionData {
+  questions: ExamQuestion[];
+  rubric: ExamRubricItem[];
+}
+
+class ExamGenerationFailure extends Error {
+  code: string;
+  status: number;
+
+  constructor(code: string, message: string, status = 502) {
+    super(message);
+    this.name = "ExamGenerationFailure";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+const EXAM_SECTIONS: ExamSectionSpec[] = [
+  {
+    key: "mcq",
+    type: "mcq",
+    title: "Multiple Choice",
+    startId: 1,
+    endId: 10,
+    points: 3,
+    instructions:
+      "Create multiple-choice recall and comprehension questions. Each question must have exactly 4 options. Use stable option values such as \"a\", \"b\", \"c\", and \"d\". The rubric answer must exactly match the correct option value.",
+    outputNotes:
+      "Each question must include options, and each option must include value plus bilingual label.",
+  },
+  {
+    key: "fitb",
+    type: "fitb",
+    title: "Fill in the Blank",
+    startId: 11,
+    endId: 20,
+    points: 3,
+    instructions:
+      "Create fill-in-the-blank questions. Each prompt must contain exactly one ___ blank. The blank should test a vocabulary item, expression, or grammar structure from the syllabus.",
+    outputNotes:
+      "Do not include options for fill-in-the-blank questions. The rubric answer must be the exact expected fill-in text.",
+  },
+  {
+    key: "translation",
+    type: "translation",
+    title: "Translation",
+    startId: 21,
+    endId: 24,
+    points: 10,
+    instructions:
+      "Create translation questions. Questions 21-23 translate a shared meaning into the target language. Question 24 translates from the target language back into each interface language.",
+    outputNotes:
+      "For questions 21-23, rubric answer is a target-language string with target-language keywords. For question 24, rubric answer and keywords are bilingual objects with en and zh-CN.",
+  },
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function countFitbBlanks(text: string) {
+  return text.match(/___/g)?.length ?? 0;
+}
+
+function getFitbPromptError(question: Record<string, unknown>, questionId: number) {
+  const prompt = question.prompt;
+
+  if (typeof prompt === "string") {
+    return countFitbBlanks(prompt) === 1
+      ? null
+      : `Question ${questionId} must contain exactly one blank.`;
+  }
+
+  if (!isRecord(prompt)) {
+    return `Question ${questionId} prompt is invalid.`;
+  }
+
+  for (const language of ["en", "zh-CN"]) {
+    const localizedPrompt = prompt[language];
+    if (typeof localizedPrompt !== "string") {
+      return `Question ${questionId} prompt is missing ${language}.`;
+    }
+
+    if (countFitbBlanks(localizedPrompt) !== 1) {
+      return `Question ${questionId} ${language} prompt must contain exactly one blank.`;
+    }
+  }
+
+  return null;
 }
 
 function getExamShapeError(value: unknown) {
@@ -53,6 +151,254 @@ function getExamShapeError(value: unknown) {
   }
 
   return null;
+}
+
+function getSectionShapeError(value: unknown, section: ExamSectionSpec) {
+  if (!isRecord(value)) return "Section payload is not an object.";
+
+  if (!Array.isArray(value.questions)) {
+    return "Section payload is missing questions.";
+  }
+
+  if (!Array.isArray(value.rubric)) {
+    return "Section payload is missing rubric.";
+  }
+
+  const expectedCount = section.endId - section.startId + 1;
+  if (value.questions.length !== expectedCount) {
+    return `Expected ${expectedCount} ${section.key} questions, got ${value.questions.length}.`;
+  }
+
+  if (value.rubric.length !== expectedCount) {
+    return `Expected ${expectedCount} ${section.key} rubric items, got ${value.rubric.length}.`;
+  }
+
+  const expectedIds = Array.from(
+    { length: expectedCount },
+    (_, index) => section.startId + index
+  );
+
+  for (const expectedId of expectedIds) {
+    const question = value.questions.find(
+      (item) => isRecord(item) && item.id === expectedId
+    );
+    const rubric = value.rubric.find(
+      (item) => isRecord(item) && item.id === expectedId
+    );
+
+    if (!isRecord(question)) {
+      return `Missing question id ${expectedId}.`;
+    }
+
+    if (question.type !== section.type) {
+      return `Question ${expectedId} has the wrong type.`;
+    }
+
+    if (section.key === "mcq") {
+      if (!Array.isArray(question.options) || question.options.length !== 4) {
+        return `Question ${expectedId} must have exactly 4 options.`;
+      }
+
+      const expectedValues = ["a", "b", "c", "d"];
+      for (const [optionIndex, option] of question.options.entries()) {
+        if (!isRecord(option)) {
+          return `Question ${expectedId} option ${optionIndex + 1} must be an object.`;
+        }
+
+        if (option.value !== expectedValues[optionIndex]) {
+          return `Question ${expectedId} option ${optionIndex + 1} has the wrong value.`;
+        }
+
+        const label = option.label;
+        if (typeof label !== "string" && !isRecord(label)) {
+          return `Question ${expectedId} option ${optionIndex + 1} is missing a label.`;
+        }
+      }
+    }
+
+    if (section.key === "fitb") {
+      const promptError = getFitbPromptError(question, expectedId);
+      if (promptError) {
+        return promptError;
+      }
+    }
+
+    if (!isRecord(rubric)) {
+      return `Missing rubric id ${expectedId}.`;
+    }
+
+    if (rubric.points !== section.points) {
+      return `Rubric ${expectedId} has the wrong point value.`;
+    }
+  }
+
+  return null;
+}
+
+function buildSectionJsonExample(section: ExamSectionSpec) {
+  const question: Record<string, unknown> = {
+    id: section.startId,
+    type: section.type,
+    prompt: {
+      en:
+        section.key === "fitb"
+          ? "Complete the sentence: I am ___."
+          : "question text in English",
+      "zh-CN":
+        section.key === "fitb"
+          ? "补全句子：我是 ___。"
+          : "对应的简体中文题干",
+    },
+  };
+
+  if (section.key === "mcq") {
+    question.options = ["a", "b", "c", "d"].map((value) => ({
+      value,
+      label: {
+        en: `option ${value}`,
+        "zh-CN": `选项 ${value}`,
+      },
+    }));
+  }
+
+  return JSON.stringify(
+    {
+      questions: [question],
+      rubric: [
+        {
+          id: section.startId,
+          answer: section.key === "mcq" ? "a" : "correct answer",
+          points: section.points,
+        },
+      ],
+    },
+    null,
+    2
+  );
+}
+
+function parseSectionJson(text: string, stopReason: string | null) {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new ExamGenerationFailure(
+        stopReason === "max_tokens" ? "AI_OUTPUT_TRUNCATED" : "EXAM_PARSE_FAILED",
+        stopReason === "max_tokens"
+          ? "Exam section JSON was truncated by the AI output limit"
+          : "Failed to parse exam section JSON"
+      );
+    }
+
+    try {
+      return JSON.parse(jsonMatch[0]) as unknown;
+    } catch {
+      throw new ExamGenerationFailure(
+        stopReason === "max_tokens" ? "AI_OUTPUT_TRUNCATED" : "EXAM_PARSE_FAILED",
+        stopReason === "max_tokens"
+          ? "Exam section JSON was truncated by the AI output limit"
+          : "Failed to parse exam section JSON"
+      );
+    }
+  }
+}
+
+function buildExamSectionPrompt(args: {
+  section: ExamSectionSpec;
+  syllabus: NonNullable<Round["syllabus"]>;
+  targetLanguage: string | null;
+  difficultyLevel: string;
+}) {
+  const { section, syllabus, targetLanguage, difficultyLevel } = args;
+  const expectedCount = section.endId - section.startId + 1;
+  const jsonExample = buildSectionJsonExample(section);
+
+  return `You are an exam generator for ClashLingo, a competitive language learning app.
+
+Generate ONLY the ${section.title} section of a larger 24-question exam.
+
+TARGET LANGUAGE:
+${targetLanguage}
+
+TARGET LEVEL:
+${difficultyLevel}
+
+SYLLABUS:
+${JSON.stringify(syllabus, null, 2)}
+
+SECTION TO GENERATE:
+- Question IDs: ${section.startId}-${section.endId}
+- Number of questions: ${expectedCount}
+- Question type: ${section.type}
+- Points per question: ${section.points}
+
+SECTION INSTRUCTIONS:
+${section.instructions}
+${section.outputNotes}
+
+GLOBAL RULES:
+- All questions must be based ONLY on the syllabus content
+- Difficulty must match ${difficultyLevel}
+- Prompts must be bilingual: both "en" and "zh-CN"
+- Questions 1-23 should have the same correct answer regardless of interface language
+- Keep every item tightly scoped and concise
+- Do not include questions outside IDs ${section.startId}-${section.endId}
+- Do not include markdown, explanations, comments, or backticks
+
+Return ONLY a JSON object with this shape:
+${jsonExample}
+
+IMPORTANT:
+- Return exactly ${expectedCount} questions and exactly ${expectedCount} rubric items.
+- Question IDs and rubric IDs must be exactly ${section.startId}-${section.endId}, in order.
+- Return ONLY valid JSON.`;
+}
+
+async function generateExamSection(args: {
+  section: ExamSectionSpec;
+  syllabus: NonNullable<Round["syllabus"]>;
+  targetLanguage: string | null;
+  difficultyLevel: string;
+}) {
+  const { section } = args;
+  const prompt = buildExamSectionPrompt(args);
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: EXAM_SECTION_MAX_TOKENS,
+      temperature: 0.2,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const textBlock = message.content.find((block) => block.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new ExamGenerationFailure("AI_NO_TEXT", "No text response from AI");
+    }
+
+    const parsedSectionData = parseSectionJson(
+      textBlock.text,
+      message.stop_reason
+    );
+    const shapeError = getSectionShapeError(parsedSectionData, section);
+
+    if (!shapeError) {
+      return parsedSectionData as ExamSectionData;
+    }
+
+    console.error("Exam section shape invalid", {
+      attempt,
+      section: section.key,
+      error: shapeError,
+      stopReason: message.stop_reason,
+    });
+  }
+
+  throw new ExamGenerationFailure(
+    "EXAM_SHAPE_INVALID",
+    `The ${section.key} exam section was incomplete.`
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -170,171 +516,27 @@ export async function POST(req: NextRequest) {
       round.target_lang
     );
 
-    const prompt = `You are an exam generator for ClashLingo, a competitive language learning app.
+    const examSections = await Promise.all(
+      EXAM_SECTIONS.map((section) =>
+        generateExamSection({
+          section,
+          syllabus,
+          targetLanguage: round.target_lang,
+          difficultyLevel,
+        })
+      )
+    );
 
-Based on the following syllabus, generate a 24-question exam with scoring rubric.
+    const examData = {
+      questions: examSections
+        .flatMap((section) => section.questions)
+        .sort((left, right) => left.id - right.id),
+      rubric: examSections
+        .flatMap((section) => section.rubric)
+        .sort((left, right) => left.id - right.id),
+    };
 
-TARGET LEVEL:
-${difficultyLevel}
-
-SYLLABUS:
-${JSON.stringify(syllabus, null, 2)}
-
-EXAM STRUCTURE (strictly follow this):
-- Questions 1-10: Multiple Choice (MCQ) — 3 points each = 30 points
-- Questions 11-20: Fill in the Blank (FITB) — 3 points each = 30 points
-- Questions 21-24: Translation — 10 points each = 40 points
-- Total: 100 points
-
-RULES:
-- All questions must be based ONLY on the syllabus content
-- Difficulty must match ${difficultyLevel}
-- MCQ: 4 options each, exactly one correct
-- FITB: One blank per question, the blank should be a word from the vocabulary or a grammar structure
-- Questions 1-23 should have the same correct answer regardless of interface language
-- Translation Q21-23: translate a shared meaning into the target language
-- Translation Q24: translate from the target language back into each interface language
-- Questions should test vocabulary, grammar, and expressions from the syllabus
-
-LEVEL GUIDANCE:
-- Beginner: keep wording direct, highly scaffolded, and strictly inside the explicit syllabus scope
-- Elementary: allow small phrasing variations, but keep sentence frames practical and predictable
-- Intermediate: use broader sentence patterns and a bit more transfer across vocabulary, grammar, and expressions
-- Advanced: use the most natural phrasing, denser grammar choices, and less obvious recall, while still staying inside the syllabus
-
-Return a JSON object with exactly this structure:
-{
-  "questions": [
-    {
-      "id": 1,
-      "type": "mcq",
-      "prompt": {
-        "en": "question text in English",
-        "zh-CN": "对应的简体中文题干"
-      },
-      "options": [
-        {
-          "value": "stable canonical option value",
-          "label": {
-            "en": "option label in English",
-            "zh-CN": "对应的简体中文选项"
-          }
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "type": "fitb",
-      "prompt": {
-        "en": "sentence with ___ blank",
-        "zh-CN": "带有 ___ 空格的简体中文题干"
-      }
-    },
-    {
-      "id": 21,
-      "type": "translation",
-      "prompt": {
-        "en": "Translate to French: ...",
-        "zh-CN": "翻译成法语：……"
-      }
-    }
-  ],
-  "rubric": [
-    {
-      "id": 1,
-      "answer": "correct canonical answer",
-      "points": 3
-    },
-    {
-      "id": 21,
-      "answer": "ideal target-language translation",
-      "points": 10,
-      "keywords": ["target", "language", "keywords"]
-    },
-    {
-      "id": 24,
-      "answer": {
-        "en": "ideal English translation",
-        "zh-CN": "理想的简体中文翻译"
-      },
-      "points": 10,
-      "keywords": {
-        "en": ["english", "keywords"],
-        "zh-CN": ["中文", "关键词"]
-      }
-    }
-  ]
-}
-
-Localization rules:
-- Every question prompt must be provided in BOTH English and Simplified Chinese
-- MCQ option labels must also be provided in BOTH English and Simplified Chinese
-- If an option is naturally target-language only, it is okay for both labels to be identical
-- For MCQ rubric answers, store the canonical matching option "value"
-- For FITB rubric answers, store the exact correct fill-in text
-- For translation Q21-23, store a single target-language answer string plus target-language keywords
-- For translation Q24, store bilingual answers and bilingual keywords because the learner may answer in English or Simplified Chinese
-
-For translation rubric, include a "keywords" array or object with important words/phrases. Partial credit will be given based on how many keywords appear in the student's answer.
-
-IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. Ensure all 24 questions and 24 rubric items are present.`;
-
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: EXAM_MAX_TOKENS,
-      temperature: 0.2,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const textBlock = message.content.find((block) => block.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json(
-        { error: "No text response", code: "AI_NO_TEXT" },
-        { status: 500 }
-      );
-    }
-
-    let parsedExamData: unknown;
-    try {
-      parsedExamData = JSON.parse(textBlock.text);
-    } catch {
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          parsedExamData = JSON.parse(jsonMatch[0]);
-        } catch {
-          return NextResponse.json(
-            {
-              error:
-                message.stop_reason === "max_tokens"
-                  ? "Exam JSON was truncated by the AI output limit"
-                  : "Failed to parse exam JSON",
-              code:
-                message.stop_reason === "max_tokens"
-                  ? "AI_OUTPUT_TRUNCATED"
-                  : "EXAM_PARSE_FAILED",
-            },
-            { status: 502 }
-          );
-        }
-      } else {
-        return NextResponse.json(
-          {
-            error:
-              message.stop_reason === "max_tokens"
-                ? "Exam JSON was truncated by the AI output limit"
-                : "Failed to parse exam JSON",
-            code:
-              message.stop_reason === "max_tokens"
-                ? "AI_OUTPUT_TRUNCATED"
-                : "EXAM_PARSE_FAILED",
-          },
-          { status: 502 }
-        );
-      }
-    }
-
-    const shapeError = getExamShapeError(parsedExamData);
+    const shapeError = getExamShapeError(examData);
     if (shapeError) {
       return NextResponse.json(
         {
@@ -344,11 +546,6 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
         { status: 502 }
       );
     }
-
-    const examData = parsedExamData as {
-      questions: ExamQuestion[];
-      rubric: ExamRubricItem[];
-    };
 
     // Check for existing exam
     const { data: existing } = await adminClient
@@ -406,6 +603,13 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
 
     return NextResponse.json({ success: true, exam: examData });
   } catch (error) {
+    if (error instanceof ExamGenerationFailure) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    }
+
     console.error("Exam generation error:", error);
     const message =
       error instanceof Error ? error.message : "Internal server error";

@@ -63,6 +63,30 @@ of claiming completion.
 
 ## What Changed This Session (2026-06-03)
 
+### Follow-up: sectioned exam generation
+
+- After the first `/api/generate-exam` hardening deployed, the same affected
+  round surfaced the more specific UI error
+  `考试生成器输出不完整，请再试一次。`
+- That confirms the round was reaching the exam generator, but the AI response
+  was still too large or malformed to become a complete 24-question exam.
+- Code changed:
+  - `app/api/generate-exam/route.ts` now generates the exam as three Anthropic
+    sections: MCQ ids 1-10, fill-in-the-blank ids 11-20, and translation ids
+    21-24.
+  - Each section is validated for item count, ids, question type, rubric point
+    values, and section-specific shape before merging.
+  - The merged exam is sorted and still validated for exactly 24 questions and
+    24 rubric items before any `exams` / `rounds` write.
+  - Each section can retry once on invalid shape, while truncated / unparsable
+    output still returns the explicit exam-generation error codes.
+- Verification before deploy:
+  - `git diff --check` — passed.
+  - `npm run lint` — passed.
+  - `npx tsc --noEmit --pretty false` — passed.
+- Next action: deploy this change, then ask the owner to refresh the stuck
+  round and click `重新尝试开考` once more.
+
 ### Follow-up: exam generation hardening
 
 - After the early-start recovery fix deployed, the affected round still showed
@@ -76,7 +100,8 @@ of claiming completion.
   - no `exams` row exists for the round
 - Code changed:
   - `app/api/generate-exam/route.ts` now exports `maxDuration = 60`.
-  - Anthropic exam generation now uses `max_tokens: 8000` and low temperature.
+  - Anthropic exam generation initially used `max_tokens: 8000` and low
+    temperature before the later sectioned-generation follow-up above.
   - AI output is validated for exactly 24 questions and 24 rubric items.
   - Truncated / malformed AI output returns `AI_OUTPUT_TRUNCATED`,
     `EXAM_PARSE_FAILED`, or `EXAM_SHAPE_INVALID`.

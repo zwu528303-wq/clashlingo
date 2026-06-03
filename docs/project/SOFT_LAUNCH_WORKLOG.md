@@ -838,8 +838,9 @@ resilient and makes any remaining failure easier to diagnose.
 
 ### How to change or undo later
 
-- To change the AI output budget, edit `EXAM_MAX_TOKENS` in
-  `app/api/generate-exam/route.ts`.
+- This entry describes the initial single-call hardening. The later sectioned
+  generator replaced the old `EXAM_MAX_TOKENS` approach; edit
+  `EXAM_SECTION_MAX_TOKENS` and `EXAM_SECTIONS` instead.
 - To change the server timeout, edit `export const maxDuration`.
 - To change the expected exam size, edit `EXPECTED_EXAM_ITEM_COUNT` and the
   generation prompt in the same file.
@@ -854,7 +855,64 @@ resilient and makes any remaining failure easier to diagnose.
 
 ### Deferred / TODO
 
-- Deploy this fix, then ask the owner to click `重新尝试开考` once more on the
-  stuck round.
-- If it still fails, the next diagnostic signal should now be whether the UI
-  shows incomplete AI output, save failure, or the generic internal failure.
+- This fix deployed and exposed the next diagnostic signal: incomplete AI
+  output. See entry 13 for the sectioned-generation follow-up.
+
+## 13. 2026-06-03 — Sectioned Rivalry Exam Generation
+
+### What changed
+
+- Investigated the next production symptom after endpoint hardening: the stuck
+  round now showed `考试生成器输出不完整，请再试一次。`
+- Updated `app/api/generate-exam/route.ts` so the 24-question rivalry exam is
+  generated in three smaller Anthropic calls:
+  - MCQ questions 1-10
+  - fill-in-the-blank questions 11-20
+  - translation questions 21-24
+- Added section-level validation before merge:
+  - exact id range and count
+  - question type
+  - rubric id and point values
+  - exactly 4 options for MCQ
+  - required FITB shape
+- Kept the final whole-exam validation before writing to `exams` or updating
+  `rounds`.
+
+### Why / what this solves
+
+The previous single-call generator still asked Anthropic for one large
+bilingual 24-question JSON object. Production reached the route, but the model
+could still return incomplete or invalid JSON. Sectioned generation reduces the
+size of each response and catches malformed sections before they can affect the
+round.
+
+### Files touched
+
+- `app/api/generate-exam/route.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+None.
+
+### How to change or undo later
+
+- To change per-section output budget, edit `EXAM_SECTION_MAX_TOKENS` in
+  `app/api/generate-exam/route.ts`.
+- To change exam composition, edit `EXAM_SECTIONS` in the same file and keep
+  the prompt, section validator, final validator, and client scoring contract in
+  sync.
+
+### Verification result
+
+- `git diff --check` — passed.
+- `npm run lint` — passed.
+- `npx tsc --noEmit --pretty false` — passed.
+
+### Deferred / TODO
+
+- Deploy this sectioned-generation fix, then ask the owner to refresh the
+  affected round and click `重新尝试开考` once more.
