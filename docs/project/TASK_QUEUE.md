@@ -19,7 +19,8 @@ Last updated: 2026-06-03
   - The route now generates MCQ, fill-in-the-blank, and translation sections separately instead of asking for one large 24-question JSON payload.
   - Each section is validated for ids, type, count, points, and required MCQ/FITB shape before the final 24-question exam is merged.
   - The final merged exam is still validated for exactly 24 questions and 24 rubric items before writing to Supabase.
-  - Verified locally before deploy: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`.
+  - Vercel production deployment `dpl_Aw9yim9DWADw94UHXeHsypSj3GYJ` for commit `ad7b607` is `READY`.
+  - Verified: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`, post-deploy public/API smoke checks.
 - Hardened `/api/generate-exam` after a stuck rivalry round still failed with `提前解锁考试失败了`.
   - Confirmed the affected round is on the current production Supabase host, has syllabus data, has both players confirmed/ready, and has no exam row.
   - Increased the exam route duration to 60 seconds and the initial single-call Anthropic output budget to 8000 tokens.

@@ -911,8 +911,17 @@ None.
 - `git diff --check` — passed.
 - `npm run lint` — passed.
 - `npx tsc --noEmit --pretty false` — passed.
+- Vercel production deployment `dpl_Aw9yim9DWADw94UHXeHsypSj3GYJ` for commit
+  `ad7b607` is `READY`.
+- Post-deploy smoke:
+  - public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return
+    `200`
+  - no-token checks for `/api/create-round`, `/api/generate-syllabus`,
+    `/api/generate-exam`, and `GET /api/scenario-progress` return
+    `401 MISSING_ACCESS_TOKEN`
+  - function response headers still include `hkg1`
+  - deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co`
 
 ### Deferred / TODO
 
-- Deploy this sectioned-generation fix, then ask the owner to refresh the
-  affected round and click `重新尝试开考` once more.
+- OWNER-REVIEW: refresh the affected round and click `重新尝试开考` once more.

@@ -222,8 +222,8 @@ Ran on 2026-06-03:
 - `npm run lint` - passes
 - `npx tsc --noEmit --pretty false` - passes
 - `git diff --check` - passes
-- Vercel production deployment `dpl_A5i3MUbuq1rmf63bJPX1WT3y4XvL` for commit `60a4754` is `READY`
-- Post-deploy smoke: public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return `200`; no-token API checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
+- Vercel production deployment `dpl_Aw9yim9DWADw94UHXeHsypSj3GYJ` for commit `ad7b607` is `READY`
+- Post-deploy smoke: public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return `200`; no-token API checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `GET /api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
 - Live response headers still show Vercel function execution in `hkg1`
 - Deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co` and includes both the stuck-state retry copy (`Try Start Again` / `重新尝试开考`) and the new exam-generation error copy (`The exam generator returned incomplete output` / `考试生成器输出不完整`)
 - Supabase connector lists only the Asia project `clashlingo_asia` / `bwwghdhwhxuqqepgpizb`; read-only counts there are still `0` auth users and `0` rows across the expected public tables

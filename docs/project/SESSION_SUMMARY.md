@@ -80,12 +80,18 @@ of claiming completion.
     24 rubric items before any `exams` / `rounds` write.
   - Each section can retry once on invalid shape, while truncated / unparsable
     output still returns the explicit exam-generation error codes.
-- Verification before deploy:
+- Verification:
   - `git diff --check` — passed.
   - `npm run lint` — passed.
   - `npx tsc --noEmit --pretty false` — passed.
-- Next action: deploy this change, then ask the owner to refresh the stuck
-  round and click `重新尝试开考` once more.
+  - Vercel production deployment `dpl_Aw9yim9DWADw94UHXeHsypSj3GYJ` for commit
+    `ad7b607` is `READY`.
+  - Post-deploy smoke passed: public routes return `200`, protected APIs return
+    `401 MISSING_ACCESS_TOKEN` without a token, deployed function headers still
+    include `hkg1`, and the deployed browser bundle still points to
+    `bemkskhhydlndiegcuxu.supabase.co`.
+- Next action: owner should refresh the affected round and click
+  `重新尝试开考` once more.
 
 ### Follow-up: exam generation hardening
 
