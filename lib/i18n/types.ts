@@ -383,6 +383,7 @@ export interface TranslationDictionary {
     starting: string;
     waitingForRival: string;
     readyToStartEarly: string;
+    retryStartExam: string;
     stake: string;
     examReadyTitle: string;
     examReadyDescription: string;

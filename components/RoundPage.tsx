@@ -395,12 +395,13 @@ export default function RoundPage() {
   };
 
   useEffect(() => {
-    if (
-      !round ||
-      round.status !== "exam_ready" ||
-      !round.player_a_exam_ready ||
-      !round.player_b_exam_ready
-    ) {
+    const canPromoteExam =
+      round &&
+      (round.status === "countdown" || round.status === "exam_ready") &&
+      round.player_a_exam_ready &&
+      round.player_b_exam_ready;
+
+    if (!canPromoteExam) {
       examLiveSyncTriggered.current = false;
       return;
     }
@@ -410,7 +411,7 @@ export default function RoundPage() {
 
     void (async () => {
       setActionLoading(true);
-      const activated = await promoteExamLive("exam_ready");
+      const activated = await promoteExamLive(round.status);
       if (!activated) {
         examLiveSyncTriggered.current = false;
       }
@@ -879,12 +880,14 @@ export default function RoundPage() {
 
               <button
                 onClick={handleExamReady}
-                disabled={actionLoading || myExamReady}
+                disabled={actionLoading || (myExamReady && !bothExamReady)}
                 className="w-full bg-primary text-on-primary py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {actionLoading
                   ? dictionary.round.starting
-                  : myExamReady
+                  : bothExamReady
+                    ? dictionary.round.retryStartExam
+                    : myExamReady
                     ? dictionary.round.waitingForRival
                     : dictionary.round.readyToStartEarly}
               </button>
@@ -948,7 +951,7 @@ export default function RoundPage() {
               {actionLoading ? (
                 <Loader2 size={24} className="animate-spin" />
               ) : bothExamReady ? (
-                dictionary.round.starting
+                dictionary.round.retryStartExam
               ) : myExamReady ? (
                 dictionary.round.waitingForRival
               ) : (

@@ -493,6 +493,7 @@ export const en = {
     starting: "Starting...",
     waitingForRival: "Waiting for rival...",
     readyToStartEarly: "Ready to Start Early",
+    retryStartExam: "Try Start Again",
     stake: "Stake",
     examReadyTitle: "Exam is Ready",
     examReadyDescription:

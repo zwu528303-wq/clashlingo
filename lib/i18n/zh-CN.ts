@@ -467,6 +467,7 @@ export const zhCN = {
     starting: "启动中...",
     waitingForRival: "正在等对手...",
     readyToStartEarly: "准备提前开始",
+    retryStartExam: "重新尝试开考",
     stake: "赌注",
     examReadyTitle: "考试已就绪",
     examReadyDescription:

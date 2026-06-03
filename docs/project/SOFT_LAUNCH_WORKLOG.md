@@ -704,3 +704,74 @@ None.
   `SUPABASE_SERVICE_ROLE_KEY`, or set it directly in Vercel.
 - After env is switched, rerun the verification script, redeploy production,
   scan the deployed Supabase host, and rerun public/API smoke checks.
+
+## 11. 2026-06-03 — Rivalry Early-Start Stuck-State Recovery
+
+### What changed
+
+- Investigated why rivalry matches could not start during the Supabase Asia
+  migration window.
+- Confirmed production still points to `bemkskhhydlndiegcuxu.supabase.co`, not
+  the empty Asia project `bwwghdhwhxuqqepgpizb`.
+- Found two active `countdown` rounds where both players were already marked
+  exam-ready, but no exam row existed and the round had not advanced to
+  `exam_live`.
+- Updated `RoundPage` so a round in either `countdown` or `exam_ready` with both
+  ready flags set will retry exam generation / live promotion.
+- Kept the button usable as a manual retry path instead of disabling it forever
+  when both players are already ready.
+
+### Why / what this solves
+
+This fixes a real stuck state that can happen if exam generation fails or is
+interrupted after both players have tapped ready. The user no longer sees a
+dead-end "waiting" state when both players are already ready.
+
+### Files touched
+
+- `components/RoundPage.tsx`
+  - `promoteExamLive`
+  - both-ready recovery `useEffect`
+  - countdown and exam-ready button disabled/label logic
+- `lib/i18n/types.ts`
+- `lib/i18n/en.ts`
+- `lib/i18n/zh-CN.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+- `round.retryStartExam`
+  - en: `Try Start Again`
+  - zh-CN: `重新尝试开考`
+
+### How to change or undo later
+
+- To change the retry button text, edit `round.retryStartExam` in
+  `lib/i18n/en.ts` and `lib/i18n/zh-CN.ts`.
+- To remove automatic recovery, revert the `canPromoteExam` condition in
+  `components/RoundPage.tsx` so it only accepts `round.status === "exam_ready"`.
+- To make failures more explicit later, add a dedicated mapped error state for
+  `generate-exam` failures in `RoundPage` instead of the current generic
+  `unlockExamFailed` copy.
+
+### Verification result
+
+- `npm run lint` — passed.
+- `npx tsc --noEmit --pretty false` — passed.
+- Production read-only checks:
+  - live bundle still points to `bemkskhhydlndiegcuxu.supabase.co`
+  - live no-token API checks return `401 MISSING_ACCESS_TOKEN`
+  - Asia Supabase project counts are still `0`, so the migration remains
+    incomplete
+
+### Deferred / TODO
+
+- OWNER-REVIEW: after deploying this fix, open the stuck round(s) and confirm
+  the exam either generates and moves to `exam_live`, or shows the retry error
+  cleanly.
+- If retry still fails, the next likely issue is the `/api/generate-exam`
+  runtime path: Anthropic key/model/API response, JSON parse, or production
+  function timeout/logs.

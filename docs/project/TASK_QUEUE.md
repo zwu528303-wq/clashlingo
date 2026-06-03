@@ -1,6 +1,6 @@
 # Task Queue
 
-Last updated: 2026-06-02
+Last updated: 2026-06-03
 
 ## Current Blocker
 
@@ -14,6 +14,13 @@ Last updated: 2026-06-02
 
 ## Recently Completed
 
+- Fixed the rivalry early-start stuck state found during the Supabase migration check.
+  - Production still points to `bemkskhhydlndiegcuxu.supabase.co`, so the observed rivalry start failure was not caused by a completed switch to the empty Asia project.
+  - Read-only data checks found two `countdown` rounds where both players were already exam-ready but no exam row existed and the round had not promoted to `exam_live`.
+  - `components/RoundPage.tsx` now retries promotion when both ready flags are already set in `countdown` or `exam_ready`.
+  - The countdown / exam-ready buttons stay usable as a manual retry path when automatic promotion fails.
+  - Added `retryStartExam` copy in English and Simplified Chinese.
+  - Verified: `npm run lint`, `npx tsc --noEmit --pretty false`.
 - Completed the Vercel Asia region and API hardening closeout.
   - Vercel production deployment for commit `f78b8de` is `READY`.
   - Production API functions now run in `hkg1`.

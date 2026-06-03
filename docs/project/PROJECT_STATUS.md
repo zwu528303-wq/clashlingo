@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-06-02
+Last updated: 2026-06-03
 Stage: early MVP, two loops live (rivalry + scenario quests)
 
 ## Product Summary
@@ -192,6 +192,7 @@ Observed status values:
 - AI syllabus and exam generation now require a Supabase Bearer token and confirm the caller belongs to the round's rivalry before any Anthropic call
 - If both players study the same language at different levels, AI generation now uses the lower of the two saved levels
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
+- Round countdown UI now recovers if both players are already marked ready but the round is still stuck in `countdown`: it retries exam generation / `exam_live` promotion and leaves a manual retry button instead of locking both players out
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
 - Results UI now includes a stronger battle-report layout in `components/ResultsPage.tsx`
@@ -213,7 +214,16 @@ Observed status values:
 
 ## Current Health Check
 
-Ran on 2026-06-02:
+Ran on 2026-06-03:
+- `npm run lint` - passes
+- `npx tsc --noEmit --pretty false` - passes
+- Latest Vercel production deployment remains `dpl_VCUhq8dAU3JSyg66PnWhjPQ7JJYM` for commit `7c71041` and is `READY`
+- Live `https://www.clashlingo.com/` returns `200`; live API no-token checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
+- Live response headers still show Vercel function execution in `hkg1`, and the deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co`
+- Supabase connector lists only the Asia project `clashlingo_asia` / `bwwghdhwhxuqqepgpizb`; read-only counts there are still `0` auth users and `0` rows across the expected public tables
+- Read-only checks against the currently configured Supabase host show 10 rivalries / 8 rounds. Three rivalries are blocked by active rounds: two `countdown` rounds had both exam-ready flags set but no exam row, and one round was still `confirming`. This led to the RoundPage recovery fix above.
+
+Previous checks on 2026-06-02:
 - `npm run lint` - passes
 - `npm run build` - failed locally because Next/Turbopack could not fetch Plus Jakarta Sans from Google Fonts; use Vercel deployment build as the production build gate
 - `npm run test:e2e -- tests/e2e/public-smoke.spec.ts` - passes (logged-out landing, login -> guide, reset-password)

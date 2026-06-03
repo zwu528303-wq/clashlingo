@@ -1,6 +1,6 @@
 # ClashLingo Session Summary
 
-Date: 2026-06-02
+Date: 2026-06-03
 
 ## OWNER ACTION REQUIRED
 
@@ -61,7 +61,55 @@ E2E credentials block a soft-launch acceptance item, preserve the fallback and
 document the exact blocker in `SOFT_LAUNCH_WORKLOG.md` and this section instead
 of claiming completion.
 
-## What Changed This Session (2026-06-02)
+## What Changed This Session (2026-06-03)
+
+### Rivalry start failure diagnosis and recovery fix
+
+- Investigated a report that rivalry matches could no longer start after the
+  Asia database migration work.
+- Production evidence:
+  - Latest Vercel production deployment is still
+    `dpl_VCUhq8dAU3JSyg66PnWhjPQ7JJYM` for commit `7c71041` and is `READY`.
+  - Live `https://www.clashlingo.com/` returns `200`.
+  - Live API no-token checks for `/api/create-round`,
+    `/api/generate-syllabus`, `/api/generate-exam`, and
+    `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`.
+  - Live response headers show `hkg1` function execution.
+  - The deployed browser bundle still points to
+    `bemkskhhydlndiegcuxu.supabase.co`, not the Asia project.
+- Supabase evidence:
+  - Supabase connector lists the Asia project as `clashlingo_asia`
+    (`bwwghdhwhxuqqepgpizb`) in `ap-northeast-1`.
+  - Read-only counts in the Asia project are still `0` auth users and `0` rows
+    across `users`, `rivalries`, `rounds`, `exams`, `submissions`,
+    `battle_packs`, `scenario_progress`, and `scenario_battle_reports`.
+  - Read-only checks against the currently configured Supabase host show
+    `users=11`, `rivalries=10`, `rounds=8`, `exams=5`, `submissions=10`.
+  - Current rivalry start state on that host: 4 paired active rivalries; 3 were
+    blocked by active rounds; 1 was ready to start a new round.
+  - Active rounds included two `countdown` rounds where both
+    `player_a_exam_ready` and `player_b_exam_ready` were already true, but no
+    exam row existed and the round had not promoted to `exam_live`.
+- Conclusion:
+  - The observed production rivalry-start problem is not explained by a
+    completed switch to the empty Asia project, because production is still on
+    `bemkskhhydlndiegcuxu.supabase.co`.
+  - A real app-side stuck state existed for `countdown + both ready + no exam`:
+    the button became disabled for both users and the page did not retry early
+    start promotion unless a fresh ready click happened.
+- Code changed:
+  - `components/RoundPage.tsx` now treats both `countdown` and `exam_ready` with
+    both ready flags as promotable states, so it retries exam generation /
+    `exam_live` promotion.
+  - The countdown and exam-ready buttons now stay usable as a manual retry path
+    when both players are ready but automatic promotion fails.
+  - Added `retryStartExam` copy in `lib/i18n/types.ts`, `lib/i18n/en.ts`, and
+    `lib/i18n/zh-CN.ts`.
+- Verification:
+  - `npm run lint` — passed.
+  - `npx tsc --noEmit --pretty false` — passed.
+
+## What Changed Previous Session (2026-06-02)
 
 ### Vercel Asia deploy verification and Supabase target mismatch
 
