@@ -68,9 +68,10 @@ of claiming completion.
 - Investigated a report that rivalry matches could no longer start after the
   Asia database migration work.
 - Production evidence:
-  - Latest Vercel production deployment is still
-    `dpl_VCUhq8dAU3JSyg66PnWhjPQ7JJYM` for commit `7c71041` and is `READY`.
-  - Live `https://www.clashlingo.com/` returns `200`.
+  - Latest Vercel production deployment
+    `dpl_5UuQnZ8L2TqJUocT3bdZiPpwFg3p` for commit `cda54da` is `READY`.
+  - Live public routes `/`, `/login`, `/reset-password`, and `/how-it-works`
+    return `200`.
   - Live API no-token checks for `/api/create-round`,
     `/api/generate-syllabus`, `/api/generate-exam`, and
     `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`.
@@ -108,6 +109,8 @@ of claiming completion.
 - Verification:
   - `npm run lint` — passed.
   - `npx tsc --noEmit --pretty false` — passed.
+  - Post-deploy smoke confirmed the new retry copy is present in the deployed
+    browser bundle.
 
 ## What Changed Previous Session (2026-06-02)
 

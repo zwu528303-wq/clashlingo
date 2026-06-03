@@ -20,7 +20,8 @@ Last updated: 2026-06-03
   - `components/RoundPage.tsx` now retries promotion when both ready flags are already set in `countdown` or `exam_ready`.
   - The countdown / exam-ready buttons stay usable as a manual retry path when automatic promotion fails.
   - Added `retryStartExam` copy in English and Simplified Chinese.
-  - Verified: `npm run lint`, `npx tsc --noEmit --pretty false`.
+  - Vercel production deployment `dpl_5UuQnZ8L2TqJUocT3bdZiPpwFg3p` for commit `cda54da` is `READY`.
+  - Verified: `npm run lint`, `npx tsc --noEmit --pretty false`, post-deploy public/API smoke checks.
 - Completed the Vercel Asia region and API hardening closeout.
   - Vercel production deployment for commit `f78b8de` is `READY`.
   - Production API functions now run in `hkg1`.

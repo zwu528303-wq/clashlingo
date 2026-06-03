@@ -766,6 +766,12 @@ dead-end "waiting" state when both players are already ready.
   - live no-token API checks return `401 MISSING_ACCESS_TOKEN`
   - Asia Supabase project counts are still `0`, so the migration remains
     incomplete
+- Post-deploy check:
+  - Vercel production deployment `dpl_5UuQnZ8L2TqJUocT3bdZiPpwFg3p` for commit
+    `cda54da` is `READY`
+  - public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return
+    `200`
+  - the deployed bundle includes the new retry copy
 
 ### Deferred / TODO
 
