@@ -761,6 +761,14 @@ dead-end "waiting" state when both players are already ready.
 
 - `npm run lint` — passed.
 - `npx tsc --noEmit --pretty false` — passed.
+- Vercel production deployment `dpl_A5i3MUbuq1rmf63bJPX1WT3y4XvL` for commit
+  `60a4754` is `READY`.
+- Post-deploy smoke:
+  - public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return
+    `200`
+  - no-token API checks return `401 MISSING_ACCESS_TOKEN`
+  - deployed bundle still points to `bemkskhhydlndiegcuxu.supabase.co`
+  - deployed bundle includes the new exam-generation error copy
 - Production read-only checks:
   - live bundle still points to `bemkskhhydlndiegcuxu.supabase.co`
   - live no-token API checks return `401 MISSING_ACCESS_TOKEN`

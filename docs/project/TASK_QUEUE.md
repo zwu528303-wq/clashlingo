@@ -20,7 +20,8 @@ Last updated: 2026-06-03
   - Added explicit validation for exactly 24 generated questions and 24 rubric items.
   - Added checked `exams` upsert and `rounds` status-update errors.
   - Added mapped frontend copy for incomplete AI output vs exam-save failure.
-  - Verified: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`.
+  - Vercel production deployment `dpl_A5i3MUbuq1rmf63bJPX1WT3y4XvL` for commit `60a4754` is `READY`.
+  - Verified: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`, post-deploy public/API smoke checks.
 - Fixed the rivalry early-start stuck state found during the Supabase migration check.
   - Production still points to `bemkskhhydlndiegcuxu.supabase.co`, so the observed rivalry start failure was not caused by a completed switch to the empty Asia project.
   - Read-only data checks found two `countdown` rounds where both players were already exam-ready but no exam row existed and the round had not promoted to `exam_live`.

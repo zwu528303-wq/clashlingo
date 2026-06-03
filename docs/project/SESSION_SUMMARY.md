@@ -88,6 +88,12 @@ of claiming completion.
   - `git diff --check` — passed.
   - `npm run lint` — passed.
   - `npx tsc --noEmit --pretty false` — passed.
+  - Vercel production deployment `dpl_A5i3MUbuq1rmf63bJPX1WT3y4XvL` for commit
+    `60a4754` is `READY`.
+  - Post-deploy smoke passed: public routes return `200`, protected APIs return
+    `401 MISSING_ACCESS_TOKEN` without a token, the deployed bundle still points
+    to `bemkskhhydlndiegcuxu.supabase.co`, and the new exam-generation error
+    copy is present.
 
 ### Rivalry start failure diagnosis and recovery fix
 

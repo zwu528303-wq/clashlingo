@@ -222,10 +222,10 @@ Ran on 2026-06-03:
 - `npm run lint` - passes
 - `npx tsc --noEmit --pretty false` - passes
 - `git diff --check` - passes
-- Latest Vercel production deployment `dpl_5UuQnZ8L2TqJUocT3bdZiPpwFg3p` for commit `cda54da` is `READY`
-- Live public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return `200`; live API no-token checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
-- Live response headers still show Vercel function execution in `hkg1`, and the deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co`
-- The deployed browser bundle includes the new stuck-state retry copy (`Try Start Again` / `重新尝试开考`)
+- Vercel production deployment `dpl_A5i3MUbuq1rmf63bJPX1WT3y4XvL` for commit `60a4754` is `READY`
+- Post-deploy smoke: public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return `200`; no-token API checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
+- Live response headers still show Vercel function execution in `hkg1`
+- Deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co` and includes both the stuck-state retry copy (`Try Start Again` / `重新尝试开考`) and the new exam-generation error copy (`The exam generator returned incomplete output` / `考试生成器输出不完整`)
 - Supabase connector lists only the Asia project `clashlingo_asia` / `bwwghdhwhxuqqepgpizb`; read-only counts there are still `0` auth users and `0` rows across the expected public tables
 - Read-only checks against the currently configured Supabase host show 10 rivalries / 8 rounds. Three rivalries are blocked by active rounds: two `countdown` rounds had both exam-ready flags set but no exam row, and one round was still `confirming`. This led to the RoundPage recovery fix above.
 
