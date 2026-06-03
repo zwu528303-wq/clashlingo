@@ -63,6 +63,33 @@ of claiming completion.
 
 ## What Changed This Session (2026-06-03)
 
+### Follow-up: syllabus fallback for stuck rivalry exam generation
+
+- The user retried after the sectioned-generation deployment and still saw
+  `考试生成器输出不完整，请再试一次。`
+- Read-only Supabase check for round `6dcc2bfd-6090-4a13-b1f0-47c4c8caa5cf`
+  showed:
+  - status is still `countdown`
+  - both players are confirmed and exam-ready
+  - syllabus exists
+  - no `exams` row exists
+- Conclusion: this is not caused by the friend not keeping the page open. The
+  remaining blocker is server-side exam generation.
+- Code changed:
+  - `app/api/generate-exam/route.ts` still tries Anthropic sectioned generation
+    first.
+  - If Anthropic returns a generation-shape failure or API/runtime error, the
+    route now builds a deterministic 24-question fallback exam from the saved
+    syllabus and writes that instead of returning another generation error.
+  - Fallback questions preserve the existing exam contract: 10 MCQ, 10 FITB, 4
+    translation, 100 total points, bilingual prompts, and rubric ids 1-24.
+- Verification before deploy:
+  - `git diff --check` — passed.
+  - `npm run lint` — passed.
+  - `npx tsc --noEmit --pretty false` — passed.
+- Next action: deploy this fallback, then owner should refresh the affected
+  round and click `重新尝试开考` once more.
+
 ### Follow-up: sectioned exam generation
 
 - After the first `/api/generate-exam` hardening deployed, the same affected
@@ -90,8 +117,8 @@ of claiming completion.
     `401 MISSING_ACCESS_TOKEN` without a token, deployed function headers still
     include `hkg1`, and the deployed browser bundle still points to
     `bemkskhhydlndiegcuxu.supabase.co`.
-- Next action: owner should refresh the affected round and click
-  `重新尝试开考` once more.
+- This deployed successfully, but the next retry still returned incomplete AI
+  output. See the syllabus fallback follow-up above.
 
 ### Follow-up: exam generation hardening
 

@@ -45,6 +45,12 @@ interface ExamSectionData {
   rubric: ExamRubricItem[];
 }
 
+interface VocabularyEntry {
+  word: string;
+  groupEn: string;
+  groupZh: string;
+}
+
 class ExamGenerationFailure extends Error {
   code: string;
   status: number;
@@ -104,6 +110,59 @@ function countFitbBlanks(text: string) {
   return text.match(/___/g)?.length ?? 0;
 }
 
+function localizedText(en: string, zh: string) {
+  return { en, "zh-CN": zh };
+}
+
+function localizedList(en: string[], zh: string[]) {
+  return { en, "zh-CN": zh };
+}
+
+function uniqueNonEmpty(items: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const item of items) {
+    const trimmed = item.replace(/\s+/g, " ").trim();
+    const key = trimmed.toLowerCase();
+    if (!trimmed || seen.has(key)) continue;
+
+    seen.add(key);
+    result.push(trimmed);
+  }
+
+  return result;
+}
+
+function getLocalizedStrings(value: unknown, language: "en" | "zh-CN") {
+  if (Array.isArray(value)) {
+    return uniqueNonEmpty(value.filter((item): item is string => typeof item === "string"));
+  }
+
+  if (isRecord(value) && Array.isArray(value[language])) {
+    return uniqueNonEmpty(
+      value[language].filter((item): item is string => typeof item === "string")
+    );
+  }
+
+  return [];
+}
+
+function normalizeFallbackPhrase(text: string) {
+  return text.replace(/\.\.\./g, "").replace(/\s+/g, " ").trim();
+}
+
+function trimAnswerToken(token: string) {
+  return token
+    .replace(/^[^\p{L}\p{N}'’-]+/u, "")
+    .replace(/[^\p{L}\p{N}'’-]+$/u, "")
+    .trim();
+}
+
+function getCycleItem<T>(items: T[], index: number) {
+  return items[index % items.length];
+}
+
 function getFitbPromptError(question: Record<string, unknown>, questionId: number) {
   const prompt = question.prompt;
 
@@ -129,6 +188,268 @@ function getFitbPromptError(question: Record<string, unknown>, questionId: numbe
   }
 
   return null;
+}
+
+function getSyllabusVocabularyEntries(
+  syllabus: NonNullable<Round["syllabus"]>,
+  targetLanguage: string | null
+) {
+  const entries: VocabularyEntry[] = [];
+
+  if (Array.isArray(syllabus.vocabulary_groups)) {
+    for (const group of syllabus.vocabulary_groups) {
+      const label = group.label ?? {};
+      const groupEn =
+        typeof label.en === "string" ? label.en : targetLanguage || "Core vocabulary";
+      const groupZh =
+        typeof label["zh-CN"] === "string" ? label["zh-CN"] : "核心词汇";
+
+      for (const word of group.words ?? []) {
+        if (typeof word === "string") {
+          entries.push({ word, groupEn, groupZh });
+        }
+      }
+    }
+  }
+
+  if (isRecord(syllabus.vocabulary)) {
+    for (const [groupName, words] of Object.entries(syllabus.vocabulary)) {
+      if (!Array.isArray(words)) continue;
+
+      for (const word of words) {
+        if (typeof word === "string") {
+          entries.push({
+            word,
+            groupEn: groupName,
+            groupZh: groupName,
+          });
+        }
+      }
+    }
+  }
+
+  const expressionEntries = (syllabus.expressions ?? []).map((expression) => ({
+    word: expression,
+    groupEn: "Useful expressions",
+    groupZh: "常用表达",
+  }));
+
+  const listeningEntries = (syllabus.listening ?? []).map((phrase) => ({
+    word: phrase,
+    groupEn: "Listening phrases",
+    groupZh: "听力短句",
+  }));
+
+  const fallbackEntries = [
+    targetLanguage || "target language",
+    syllabus.topic || "round topic",
+    "practice",
+    "review",
+  ].map((word) => ({
+    word,
+    groupEn: "Round basics",
+    groupZh: "本轮基础",
+  }));
+
+  const seen = new Set<string>();
+  return [...entries, ...expressionEntries, ...listeningEntries, ...fallbackEntries].filter(
+    (entry) => {
+      const key = entry.word.toLowerCase();
+      if (!entry.word.trim() || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }
+  );
+}
+
+function getSyllabusPhrasePool(syllabus: NonNullable<Round["syllabus"]>) {
+  return uniqueNonEmpty([
+    ...(syllabus.expressions ?? []),
+    ...(syllabus.listening ?? []),
+    ...getLocalizedStrings(syllabus.grammar, "en"),
+  ])
+    .map(normalizeFallbackPhrase)
+    .filter(Boolean);
+}
+
+function buildFallbackOptions(
+  correctAnswer: string,
+  distractorPool: string[],
+  questionIndex: number
+) {
+  const optionValues = ["a", "b", "c", "d"];
+  const correctIndex = questionIndex % optionValues.length;
+  const distractors = uniqueNonEmpty(
+    distractorPool.filter(
+      (item) => item.toLowerCase() !== correctAnswer.toLowerCase()
+    )
+  );
+  const labels: string[] = [];
+
+  for (const distractor of distractors) {
+    if (labels.length === 3) break;
+    labels.push(distractor);
+  }
+
+  for (const fallback of ["practice", "review", "dialogue", "lesson", "example"]) {
+    if (labels.length === 3) break;
+    if (fallback.toLowerCase() !== correctAnswer.toLowerCase()) {
+      labels.push(fallback);
+    }
+  }
+
+  labels.splice(correctIndex, 0, correctAnswer);
+
+  return {
+    answer: optionValues[correctIndex],
+    options: labels.slice(0, 4).map((label, optionIndex) => ({
+      value: optionValues[optionIndex],
+      label: localizedText(label, label),
+    })),
+  };
+}
+
+function blankFallbackPhrase(phrase: string, index: number) {
+  const cleanPhrase = normalizeFallbackPhrase(phrase) || "practice";
+  const tokens = cleanPhrase.split(/\s+/);
+  const token = getCycleItem(tokens, index);
+  const answer = trimAnswerToken(token) || token;
+  const blanked = cleanPhrase.replace(token, "___");
+
+  return {
+    answer,
+    blanked: countFitbBlanks(blanked) === 1 ? blanked : `___ ${cleanPhrase}`,
+  };
+}
+
+function getTranslationKeywords(answer: string) {
+  const keywords = uniqueNonEmpty(
+    answer
+      .split(/\s+/)
+      .map(trimAnswerToken)
+      .filter((token) => token.length > 1)
+  );
+
+  return keywords.slice(0, 6);
+}
+
+function buildFallbackExamSections(args: {
+  syllabus: NonNullable<Round["syllabus"]>;
+  targetLanguage: string | null;
+}) {
+  const { syllabus, targetLanguage } = args;
+  const topic = syllabus.topic || "this round";
+  const target = targetLanguage || syllabus.target_lang || "the target language";
+  const vocabularyEntries = getSyllabusVocabularyEntries(syllabus, target);
+  const phrasePool = getSyllabusPhrasePool(syllabus);
+  const canDoEn = getLocalizedStrings(syllabus.can_do, "en");
+  const canDoZh = getLocalizedStrings(syllabus.can_do, "zh-CN");
+  const fallbackPhrases =
+    phrasePool.length > 0
+      ? phrasePool
+      : vocabularyEntries.map((entry) => entry.word);
+
+  const mcqQuestions: ExamQuestion[] = [];
+  const mcqRubric: ExamRubricItem[] = [];
+  const allVocabularyWords = vocabularyEntries.map((entry) => entry.word);
+
+  for (let index = 0; index < 10; index += 1) {
+    const entry = getCycleItem(vocabularyEntries, index);
+    const distractorPool = vocabularyEntries
+      .filter((candidate) => candidate.groupEn !== entry.groupEn)
+      .map((candidate) => candidate.word);
+    const { answer, options } = buildFallbackOptions(
+      entry.word,
+      distractorPool.length > 0 ? distractorPool : allVocabularyWords,
+      index
+    );
+    const id = index + 1;
+
+    mcqQuestions.push({
+      id,
+      type: "mcq",
+      prompt: localizedText(
+        `Which item belongs to "${entry.groupEn}" in this ${target} syllabus?`,
+        `哪个词或表达属于本轮「${entry.groupZh}」？`
+      ),
+      options,
+    });
+    mcqRubric.push({ id, answer, points: 3 });
+  }
+
+  const fitbQuestions: ExamQuestion[] = [];
+  const fitbRubric: ExamRubricItem[] = [];
+
+  for (let index = 0; index < 10; index += 1) {
+    const sourcePhrase = getCycleItem(fallbackPhrases, index);
+    const { answer, blanked } = blankFallbackPhrase(sourcePhrase, index);
+    const id = index + 11;
+
+    fitbQuestions.push({
+      id,
+      type: "fitb",
+      prompt: localizedText(
+        `Complete this syllabus phrase: ${blanked}`,
+        `补全这个本轮短语：${blanked}`
+      ),
+    });
+    fitbRubric.push({ id, answer, points: 3 });
+  }
+
+  const translationQuestions: ExamQuestion[] = [];
+  const translationRubric: ExamRubricItem[] = [];
+
+  for (let index = 0; index < 3; index += 1) {
+    const answer = getCycleItem(fallbackPhrases, index);
+    const id = index + 21;
+
+    translationQuestions.push({
+      id,
+      type: "translation",
+      prompt: localizedText(
+        `Write a ${target} phrase from this round for: ${
+          canDoEn[index] || topic
+        }`,
+        `根据本轮内容，写一个${target}短语来表达：${
+          canDoZh[index] || topic
+        }`
+      ),
+    });
+    translationRubric.push({
+      id,
+      answer,
+      points: 10,
+      keywords: getTranslationKeywords(answer),
+    });
+  }
+
+  const sourcePhrase = getCycleItem(fallbackPhrases, 3);
+  translationQuestions.push({
+    id: 24,
+    type: "translation",
+    prompt: localizedText(
+      `Translate or explain this ${target} phrase in English: "${sourcePhrase}"`,
+      `把这个${target}短语翻译或解释成中文："${sourcePhrase}"`
+    ),
+  });
+  translationRubric.push({
+    id: 24,
+    answer: localizedText(
+      canDoEn[3] || `${topic} phrase from the syllabus`,
+      canDoZh[3] || `本轮「${topic}」中的表达`
+    ),
+    points: 10,
+    keywords: localizedList(
+      getTranslationKeywords(canDoEn[3] || topic),
+      getTranslationKeywords(canDoZh[3] || topic)
+    ),
+  });
+
+  return [
+    { questions: mcqQuestions, rubric: mcqRubric },
+    { questions: fitbQuestions, rubric: fitbRubric },
+    { questions: translationQuestions, rubric: translationRubric },
+  ] satisfies ExamSectionData[];
 }
 
 function getExamShapeError(value: unknown) {
@@ -516,16 +837,32 @@ export async function POST(req: NextRequest) {
       round.target_lang
     );
 
-    const examSections = await Promise.all(
-      EXAM_SECTIONS.map((section) =>
-        generateExamSection({
-          section,
-          syllabus,
-          targetLanguage: round.target_lang,
-          difficultyLevel,
-        })
-      )
-    );
+    let usedFallback = false;
+    let examSections: ExamSectionData[];
+
+    try {
+      examSections = await Promise.all(
+        EXAM_SECTIONS.map((section) =>
+          generateExamSection({
+            section,
+            syllabus,
+            targetLanguage: round.target_lang,
+            difficultyLevel,
+          })
+        )
+      );
+    } catch (error) {
+      console.error("Exam AI generation failed; using syllabus fallback", {
+        code: error instanceof ExamGenerationFailure ? error.code : "AI_GENERATION_FAILED",
+        message: error instanceof Error ? error.message : "Unknown AI generation error",
+        roundId,
+      });
+      usedFallback = true;
+      examSections = buildFallbackExamSections({
+        syllabus,
+        targetLanguage: round.target_lang,
+      });
+    }
 
     const examData = {
       questions: examSections
@@ -601,7 +938,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, exam: examData });
+    return NextResponse.json({ success: true, exam: examData, fallback: usedFallback });
   } catch (error) {
     if (error instanceof ExamGenerationFailure) {
       return NextResponse.json(

@@ -925,3 +925,59 @@ None.
 ### Deferred / TODO
 
 - OWNER-REVIEW: refresh the affected round and click `重新尝试开考` once more.
+
+## 14. 2026-06-03 — Syllabus Fallback For Rivalry Exam Generation
+
+### What changed
+
+- Rechecked round `6dcc2bfd-6090-4a13-b1f0-47c4c8caa5cf` after the user still
+  saw `考试生成器输出不完整，请再试一次。`
+- Confirmed both players are already confirmed and exam-ready, the round is
+  still `countdown`, syllabus exists, and no exam row exists.
+- Updated `app/api/generate-exam/route.ts` so Anthropic is still the preferred
+  generator, but a deterministic syllabus-based fallback exam is written if
+  Anthropic returns a generation-shape failure or API/runtime error.
+- The fallback exam keeps the existing rivalry exam structure:
+  - 10 MCQ questions
+  - 10 fill-in-the-blank questions
+  - 4 translation questions
+  - 24 rubric items
+  - 100 total points
+
+### Why / what this solves
+
+The live blocker is not the opponent leaving the page closed; both ready flags
+are already true. The app was repeatedly blocked by AI output shape failures.
+This fallback prevents the round from getting stuck when the saved syllabus is
+good but the model output is not.
+
+### Files touched
+
+- `app/api/generate-exam/route.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+None.
+
+### How to change or undo later
+
+- To make fallback stricter or softer, edit `buildFallbackExamSections` in
+  `app/api/generate-exam/route.ts`.
+- To remove fallback behavior, remove the `ExamGenerationFailure` catch around
+  sectioned generation and let the existing explicit AI error codes return to
+  the client.
+
+### Verification result
+
+- `git diff --check` — passed.
+- `npm run lint` — passed.
+- `npx tsc --noEmit --pretty false` — passed.
+
+### Deferred / TODO
+
+- Deploy this fallback fix, then ask the owner to refresh the affected round
+  and click `重新尝试开考` once more.

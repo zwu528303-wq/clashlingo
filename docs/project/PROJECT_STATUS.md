@@ -67,6 +67,7 @@ ClashLingo has two learning loops:
   - uses Anthropic to generate a 24-question exam + rubric from the saved syllabus
   - generates MCQ, fill-in-the-blank, and translation sections separately, then merges them server-side
   - validates each section and then validates that the final exam contains exactly 24 questions and 24 rubric items before writing
+  - falls back to a deterministic syllabus-based exam if Anthropic still returns truncated or invalid exam JSON
   - upserts into `exams`
   - returns explicit generation-shape / save-failure error codes instead of collapsing all failures into a generic internal error
   - moves round status to `exam_ready`
@@ -196,7 +197,7 @@ Observed status values:
 - If both players study the same language at different levels, AI generation now uses the lower of the two saved levels
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Round countdown UI now recovers if both players are already marked ready but the round is still stuck in `countdown`: it retries exam generation / `exam_live` promotion and leaves a manual retry button instead of locking both players out
-- Exam generation now has a 60-second route duration, section-by-section Anthropic calls for MCQ / fill-in-the-blank / translation, explicit shape validation, and checked `exams` / `rounds` write errors
+- Exam generation now has a 60-second route duration, section-by-section Anthropic calls for MCQ / fill-in-the-blank / translation, deterministic syllabus fallback, explicit shape validation, and checked `exams` / `rounds` write errors
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
 - Results UI now includes a stronger battle-report layout in `components/ResultsPage.tsx`
