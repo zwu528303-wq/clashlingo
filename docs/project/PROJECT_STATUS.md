@@ -223,7 +223,7 @@ Ran on 2026-06-03:
 - `npm run lint` - passes
 - `npx tsc --noEmit --pretty false` - passes
 - `git diff --check` - passes
-- Vercel production deployment `dpl_Aw9yim9DWADw94UHXeHsypSj3GYJ` for commit `ad7b607` is `READY`
+- Vercel production deployment `dpl_9rJDyC9HuzJytchmE6qLXYzkaoSB` for commit `55bb98f` is `READY`
 - Post-deploy smoke: public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return `200`; no-token API checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `GET /api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
 - Live response headers still show Vercel function execution in `hkg1`
 - Deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co` and includes both the stuck-state retry copy (`Try Start Again` / `重新尝试开考`) and the new exam-generation error copy (`The exam generator returned incomplete output` / `考试生成器输出不完整`)

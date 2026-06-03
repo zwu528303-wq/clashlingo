@@ -976,8 +976,14 @@ None.
 - `git diff --check` — passed.
 - `npm run lint` — passed.
 - `npx tsc --noEmit --pretty false` — passed.
+- Vercel production deployment `dpl_9rJDyC9HuzJytchmE6qLXYzkaoSB` for commit
+  `55bb98f` is `READY`.
+- Post-deploy smoke:
+  - public routes `/` and `/login` return `200`
+  - no-token checks for `/api/generate-exam` and `GET /api/scenario-progress`
+    return `401 MISSING_ACCESS_TOKEN`
+  - function response headers still include `hkg1`
 
 ### Deferred / TODO
 
-- Deploy this fallback fix, then ask the owner to refresh the affected round
-  and click `重新尝试开考` once more.
+- OWNER-REVIEW: refresh the affected round and click `重新尝试开考` once more.

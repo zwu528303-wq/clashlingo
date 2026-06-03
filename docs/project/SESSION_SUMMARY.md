@@ -83,12 +83,17 @@ of claiming completion.
     syllabus and writes that instead of returning another generation error.
   - Fallback questions preserve the existing exam contract: 10 MCQ, 10 FITB, 4
     translation, 100 total points, bilingual prompts, and rubric ids 1-24.
-- Verification before deploy:
+- Verification:
   - `git diff --check` — passed.
   - `npm run lint` — passed.
   - `npx tsc --noEmit --pretty false` — passed.
-- Next action: deploy this fallback, then owner should refresh the affected
-  round and click `重新尝试开考` once more.
+  - Vercel production deployment `dpl_9rJDyC9HuzJytchmE6qLXYzkaoSB` for commit
+    `55bb98f` is `READY`.
+  - Post-deploy smoke passed: `/` and `/login` return `200`; no-token
+    `/api/generate-exam` and `GET /api/scenario-progress` return
+    `401 MISSING_ACCESS_TOKEN`; function headers still include `hkg1`.
+- Next action: owner should refresh the affected round and click
+  `重新尝试开考` once more.
 
 ### Follow-up: sectioned exam generation
 

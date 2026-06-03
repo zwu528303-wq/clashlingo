@@ -18,7 +18,8 @@ Last updated: 2026-06-03
   - Rechecked round `6dcc2bfd-6090-4a13-b1f0-47c4c8caa5cf`: both players are confirmed/ready, the round is still `countdown`, and no `exams` row exists.
   - This confirms the blocker is not the friend leaving the page open or closed; it is the server-side exam generation path.
   - `/api/generate-exam` now uses Anthropic first, then falls back to a deterministic 24-question exam built from the saved syllabus if Anthropic returns a generation-shape failure.
-  - Verified before deploy: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`.
+  - Vercel production deployment `dpl_9rJDyC9HuzJytchmE6qLXYzkaoSB` for commit `55bb98f` is `READY`.
+  - Verified: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`, post-deploy public/API smoke checks.
 - Split `/api/generate-exam` into sectioned Anthropic calls after production returned `考试生成器输出不完整，请再试一次。`.
   - The affected stuck round is still on `bemkskhhydlndiegcuxu.supabase.co`, so this remains unrelated to a completed Asia database switch.
   - The route now generates MCQ, fill-in-the-blank, and translation sections separately instead of asking for one large 24-question JSON payload.
