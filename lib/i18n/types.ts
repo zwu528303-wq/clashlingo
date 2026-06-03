@@ -398,6 +398,8 @@ export interface TranslationDictionary {
       saveReadyFailed: string;
       refreshReadyFailed: string;
       unlockExamFailed: string;
+      generateExamContentFailed: string;
+      saveExamFailed: string;
       startExamFailed: string;
     };
   };

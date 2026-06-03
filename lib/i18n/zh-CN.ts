@@ -483,6 +483,9 @@ export const zhCN = {
       saveReadyFailed: "保存你的准备状态失败了。",
       refreshReadyFailed: "刷新最新准备状态失败了。",
       unlockExamFailed: "提前解锁考试失败了。",
+      generateExamContentFailed:
+        "考试生成器输出不完整，请再试一次。",
+      saveExamFailed: "考试保存失败了，请再试一次。",
       startExamFailed: "开始考试失败了。",
     },
   },

@@ -87,6 +87,12 @@ function mapExamErrorCode(
     case "MISSING_SYLLABUS":
     case "AI_NO_TEXT":
     case "EXAM_PARSE_FAILED":
+    case "AI_OUTPUT_TRUNCATED":
+    case "EXAM_SHAPE_INVALID":
+      return dictionary.round.errors.generateExamContentFailed;
+    case "EXAM_UPSERT_FAILED":
+    case "ROUND_UPDATE_FAILED":
+      return dictionary.round.errors.saveExamFailed;
     case "INTERNAL_ERROR":
       return dictionary.round.errors.unlockExamFailed;
     default:

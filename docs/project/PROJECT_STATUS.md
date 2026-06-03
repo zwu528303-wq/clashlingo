@@ -65,7 +65,10 @@ ClashLingo has two learning loops:
   - validates the signed-in user with a Supabase Bearer token
   - verifies the user belongs to the round's rivalry before any Anthropic call
   - uses Anthropic to generate a 24-question exam + rubric from the saved syllabus
+  - allows a longer server execution window and larger AI output budget for the 24-question bilingual JSON payload
+  - validates that AI output contains exactly 24 questions and 24 rubric items before writing
   - upserts into `exams`
+  - returns explicit generation-shape / save-failure error codes instead of collapsing all failures into a generic internal error
   - moves round status to `exam_ready`
 - `/api/profile`
   - validates the signed-in user on the server
@@ -193,6 +196,7 @@ Observed status values:
 - If both players study the same language at different levels, AI generation now uses the lower of the two saved levels
 - Round countdown UI now supports mutual early start, and exam-ready still supports synchronized launch
 - Round countdown UI now recovers if both players are already marked ready but the round is still stuck in `countdown`: it retries exam generation / `exam_live` promotion and leaves a manual retry button instead of locking both players out
+- Exam generation now has a 60-second route duration, 8000-token AI output budget, explicit 24-question shape validation, and checked `exams` / `rounds` write errors
 - Exam generation endpoint
 - Exam route now points to `components/ExamPage.tsx`
 - Results UI now includes a stronger battle-report layout in `components/ResultsPage.tsx`
@@ -217,6 +221,7 @@ Observed status values:
 Ran on 2026-06-03:
 - `npm run lint` - passes
 - `npx tsc --noEmit --pretty false` - passes
+- `git diff --check` - passes
 - Latest Vercel production deployment `dpl_5UuQnZ8L2TqJUocT3bdZiPpwFg3p` for commit `cda54da` is `READY`
 - Live public routes `/`, `/login`, `/reset-password`, and `/how-it-works` return `200`; live API no-token checks for `/api/create-round`, `/api/generate-syllabus`, `/api/generate-exam`, and `/api/scenario-progress` return `401 MISSING_ACCESS_TOKEN`
 - Live response headers still show Vercel function execution in `hkg1`, and the deployed browser bundle still points to `bemkskhhydlndiegcuxu.supabase.co`

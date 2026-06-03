@@ -509,6 +509,9 @@ export const en = {
       saveReadyFailed: "Failed to save your ready state.",
       refreshReadyFailed: "Failed to refresh the latest ready state.",
       unlockExamFailed: "Failed to unlock the exam early.",
+      generateExamContentFailed:
+        "The exam generator returned incomplete output. Please try again.",
+      saveExamFailed: "The exam could not be saved. Please try again.",
       startExamFailed: "Failed to start the exam.",
     },
   },

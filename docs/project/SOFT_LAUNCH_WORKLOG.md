@@ -781,3 +781,72 @@ dead-end "waiting" state when both players are already ready.
 - If retry still fails, the next likely issue is the `/api/generate-exam`
   runtime path: Anthropic key/model/API response, JSON parse, or production
   function timeout/logs.
+
+## 12. 2026-06-03 — Exam Generation Endpoint Hardening
+
+### What changed
+
+- Investigated the follow-up failure where the stuck round still showed
+  `提前解锁考试失败了` after the retry button shipped.
+- Confirmed round `6dcc2bfd-6090-4a13-b1f0-47c4c8caa5cf` is still on
+  `bemkskhhydlndiegcuxu.supabase.co`, has syllabus data, has both players
+  confirmed/ready, and has no matching `exams` row.
+- Hardened `app/api/generate-exam/route.ts`:
+  - route duration is now `60` seconds
+  - AI output budget is now `8000` tokens
+  - output must contain exactly 24 questions and 24 rubric items before writing
+  - malformed/truncated AI output returns explicit error codes
+  - `exams` insert/update and `rounds` update errors are checked
+- Added more specific RoundPage error copy for incomplete exam output and exam
+  save failures.
+
+### Why / what this solves
+
+The 24-question bilingual exam JSON is much larger than the syllabus payload.
+The old `4000` token output budget could truncate the JSON, and the route did
+not validate shape before writing. This makes the live early-start path more
+resilient and makes any remaining failure easier to diagnose.
+
+### Files touched
+
+- `app/api/generate-exam/route.ts`
+- `components/RoundPage.tsx`
+- `lib/i18n/types.ts`
+- `lib/i18n/en.ts`
+- `lib/i18n/zh-CN.ts`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/TASK_QUEUE.md`
+- `docs/project/SESSION_SUMMARY.md`
+- `docs/project/SOFT_LAUNCH_WORKLOG.md`
+
+### New i18n keys
+
+- `round.errors.generateExamContentFailed`
+  - en: `The exam generator returned incomplete output. Please try again.`
+  - zh-CN: `考试生成器输出不完整，请再试一次。`
+- `round.errors.saveExamFailed`
+  - en: `The exam could not be saved. Please try again.`
+  - zh-CN: `考试保存失败了，请再试一次。`
+
+### How to change or undo later
+
+- To change the AI output budget, edit `EXAM_MAX_TOKENS` in
+  `app/api/generate-exam/route.ts`.
+- To change the server timeout, edit `export const maxDuration`.
+- To change the expected exam size, edit `EXPECTED_EXAM_ITEM_COUNT` and the
+  generation prompt in the same file.
+- To adjust user-facing failure copy, edit the new `round.errors.*` keys in
+  `lib/i18n/en.ts` and `lib/i18n/zh-CN.ts`.
+
+### Verification result
+
+- `git diff --check` — passed.
+- `npm run lint` — passed.
+- `npx tsc --noEmit --pretty false` — passed.
+
+### Deferred / TODO
+
+- Deploy this fix, then ask the owner to click `重新尝试开考` once more on the
+  stuck round.
+- If it still fails, the next diagnostic signal should now be whether the UI
+  shows incomplete AI output, save failure, or the generic internal failure.

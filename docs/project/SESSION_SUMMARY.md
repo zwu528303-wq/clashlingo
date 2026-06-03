@@ -63,6 +63,32 @@ of claiming completion.
 
 ## What Changed This Session (2026-06-03)
 
+### Follow-up: exam generation hardening
+
+- After the early-start recovery fix deployed, the affected round still showed
+  `提前解锁考试失败了`.
+- Read-only Supabase check for round `6dcc2bfd-6090-4a13-b1f0-47c4c8caa5cf`
+  showed:
+  - production/local host is still `bemkskhhydlndiegcuxu.supabase.co`
+  - round status is `countdown`
+  - both players are confirmed and exam-ready
+  - syllabus exists
+  - no `exams` row exists for the round
+- Code changed:
+  - `app/api/generate-exam/route.ts` now exports `maxDuration = 60`.
+  - Anthropic exam generation now uses `max_tokens: 8000` and low temperature.
+  - AI output is validated for exactly 24 questions and 24 rubric items.
+  - Truncated / malformed AI output returns `AI_OUTPUT_TRUNCATED`,
+    `EXAM_PARSE_FAILED`, or `EXAM_SHAPE_INVALID`.
+  - `exams` insert/update and `rounds` status update errors are now checked and
+    return `EXAM_UPSERT_FAILED` or `ROUND_UPDATE_FAILED`.
+  - `components/RoundPage.tsx` maps incomplete AI output and save failures to
+    more specific bilingual UI copy.
+- Verification:
+  - `git diff --check` — passed.
+  - `npm run lint` — passed.
+  - `npx tsc --noEmit --pretty false` — passed.
+
 ### Rivalry start failure diagnosis and recovery fix
 
 - Investigated a report that rivalry matches could no longer start after the

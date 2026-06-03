@@ -14,6 +14,13 @@ Last updated: 2026-06-03
 
 ## Recently Completed
 
+- Hardened `/api/generate-exam` after a stuck rivalry round still failed with `提前解锁考试失败了`.
+  - Confirmed the affected round is on the current production Supabase host, has syllabus data, has both players confirmed/ready, and has no exam row.
+  - Increased the exam route duration to 60 seconds and the Anthropic output budget to 8000 tokens.
+  - Added explicit validation for exactly 24 generated questions and 24 rubric items.
+  - Added checked `exams` upsert and `rounds` status-update errors.
+  - Added mapped frontend copy for incomplete AI output vs exam-save failure.
+  - Verified: `git diff --check`, `npm run lint`, `npx tsc --noEmit --pretty false`.
 - Fixed the rivalry early-start stuck state found during the Supabase migration check.
   - Production still points to `bemkskhhydlndiegcuxu.supabase.co`, so the observed rivalry start failure was not caused by a completed switch to the empty Asia project.
   - Read-only data checks found two `countdown` rounds where both players were already exam-ready but no exam row existed and the round had not promoted to `exam_live`.

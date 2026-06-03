@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import type { Exam, Rivalry, Round } from "@/lib/domain-types";
+import type {
+  ExamQuestion,
+  ExamRubricItem,
+  Rivalry,
+  Round,
+} from "@/lib/domain-types";
 import { resolveRoundLanguageLevel } from "@/lib/language-level";
+
+export const maxDuration = 60;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -18,6 +25,35 @@ if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
 
 const authClient = createClient(supabaseUrl, supabaseAnonKey);
 const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+const EXPECTED_EXAM_ITEM_COUNT = 24;
+const EXAM_MAX_TOKENS = 8000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getExamShapeError(value: unknown) {
+  if (!isRecord(value)) return "Exam payload is not an object.";
+
+  if (!Array.isArray(value.questions)) {
+    return "Exam payload is missing questions.";
+  }
+
+  if (!Array.isArray(value.rubric)) {
+    return "Exam payload is missing rubric.";
+  }
+
+  if (value.questions.length !== EXPECTED_EXAM_ITEM_COUNT) {
+    return `Expected ${EXPECTED_EXAM_ITEM_COUNT} questions, got ${value.questions.length}.`;
+  }
+
+  if (value.rubric.length !== EXPECTED_EXAM_ITEM_COUNT) {
+    return `Expected ${EXPECTED_EXAM_ITEM_COUNT} rubric items, got ${value.rubric.length}.`;
+  }
+
+  return null;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -245,7 +281,8 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
+      max_tokens: EXAM_MAX_TOKENS,
+      temperature: 0.2,
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -257,24 +294,61 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
       );
     }
 
-    let examData: Pick<Exam, "questions" | "rubric">;
+    let parsedExamData: unknown;
     try {
-      examData = JSON.parse(textBlock.text);
+      parsedExamData = JSON.parse(textBlock.text);
     } catch {
       const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        examData = JSON.parse(jsonMatch[0]);
+        try {
+          parsedExamData = JSON.parse(jsonMatch[0]);
+        } catch {
+          return NextResponse.json(
+            {
+              error:
+                message.stop_reason === "max_tokens"
+                  ? "Exam JSON was truncated by the AI output limit"
+                  : "Failed to parse exam JSON",
+              code:
+                message.stop_reason === "max_tokens"
+                  ? "AI_OUTPUT_TRUNCATED"
+                  : "EXAM_PARSE_FAILED",
+            },
+            { status: 502 }
+          );
+        }
       } else {
         return NextResponse.json(
           {
-            error: "Failed to parse exam JSON",
-            code: "EXAM_PARSE_FAILED",
-            raw: textBlock.text,
+            error:
+              message.stop_reason === "max_tokens"
+                ? "Exam JSON was truncated by the AI output limit"
+                : "Failed to parse exam JSON",
+            code:
+              message.stop_reason === "max_tokens"
+                ? "AI_OUTPUT_TRUNCATED"
+                : "EXAM_PARSE_FAILED",
           },
-          { status: 500 }
+          { status: 502 }
         );
       }
     }
+
+    const shapeError = getExamShapeError(parsedExamData);
+    if (shapeError) {
+      return NextResponse.json(
+        {
+          error: shapeError,
+          code: "EXAM_SHAPE_INVALID",
+        },
+        { status: 502 }
+      );
+    }
+
+    const examData = parsedExamData as {
+      questions: ExamQuestion[];
+      rubric: ExamRubricItem[];
+    };
 
     // Check for existing exam
     const { data: existing } = await adminClient
@@ -285,7 +359,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
 
     if (existing) {
       // Update existing
-      await adminClient
+      const { error: updateExamError } = await adminClient
         .from("exams")
         .update({
           questions: examData.questions,
@@ -293,21 +367,42 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanation, no backticks. En
           total_points: 100,
         })
         .eq("id", existing.id);
+
+      if (updateExamError) {
+        return NextResponse.json(
+          { error: updateExamError.message, code: "EXAM_UPSERT_FAILED" },
+          { status: 500 }
+        );
+      }
     } else {
       // Create new
-      await adminClient.from("exams").insert({
+      const { error: insertExamError } = await adminClient.from("exams").insert({
         round_id: roundId,
         questions: examData.questions,
         rubric: examData.rubric,
         total_points: 100,
       });
+
+      if (insertExamError) {
+        return NextResponse.json(
+          { error: insertExamError.message, code: "EXAM_UPSERT_FAILED" },
+          { status: 500 }
+        );
+      }
     }
 
     // Update round status
-    await adminClient
+    const { error: updateRoundError } = await adminClient
       .from("rounds")
       .update({ status: "exam_ready" })
       .eq("id", roundId);
+
+    if (updateRoundError) {
+      return NextResponse.json(
+        { error: updateRoundError.message, code: "ROUND_UPDATE_FAILED" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true, exam: examData });
   } catch (error) {
